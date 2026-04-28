@@ -1,0 +1,87 @@
+spring:
+  application:
+    name: springboot
+
+  datasource:
+    url: jdbc:h2:mem:ottdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_SMTP_USERNAME:}
+    password: ${GMAIL_SMTP_APP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - openid
+              - profile
+              - email
+          kakao:
+            provider: kakao
+            client-id: ${KAKAO_REST_API_KEY:}
+            client-secret: ${KAKAO_CLIENT_SECRET:}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - profile_nickname
+              - account_email
+              - phone_number
+              - name
+            client-name: Kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:replace-with-a-very-long-secret-key-for-hs256-1234567890}
+    expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:120}
+  tablet-base-url: ${APP_TABLET_BASE_URL:http://127.0.0.1:5173/tablet}
+  frontend-base-url: ${APP_FRONTEND_BASE_URL:http://127.0.0.1:5173}
+  sms:
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-number: ${TWILIO_FROM_NUMBER:}
+  ocr:
+    google:
+      api-key: ${GOOGLE_VISION_API_KEY:}
+      endpoint: ${GOOGLE_VISION_ENDPOINT:https://vision.googleapis.com/v1/images:annotate}
+  aws:
+    s3:
+      bucket: ${AWS_S3_BUCKET:}
+      region: ${AWS_REGION:ap-northeast-2}
+  security:
+    data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:0123456789abcdef0123456789abcdef}
