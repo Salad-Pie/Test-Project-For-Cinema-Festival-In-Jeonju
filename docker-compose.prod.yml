@@ -2,7 +2,7 @@ services:
   springboot:
     image: ${SPRINGBOOT_IMAGE}
     env_file:
-      - ./springboot/.env.prod
+      - /etc/cinema/springboot.env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
     restart: unless-stopped
