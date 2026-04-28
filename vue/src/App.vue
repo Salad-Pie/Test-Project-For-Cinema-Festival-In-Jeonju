@@ -4,8 +4,10 @@ import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
 
-const apiBase = 'http://127.0.0.1:8080/api/auth'
-const ideaAuthApiBase = 'http://127.0.0.1:8080/api/idea-contest-auth'
+const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8080').replace(/\/$/, '')
+const apiRoot = `${backendBaseUrl}/api`
+const apiBase = `${apiRoot}/auth`
+const ideaAuthApiBase = `${apiRoot}/idea-contest-auth`
 const path = window.location.pathname.toLowerCase()
 const isOriginalRoute = path === '/original' || path.startsWith('/original/')
 const isLegacyBootstrapRoute = path === '/boot-strap' || path.startsWith('/boot-strap/')
@@ -353,7 +355,7 @@ async function submitIdeaContest() {
       formData.append('images', file)
     }
 
-    const res = await fetch('http://127.0.0.1:8080/api/idea-contests', {
+    const res = await fetch(`${apiRoot}/idea-contests`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authToken}`,
@@ -426,7 +428,7 @@ async function submitSponsorship() {
       address: combineAddress(state.sponsorship.address, state.sponsorship.addressDetail),
     }
 
-    const res = await fetch('http://127.0.0.1:8080/api/sponsorship-applications', {
+    const res = await fetch(`${apiRoot}/sponsorship-applications`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -470,7 +472,7 @@ async function submitStreetCollaboration() {
       phoneNumber: state.street.phoneNumber,
     }
 
-    const res = await fetch('http://127.0.0.1:8080/api/street-collaboration-reservations', {
+    const res = await fetch(`${apiRoot}/street-collaboration-reservations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -511,7 +513,7 @@ async function submitArtistMeetingReservation() {
       time: `${String(state.artistMeeting.hour).padStart(2, '0')}:00:00`,
     }
 
-    const res = await fetch('http://127.0.0.1:8080/api/exhibition-artist-meeting-reservations', {
+    const res = await fetch(`${apiRoot}/exhibition-artist-meeting-reservations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -562,7 +564,7 @@ async function submitExhibitionSurvey() {
       throw new Error(t('survey.identifierOptionalRule'))
     }
     const payload = { ...state.exhibitionSurvey }
-    const res = await fetch('http://127.0.0.1:8080/api/exhibition-surveys', {
+    const res = await fetch(`${apiRoot}/exhibition-surveys`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -597,7 +599,7 @@ async function submitExperienceSurvey() {
       throw new Error(t('common.requiredAll'))
     }
     const payload = { ...state.experienceSurvey }
-    const res = await fetch('http://127.0.0.1:8080/api/experience-zone-surveys', {
+    const res = await fetch(`${apiRoot}/experience-zone-surveys`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -621,7 +623,7 @@ async function submitProjectRecruitment(projectKey, phoneNumber, date, hour) {
     const authToken = getIdeaContestAuthToken()
     if (!authToken) throw new Error(t('common.loginTokenRequired'))
     const payload = { phoneNumber, date, time: `${String(hour).padStart(2, '0')}:00:00` }
-    const res = await fetch(`http://127.0.0.1:8080/api/project-recruitments/${projectKey}`, {
+    const res = await fetch(`${apiRoot}/project-recruitments/${projectKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
       body: JSON.stringify(payload),
@@ -643,7 +645,7 @@ async function fetchStreetAvailability() {
   try {
     const reservationAt = `${state.street.reservationDate}T${state.street.reservationHour.padStart(2, '0')}:00:00`
     const query = encodeURIComponent(reservationAt)
-    const res = await fetch(`http://127.0.0.1:8080/api/street-collaboration-reservations/availability?reservationAt=${query}`)
+    const res = await fetch(`${apiRoot}/street-collaboration-reservations/availability?reservationAt=${query}`)
 
     if (!res.ok) {
       let msg = t('common.requestFailed')
@@ -1427,3 +1429,5 @@ async function submitSignature() {
     <p v-if="state.error" class="error">{{ state.error }}</p>
   </main>
 </template>
+
+

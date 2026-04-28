@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: ${PROD_DB_URL}
+    driver-class-name: ${PROD_DB_DRIVER:org.postgresql.Driver}
+    username: ${PROD_DB_USERNAME}
+    password: ${PROD_DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${PROD_JPA_DDL_AUTO:update}
+    show-sql: ${PROD_JPA_SHOW_SQL:false}
+
+  h2:
+    console:
+      enabled: false
+
+app:
+  jwt:
+    secret: ${PROD_APP_JWT_SECRET}
+    expiration-minutes: ${PROD_APP_JWT_EXPIRATION_MINUTES:120}
+  tablet-base-url: ${PROD_APP_TABLET_BASE_URL:https://cinema.zdo.co.kr/tablet}
+  frontend-base-url: ${PROD_APP_FRONTEND_BASE_URL:https://cinema.zdo.co.kr}
+  security:
+    data-encryption-key: ${PROD_APP_DATA_ENCRYPTION_KEY}

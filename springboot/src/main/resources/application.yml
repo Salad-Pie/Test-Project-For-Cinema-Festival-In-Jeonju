@@ -2,21 +2,8 @@ spring:
   application:
     name: springboot
 
-  datasource:
-    url: jdbc:h2:mem:ottdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
   jpa:
-    hibernate:
-      ddl-auto: update
     show-sql: true
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
   mail:
     host: smtp.gmail.com
@@ -84,4 +71,4 @@ app:
       bucket: ${AWS_S3_BUCKET:}
       region: ${AWS_REGION:ap-northeast-2}
   security:
-    data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:0123456789abcdef0123456789abcdef}
+    data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:}

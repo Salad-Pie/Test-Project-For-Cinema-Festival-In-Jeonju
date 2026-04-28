@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:h2:mem:ottdb}
+    driver-class-name: ${TEST_DB_DRIVER:org.h2.Driver}
+    username: ${TEST_DB_USERNAME:sa}
+    password: ${TEST_DB_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${TEST_JPA_DDL_AUTO:update}
+    show-sql: ${TEST_JPA_SHOW_SQL:true}
+
+  h2:
+    console:
+      enabled: ${TEST_H2_CONSOLE_ENABLED:true}
+      path: /h2-console
+
+app:
+  jwt:
+    secret: ${TEST_APP_JWT_SECRET:replace-with-a-very-long-test-secret-key-for-hs256-1234567890}
+    expiration-minutes: ${TEST_APP_JWT_EXPIRATION_MINUTES:120}
+  tablet-base-url: ${TEST_APP_TABLET_BASE_URL:http://127.0.0.1:5173/tablet}
+  frontend-base-url: ${TEST_APP_FRONTEND_BASE_URL:http://127.0.0.1:5173}
+  security:
+    data-encryption-key: ${TEST_APP_DATA_ENCRYPTION_KEY:0123456789abcdef0123456789abcdef}

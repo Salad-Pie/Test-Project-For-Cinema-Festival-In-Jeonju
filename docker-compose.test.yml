@@ -1,0 +1,20 @@
+services:
+  springboot:
+    build:
+      context: ./springboot
+    env_file:
+      - ./springboot/.env.test
+    environment:
+      SPRING_PROFILES_ACTIVE: test
+    ports:
+      - "8080:8080"
+
+  vue:
+    build:
+      context: ./vue
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:8080
+    depends_on:
+      - springboot
+    ports:
+      - "5173:80"

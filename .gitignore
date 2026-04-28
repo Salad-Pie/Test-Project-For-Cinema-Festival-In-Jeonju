@@ -50,5 +50,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.test.example
+!.env.prod.example
 application-local.yml
 application-*.local.yml
