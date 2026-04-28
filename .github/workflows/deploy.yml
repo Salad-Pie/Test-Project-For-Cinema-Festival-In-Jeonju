@@ -73,7 +73,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "${BASTION_USER}@${BASTION_HOST}" \
             "PROD_TARGET_PORT='${PROD_TARGET_PORT}' PROD_TARGET_HOST='${PROD_TARGET_HOST}' TARGET_USER='${TARGET_USER}' COMPOSE_B64='${COMPOSE_B64}' VUE_IMAGE='${DOCKERHUB_USERNAME}/cinema-vue:latest' SPRINGBOOT_IMAGE='${DOCKERHUB_USERNAME}/cinema-springboot:latest' DOCKERHUB_USERNAME='${DOCKERHUB_USERNAME}' DOCKERHUB_TOKEN='${DOCKERHUB_TOKEN}' bash -s" << 'BASTION'
           set -e
-          ssh -p "${PROD_TARGET_PORT}" -o StrictHostKeyChecking=no "${TARGET_USER}@${PROD_TARGET_HOST}" \
+          ssh -i ~/saladpie-web-key.pem -p "${PROD_TARGET_PORT}" -o StrictHostKeyChecking=no "${TARGET_USER}@${PROD_TARGET_HOST}" \
             "COMPOSE_B64='${COMPOSE_B64}' VUE_IMAGE='${VUE_IMAGE}' SPRINGBOOT_IMAGE='${SPRINGBOOT_IMAGE}' DOCKERHUB_USERNAME='${DOCKERHUB_USERNAME}' DOCKERHUB_TOKEN='${DOCKERHUB_TOKEN}' bash -s" << 'REMOTE'
           set -e
           mkdir -p ~/cinema-deploy/springboot
