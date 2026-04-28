@@ -60,6 +60,7 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.SPRINGBOOT_ENV_PROD }}" > springboot.env.prod
 
       - name: Deploy through EC2 bastion
         env:
@@ -70,15 +71,19 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           COMPOSE_B64="$(base64 -w 0 docker-compose.prod.yml)"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no springboot.env.prod "${BASTION_USER}@${BASTION_HOST}:~/springboot.env.prod"
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "${BASTION_USER}@${BASTION_HOST}" \
             "PROD_TARGET_PORT='${PROD_TARGET_PORT}' PROD_TARGET_HOST='${PROD_TARGET_HOST}' TARGET_USER='${TARGET_USER}' COMPOSE_B64='${COMPOSE_B64}' VUE_IMAGE='${DOCKERHUB_USERNAME}/cinema-vue:latest' SPRINGBOOT_IMAGE='${DOCKERHUB_USERNAME}/cinema-springboot:latest' DOCKERHUB_USERNAME='${DOCKERHUB_USERNAME}' DOCKERHUB_TOKEN='${DOCKERHUB_TOKEN}' bash -s" << 'BASTION'
           set -e
+          scp -i ~/saladpie-web-key.pem -P "${PROD_TARGET_PORT}" -o StrictHostKeyChecking=no ~/springboot.env.prod "${TARGET_USER}@${PROD_TARGET_HOST}:~/springboot.env.prod"
           ssh -i ~/saladpie-web-key.pem -p "${PROD_TARGET_PORT}" -o StrictHostKeyChecking=no "${TARGET_USER}@${PROD_TARGET_HOST}" \
             "COMPOSE_B64='${COMPOSE_B64}' VUE_IMAGE='${VUE_IMAGE}' SPRINGBOOT_IMAGE='${SPRINGBOOT_IMAGE}' DOCKERHUB_USERNAME='${DOCKERHUB_USERNAME}' DOCKERHUB_TOKEN='${DOCKERHUB_TOKEN}' bash -s" << 'REMOTE'
           set -e
           mkdir -p ~/cinema-deploy/springboot
           cd ~/cinema-deploy
           printf '%s' "${COMPOSE_B64}" | base64 -d > docker-compose.prod.yml
+          mv ~/springboot.env.prod ~/cinema-deploy/springboot/.env.prod
+          chmod 600 ~/cinema-deploy/springboot/.env.prod
           cat > .env << ENVEOF
           VUE_IMAGE=${VUE_IMAGE}
           SPRINGBOOT_IMAGE=${SPRINGBOOT_IMAGE}
