@@ -1,13 +1,21 @@
-﻿<script setup>
+<script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { apiFetchWithBase, createApiFetch, parseErrorResponse } from './api/client'
+import { apiBase, apiRoot, ideaAuthApiBase } from './config/api'
+import {
+  clearGlobalRedirectPath,
+  getGlobalRedirectPath,
+  getIdeaContestAuthToken,
+  isIdeaContestLoggedIn,
+  saveIdeaContestAuthToken,
+  saveIdeaContestLogin,
+  setGlobalRedirectPath,
+} from './utils/authStorage'
+import { combineAddress, formatPhoneInput } from './utils/format'
+import { parseJwtPayload } from './utils/jwt'
 
 const { t, locale } = useI18n()
-
-const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8080').replace(/\/$/, '')
-const apiRoot = `${backendBaseUrl}/api`
-const apiBase = `${apiRoot}/auth`
-const ideaAuthApiBase = `${apiRoot}/idea-contest-auth`
 const path = window.location.pathname.toLowerCase()
 const isOriginalRoute = path === '/original' || path.startsWith('/original/')
 const isLegacyBootstrapRoute = path === '/boot-strap' || path.startsWith('/boot-strap/')
@@ -77,9 +85,6 @@ const q = new URLSearchParams(window.location.search)
 const callbackCode = q.get('code') || ''
 const callbackState = q.get('state') || ''
 const loginRedirectPath = q.get('redirect') || ''
-const ideaContestAuthKey = 'zdoIdeaContestAuthUserId'
-const ideaContestAuthTokenKey = 'zdoIdeaContestAuthToken'
-const postLoginRedirectKey = 'zdoPostLoginRedirectPath'
 const localeStorageKey = 'zdo.locale'
 
 const state = reactive({
@@ -149,6 +154,7 @@ const state = reactive({
 const tabletToken = computed(() => new URLSearchParams(window.location.search).get('token') || '')
 const canvasRef = ref(null)
 const drawing = ref(false)
+const apiFetch = createApiFetch(apiBase, () => t('common.requestFailed'))
 const emailLoginHref = computed(() => {
   const redirectPath = getGlobalRedirectPath()
   const loginPath = pageHref('/login/email')
@@ -170,6 +176,16 @@ function setLocale(next) {
   try {
     localStorage.setItem(localeStorageKey, next)
   } catch (_) {}
+}
+
+function userError(message) {
+  const error = new Error(message)
+  error.exposeToUser = true
+  return error
+}
+
+function setSafeError(error) {
+  state.error = error?.exposeToUser ? error.message : t('common.requestFailed')
 }
 
 onMounted(() => {
@@ -249,10 +265,6 @@ async function copyLocationAddress() {
   }
 }
 
-function combineAddress(address, detail) {
-  return [address, detail].map((value) => String(value || '').trim()).filter(Boolean).join(' ')
-}
-
 function openAddressSearch(target) {
   if (!window.daum?.Postcode) {
     state.error = t('common.addressApiUnavailable')
@@ -291,63 +303,13 @@ watch(
   }
 )
 
-async function apiFetch(pathname, options = {}) {
-  const mergedHeaders = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  }
-
-  const res = await fetch(`${apiBase}${pathname}`, {
-    ...options,
-    headers: mergedHeaders,
-  })
-
-  if (!res.ok) {
-    let msg = t('common.requestFailed')
-    try {
-      const json = await res.json()
-      msg = json.message || msg
-    } catch (_) {}
-    throw new Error(msg)
-  }
-
-  if (res.status === 204) return null
-  const text = await res.text()
-  return text ? JSON.parse(text) : null
-}
-
-async function apiFetchWithBase(baseUrl, pathname, options = {}) {
-  const mergedHeaders = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  }
-
-  const res = await fetch(`${baseUrl}${pathname}`, {
-    ...options,
-    headers: mergedHeaders,
-  })
-
-  if (!res.ok) {
-    let msg = t('common.requestFailed')
-    try {
-      const json = await res.json()
-      msg = json.message || msg
-    } catch (_) {}
-    throw new Error(msg)
-  }
-
-  if (res.status === 204) return null
-  const text = await res.text()
-  return text ? JSON.parse(text) : null
-}
-
 async function submitIdeaContest() {
   state.loading = true
   state.error = ''
   try {
     const authToken = getIdeaContestAuthToken()
     if (!authToken) {
-      throw new Error(t('common.loginTokenRequired'))
+      throw userError(t('common.loginTokenRequired'))
     }
 
     const formData = new FormData()
@@ -364,18 +326,13 @@ async function submitIdeaContest() {
     })
 
     if (!res.ok) {
-      let msg = t('common.requestFailed')
-      try {
-        const json = await res.json()
-        msg = json.message || msg
-      } catch (_) {}
-      throw new Error(msg)
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
     const json = await res.json()
     state.message = t('idea.submitted', { id: json.id, count: json.images?.length ?? 0 })
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -387,33 +344,11 @@ function onIdeaFilesChange(event) {
 }
 
 function onIdeaPhoneInput(event) {
-  const raw = String(event?.target?.value ?? '')
-  const digits = raw.replace(/\D/g, '').slice(0, 11)
-
-  if (digits.length < 4) {
-    state.ideaContest.phoneNumber = digits
-    return
-  }
-  if (digits.length < 8) {
-    state.ideaContest.phoneNumber = `${digits.slice(0, 3)}-${digits.slice(3)}`
-    return
-  }
-  state.ideaContest.phoneNumber = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+  state.ideaContest.phoneNumber = formatPhoneInput(event)
 }
 
 function onSponsorshipPhoneInput(event) {
-  const raw = String(event?.target?.value ?? '')
-  const digits = raw.replace(/\D/g, '').slice(0, 11)
-
-  if (digits.length < 4) {
-    state.sponsorship.phoneNumber = digits
-    return
-  }
-  if (digits.length < 8) {
-    state.sponsorship.phoneNumber = `${digits.slice(0, 3)}-${digits.slice(3)}`
-    return
-  }
-  state.sponsorship.phoneNumber = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+  state.sponsorship.phoneNumber = formatPhoneInput(event)
 }
 
 async function submitSponsorship() {
@@ -437,19 +372,14 @@ async function submitSponsorship() {
     })
 
     if (!res.ok) {
-      let msg = t('common.requestFailed')
-      try {
-        const json = await res.json()
-        msg = json.message || msg
-      } catch (_) {}
-      throw new Error(msg)
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
     const json = await res.json()
     state.message = t('sponsorship.submitted', { id: json.id })
     window.location.href = pageHref('/sponsorship-thanks')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -460,10 +390,10 @@ async function submitStreetCollaboration() {
   state.error = ''
   try {
     if (!state.street.reservationDate) {
-      throw new Error(t('street.reservationDateRequired'))
+      throw userError(t('street.reservationDateRequired'))
     }
     if (state.street.availability && !state.street.availability.available) {
-      throw new Error(t('street.full'))
+      throw userError(t('street.full'))
     }
 
     const payload = {
@@ -481,19 +411,14 @@ async function submitStreetCollaboration() {
     })
 
     if (!res.ok) {
-      let msg = t('common.requestFailed')
-      try {
-        const json = await res.json()
-        msg = json.message || msg
-      } catch (_) {}
-      throw new Error(msg)
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
     const json = await res.json()
     state.message = t('street.submitted', { id: json.id })
     await fetchStreetAvailability()
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -505,7 +430,7 @@ async function submitArtistMeetingReservation() {
   try {
     const authToken = getIdeaContestAuthToken()
     if (!authToken) {
-      throw new Error(t('common.loginTokenRequired'))
+      throw userError(t('common.loginTokenRequired'))
     }
 
     const payload = {
@@ -523,18 +448,13 @@ async function submitArtistMeetingReservation() {
     })
 
     if (!res.ok) {
-      let msg = t('common.requestFailed')
-      try {
-        const json = await res.json()
-        msg = json.message || msg
-      } catch (_) {}
-      throw new Error(msg)
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
     const json = await res.json()
     state.message = t('artistMeeting.submitted', { id: json.id })
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -555,13 +475,13 @@ async function submitExhibitionSurvey() {
       state.exhibitionSurvey.feedback,
     ]
     if (requiredFields.some((value) => !String(value || '').trim())) {
-      throw new Error(t('common.requiredAll'))
+      throw userError(t('common.requiredAll'))
     }
     if (
       String(state.exhibitionSurvey.identifierCode || '').trim() &&
       !/^\d{6}$/.test(String(state.exhibitionSurvey.identifierCode).trim())
     ) {
-      throw new Error(t('survey.identifierOptionalRule'))
+      throw userError(t('survey.identifierOptionalRule'))
     }
     const payload = { ...state.exhibitionSurvey }
     const res = await fetch(`${apiRoot}/exhibition-surveys`, {
@@ -570,12 +490,11 @@ async function submitExhibitionSurvey() {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}))
-      throw new Error(json.message || t('common.requestFailed'))
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
     window.location.href = pageHref('/exhibition-survey-success')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -596,7 +515,7 @@ async function submitExperienceSurvey() {
       state.experienceSurvey.feedback,
     ]
     if (requiredFields.some((value) => !String(value || '').trim())) {
-      throw new Error(t('common.requiredAll'))
+      throw userError(t('common.requiredAll'))
     }
     const payload = { ...state.experienceSurvey }
     const res = await fetch(`${apiRoot}/experience-zone-surveys`, {
@@ -605,12 +524,11 @@ async function submitExperienceSurvey() {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}))
-      throw new Error(json.message || t('common.requestFailed'))
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
     window.location.href = pageHref('/experience-zone-survey-success')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -621,7 +539,7 @@ async function submitProjectRecruitment(projectKey, phoneNumber, date, hour) {
   state.error = ''
   try {
     const authToken = getIdeaContestAuthToken()
-    if (!authToken) throw new Error(t('common.loginTokenRequired'))
+    if (!authToken) throw userError(t('common.loginTokenRequired'))
     const payload = { phoneNumber, date, time: `${String(hour).padStart(2, '0')}:00:00` }
     const res = await fetch(`${apiRoot}/project-recruitments/${projectKey}`, {
       method: 'POST',
@@ -629,12 +547,11 @@ async function submitProjectRecruitment(projectKey, phoneNumber, date, hour) {
       body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      const json = await res.json().catch(() => ({}))
-      throw new Error(json.message || t('common.requestFailed'))
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
     state.message = t('common.applicationCompleted')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -648,17 +565,12 @@ async function fetchStreetAvailability() {
     const res = await fetch(`${apiRoot}/street-collaboration-reservations/availability?reservationAt=${query}`)
 
     if (!res.ok) {
-      let msg = t('common.requestFailed')
-      try {
-        const json = await res.json()
-        msg = json.message || msg
-      } catch (_) {}
-      throw new Error(msg)
+      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
     state.street.availability = await res.json()
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
     state.street.availability = null
   } finally {
     state.street.checkingAvailability = false
@@ -693,19 +605,6 @@ function onPdRecruitPhoneInput(event) {
   state.pdRecruit.phoneNumber = formatPhoneInput(event)
 }
 
-function formatPhoneInput(event) {
-  const raw = String(event?.target?.value ?? '')
-  const digits = raw.replace(/\D/g, '').slice(0, 11)
-
-  if (digits.length < 4) {
-    return digits
-  }
-  if (digits.length < 8) {
-    return `${digits.slice(0, 3)}-${digits.slice(3)}`
-  }
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-}
-
 async function startOAuth(provider) {
   state.loading = true
   state.error = ''
@@ -722,7 +621,7 @@ async function startOAuth(provider) {
     const result = await apiFetchWithBase(authBase, `/oauth/authorize-url/${provider}${redirectQuery}`)
     window.location.href = result.authorizationUrl
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
     state.loading = false
   }
 }
@@ -753,7 +652,7 @@ async function exchangeOAuthCode() {
       window.location.href = redirectPath
     }
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -770,7 +669,7 @@ async function doEmailLogin() {
     })
     state.message = t('auth.codeSentToEmail')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -795,7 +694,7 @@ async function loginEmailWithIdentifier() {
       window.location.href = redirectPath
     }
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -820,78 +719,16 @@ async function verifyEmailLoginCode() {
       window.location.href = redirectPath
     }
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
-}
-
-function parseJwtPayload(token) {
-  try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-    return JSON.parse(atob(base64))
-  } catch (_) {
-    return null
-  }
-}
-
-function saveIdeaContestLogin(userId) {
-  if (!userId) return
-  try {
-    localStorage.setItem(ideaContestAuthKey, String(userId))
-  } catch (_) {}
-}
-
-function isIdeaContestLoggedIn() {
-  try {
-    const userId = localStorage.getItem(ideaContestAuthKey)
-    return Boolean(userId)
-  } catch (_) {
-    return false
-  }
-}
-
-function saveIdeaContestAuthToken(token) {
-  if (!token) return
-  try {
-    localStorage.setItem(ideaContestAuthTokenKey, token)
-  } catch (_) {}
-}
-
-function getIdeaContestAuthToken() {
-  try {
-    return localStorage.getItem(ideaContestAuthTokenKey) || ''
-  } catch (_) {
-    return ''
-  }
-}
-
-function setGlobalRedirectPath(pathname) {
-  if (!pathname || !pathname.startsWith('/')) return
-  try {
-    localStorage.setItem(postLoginRedirectKey, pathname)
-  } catch (_) {}
 }
 
 function redirectToLogin(redirectPath) {
   setGlobalRedirectPath(redirectPath)
   const loginPath = isOriginalRoute ? '/original/login-page' : '/login-page'
   window.location.href = `${loginPath}?redirect=${encodeURIComponent(redirectPath)}`
-}
-
-function clearGlobalRedirectPath() {
-  try {
-    localStorage.removeItem(postLoginRedirectKey)
-  } catch (_) {}
-}
-
-function getGlobalRedirectPath() {
-  try {
-    const saved = localStorage.getItem(postLoginRedirectKey)
-    return saved && saved.startsWith('/') ? saved : ''
-  } catch (_) {
-    return ''
-  }
 }
 
 function shouldUseIdeaContestAuthApi() {
@@ -924,7 +761,7 @@ async function verifyOnTablet() {
     state.verifiedToken = result.verifiedToken
     state.message = t('tablet.verifiedDone')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -983,7 +820,7 @@ async function submitSignature() {
     })
     state.message = t('tablet.signatureSaved')
   } catch (e) {
-    state.error = e.message
+    setSafeError(e)
   } finally {
     state.loading = false
   }
@@ -1129,14 +966,14 @@ async function submitSignature() {
         <div class="idea-form">
           <h2>{{ t('street.title') }}</h2>
           <div class="grid">
-            <label>{{ t('street.reservationDate') }} <input v-model="state.street.reservationDate" type="date" /></label>
+            <label>{{ t('street.reservationDate') }} <input v-model="state.street.reservationDate" type="date" :placeholder="t('common.placeholders.date')" /></label>
             <label>{{ t('street.reservationHour') }}
               <select v-model="state.street.reservationHour">
                 <option v-for="hour in streetHourOptions" :key="hour" :value="String(hour)">{{ hour }}:00</option>
               </select>
             </label>
-            <label>{{ t('street.name') }} <input v-model="state.street.name" type="text" /></label>
-            <label>{{ t('street.phone') }} <input v-model="state.street.phoneNumber" type="text" @input="onStreetPhoneInput" /></label>
+            <label>{{ t('street.name') }} <input v-model="state.street.name" type="text" :placeholder="t('common.placeholders.name')" /></label>
+            <label>{{ t('street.phone') }} <input v-model="state.street.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onStreetPhoneInput" /></label>
           </div>
           <button :disabled="state.loading || state.street.checkingAvailability || (state.street.availability && !state.street.availability.available)" @click="submitStreetCollaboration">{{ t('street.submit') }}</button>
           <p v-if="state.street.checkingAvailability">{{ t('street.checking') }}</p>
@@ -1158,10 +995,10 @@ async function submitSignature() {
         <div class="idea-form">
           <h2>{{ t('sponsorship.title') }}</h2>
           <div class="grid">
-            <label>{{ t('sponsorship.name') }} <input v-model="state.sponsorship.name" type="text" /></label>
-            <label>{{ t('sponsorship.phone') }} <input v-model="state.sponsorship.phoneNumber" type="text" @input="onSponsorshipPhoneInput" /></label>
-            <label>{{ t('sponsorship.bankAccount') }} <input v-model="state.sponsorship.bankAccount" type="text" /></label>
-            <label>{{ t('sponsorship.amount') }} <input v-model="state.sponsorship.amount" type="number" min="1" /></label>
+            <label>{{ t('sponsorship.name') }} <input v-model="state.sponsorship.name" type="text" :placeholder="t('common.placeholders.name')" /></label>
+            <label>{{ t('sponsorship.phone') }} <input v-model="state.sponsorship.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onSponsorshipPhoneInput" /></label>
+            <label>{{ t('sponsorship.bankAccount') }} <input v-model="state.sponsorship.bankAccount" type="text" :placeholder="t('common.placeholders.bankAccount')" /></label>
+            <label>{{ t('sponsorship.amount') }} <input v-model="state.sponsorship.amount" type="number" min="1" :placeholder="t('common.placeholders.amount')" /></label>
           </div>
           <label>{{ t('sponsorship.address') }}</label>
           <div class="address-field">
@@ -1186,7 +1023,7 @@ async function submitSignature() {
         <div class="idea-form">
           <h2>{{ t('idea.title') }}</h2>
           <label>{{ t('idea.memoLabel') }}</label>
-          <input type="file" multiple accept="image/*" @change="onIdeaFilesChange" />
+          <input type="file" multiple accept="image/*" :aria-label="t('common.placeholders.imageFile')" @change="onIdeaFilesChange" />
           <p>{{ t('idea.selectedFiles', { count: state.ideaContest.files.length }) }}</p>
           <button :disabled="state.loading" @click="submitIdeaContest">{{ t('idea.submit') }}</button>
         </div>
@@ -1209,8 +1046,8 @@ async function submitSignature() {
     <section v-if="isExhibitionSurveyPage" class="card">
       <h2>{{ t('survey.exhibitionTitle') }}</h2>
       <div class="survey-stack">
-        <label>{{ t('survey.nameRequired') }} <input v-model="state.exhibitionSurvey.name" type="text" required /></label>
-        <label>{{ t('survey.phoneRequired') }} <input v-model="state.exhibitionSurvey.phoneNumber" type="text" required @input="onExhibitionSurveyPhoneInput" /></label>
+        <label>{{ t('survey.nameRequired') }} <input v-model="state.exhibitionSurvey.name" type="text" required :placeholder="t('common.placeholders.name')" /></label>
+        <label>{{ t('survey.phoneRequired') }} <input v-model="state.exhibitionSurvey.phoneNumber" type="text" required :placeholder="t('common.placeholders.phone')" @input="onExhibitionSurveyPhoneInput" /></label>
         <label>{{ t('survey.addressRequired') }}
           <div class="address-field">
             <div class="address-search-row">
@@ -1220,14 +1057,14 @@ async function submitSignature() {
             <input v-model="state.exhibitionSurvey.addressDetail" type="text" :placeholder="t('common.detailAddress')" />
           </div>
         </label>
-        <label>{{ t('survey.identifierOptional') }} <input v-model="state.exhibitionSurvey.identifierCode" type="text" maxlength="6" /></label>
+        <label>{{ t('survey.identifierOptional') }} <input v-model="state.exhibitionSurvey.identifierCode" type="text" maxlength="6" :placeholder="t('common.placeholders.identifierCode')" /></label>
       </div>
       <div class="survey-stack">
-        <label>{{ t('survey.exhibition.q1') }} <textarea v-model="state.exhibitionSurvey.impressivePoint" required /></label>
-        <label>{{ t('survey.exhibition.q2') }} <textarea v-model="state.exhibitionSurvey.improvementNeeded" required /></label>
-        <label>{{ t('survey.exhibition.q3') }} <textarea v-model="state.exhibitionSurvey.desiredGenre" required /></label>
-        <label>{{ t('survey.exhibition.q4') }} <textarea v-model="state.exhibitionSurvey.invitedArtist" required /></label>
-        <label>{{ t('survey.exhibition.q5') }} <textarea v-model="state.exhibitionSurvey.feedback" required /></label>
+        <label>{{ t('survey.exhibition.q1') }} <textarea v-model="state.exhibitionSurvey.impressivePoint" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.exhibition.q2') }} <textarea v-model="state.exhibitionSurvey.improvementNeeded" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.exhibition.q3') }} <textarea v-model="state.exhibitionSurvey.desiredGenre" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.exhibition.q4') }} <textarea v-model="state.exhibitionSurvey.invitedArtist" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.exhibition.q5') }} <textarea v-model="state.exhibitionSurvey.feedback" required :placeholder="t('common.placeholders.answer')" /></label>
       </div>
       <button :disabled="state.loading" @click="submitExhibitionSurvey">{{ t('survey.submitExhibition') }}</button>
     </section>
@@ -1243,8 +1080,8 @@ async function submitSignature() {
     <section v-if="isExperienceZoneSurveyPage" class="card">
       <h2>{{ t('survey.experienceTitle') }}</h2>
       <div class="survey-stack">
-        <label>{{ t('survey.nameRequired') }} <input v-model="state.experienceSurvey.name" type="text" required /></label>
-        <label>{{ t('survey.phoneRequired') }} <input v-model="state.experienceSurvey.phoneNumber" type="text" required @input="onExperienceSurveyPhoneInput" /></label>
+        <label>{{ t('survey.nameRequired') }} <input v-model="state.experienceSurvey.name" type="text" required :placeholder="t('common.placeholders.name')" /></label>
+        <label>{{ t('survey.phoneRequired') }} <input v-model="state.experienceSurvey.phoneNumber" type="text" required :placeholder="t('common.placeholders.phone')" @input="onExperienceSurveyPhoneInput" /></label>
         <label>{{ t('survey.addressRequired') }}
           <div class="address-field">
             <div class="address-search-row">
@@ -1256,11 +1093,11 @@ async function submitSignature() {
         </label>
       </div>
       <div class="survey-stack">
-        <label>{{ t('survey.experience.q1') }} <textarea v-model="state.experienceSurvey.impressiveSpace" required /></label>
-        <label>{{ t('survey.experience.q2') }} <textarea v-model="state.experienceSurvey.improvementIdeaSpace" required /></label>
-        <label>{{ t('survey.experience.q3') }} <textarea v-model="state.experienceSurvey.streamingParticipation" required /></label>
-        <label>{{ t('survey.experience.q4') }} <textarea v-model="state.experienceSurvey.desiredGoods" required /></label>
-        <label>{{ t('survey.experience.q5') }} <textarea v-model="state.experienceSurvey.feedback" required /></label>
+        <label>{{ t('survey.experience.q1') }} <textarea v-model="state.experienceSurvey.impressiveSpace" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.experience.q2') }} <textarea v-model="state.experienceSurvey.improvementIdeaSpace" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.experience.q3') }} <textarea v-model="state.experienceSurvey.streamingParticipation" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.experience.q4') }} <textarea v-model="state.experienceSurvey.desiredGoods" required :placeholder="t('common.placeholders.answer')" /></label>
+        <label>{{ t('survey.experience.q5') }} <textarea v-model="state.experienceSurvey.feedback" required :placeholder="t('common.placeholders.answer')" /></label>
       </div>
       <button :disabled="state.loading" @click="submitExperienceSurvey">{{ t('survey.submitExperience') }}</button>
     </section>
@@ -1331,9 +1168,9 @@ async function submitSignature() {
     <section v-if="isAxSpacePage" class="card">
       <h2>{{ t('project.axSpaceTitle') }}</h2>
       <div class="grid">
-        <label>{{ t('project.reservationDate') }} <input v-model="state.axSpace.date" type="date" readonly /></label>
-        <label>{{ t('project.reservationTime') }} <input :value="`${state.axSpace.hour}:00`" type="text" readonly /></label>
-        <label>{{ t('project.phone') }} <input v-model="state.axSpace.phoneNumber" type="text" @input="onAxSpacePhoneInput" /></label>
+        <label>{{ t('project.reservationDate') }} <input v-model="state.axSpace.date" type="date" readonly :placeholder="t('common.placeholders.date')" /></label>
+        <label>{{ t('project.reservationTime') }} <input :value="`${state.axSpace.hour}:00`" type="text" readonly :placeholder="t('common.placeholders.time')" /></label>
+        <label>{{ t('project.phone') }} <input v-model="state.axSpace.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onAxSpacePhoneInput" /></label>
       </div>
       <button :disabled="state.loading" @click="submitProjectRecruitment('ax-space', state.axSpace.phoneNumber, state.axSpace.date, state.axSpace.hour)">{{ t('project.submit') }}</button>
     </section>
@@ -1341,9 +1178,9 @@ async function submitSignature() {
     <section v-if="isKartAxPage" class="card">
       <h2>{{ t('project.kArtAxTitle') }}</h2>
       <div class="grid">
-        <label>{{ t('project.reservationDate') }} <input v-model="state.kArtAx.date" type="date" readonly /></label>
-        <label>{{ t('project.reservationTime') }} <input :value="`${state.kArtAx.hour}:00`" type="text" readonly /></label>
-        <label>{{ t('project.phone') }} <input v-model="state.kArtAx.phoneNumber" type="text" @input="onKArtAxPhoneInput" /></label>
+        <label>{{ t('project.reservationDate') }} <input v-model="state.kArtAx.date" type="date" readonly :placeholder="t('common.placeholders.date')" /></label>
+        <label>{{ t('project.reservationTime') }} <input :value="`${state.kArtAx.hour}:00`" type="text" readonly :placeholder="t('common.placeholders.time')" /></label>
+        <label>{{ t('project.phone') }} <input v-model="state.kArtAx.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onKArtAxPhoneInput" /></label>
       </div>
       <button :disabled="state.loading" @click="submitProjectRecruitment('k-art-ax', state.kArtAx.phoneNumber, state.kArtAx.date, state.kArtAx.hour)">{{ t('project.submit') }}</button>
     </section>
@@ -1351,9 +1188,9 @@ async function submitSignature() {
     <section v-if="isAxShopShopPage" class="card">
       <h2>{{ t('project.axShopShopTitle') }}</h2>
       <div class="grid">
-        <label>{{ t('project.reservationDate') }} <input v-model="state.axShopShop.date" type="date" readonly /></label>
-        <label>{{ t('project.reservationTime') }} <input :value="`${state.axShopShop.hour}:00`" type="text" readonly /></label>
-        <label>{{ t('project.phone') }} <input v-model="state.axShopShop.phoneNumber" type="text" @input="onAxShopShopPhoneInput" /></label>
+        <label>{{ t('project.reservationDate') }} <input v-model="state.axShopShop.date" type="date" readonly :placeholder="t('common.placeholders.date')" /></label>
+        <label>{{ t('project.reservationTime') }} <input :value="`${state.axShopShop.hour}:00`" type="text" readonly :placeholder="t('common.placeholders.time')" /></label>
+        <label>{{ t('project.phone') }} <input v-model="state.axShopShop.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onAxShopShopPhoneInput" /></label>
       </div>
       <button :disabled="state.loading" @click="submitProjectRecruitment('ax-shop-shop', state.axShopShop.phoneNumber, state.axShopShop.date, state.axShopShop.hour)">{{ t('project.submit') }}</button>
     </section>
@@ -1361,9 +1198,9 @@ async function submitSignature() {
     <section v-if="isPdRecruitPage" class="card">
       <h2>{{ t('project.pdRecruitTitle') }}</h2>
       <div class="grid">
-        <label>{{ t('project.reservationDate') }} <input v-model="state.pdRecruit.date" type="date" readonly /></label>
-        <label>{{ t('project.reservationTime') }} <input :value="`${state.pdRecruit.hour}:00`" type="text" readonly /></label>
-        <label>{{ t('project.phone') }} <input v-model="state.pdRecruit.phoneNumber" type="text" @input="onPdRecruitPhoneInput" /></label>
+        <label>{{ t('project.reservationDate') }} <input v-model="state.pdRecruit.date" type="date" readonly :placeholder="t('common.placeholders.date')" /></label>
+        <label>{{ t('project.reservationTime') }} <input :value="`${state.pdRecruit.hour}:00`" type="text" readonly :placeholder="t('common.placeholders.time')" /></label>
+        <label>{{ t('project.phone') }} <input v-model="state.pdRecruit.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onPdRecruitPhoneInput" /></label>
       </div>
       <button :disabled="state.loading" @click="submitProjectRecruitment('pd-writer-edit-sound', state.pdRecruit.phoneNumber, state.pdRecruit.date, state.pdRecruit.hour)">{{ t('project.submit') }}</button>
     </section>
@@ -1371,8 +1208,8 @@ async function submitSignature() {
     <section v-if="isEmailLoginPage" class="card">
       <h2>{{ t('auth.emailLogin') }}</h2>
       <div class="grid">
-        <label>{{ t('auth.email') }} <input v-model="state.emailLogin.email" type="email" /></label>
-        <label>{{ t('auth.identifierCode') }} <input v-model="state.emailLogin.code" type="text" maxlength="6" /></label>
+        <label>{{ t('auth.email') }} <input v-model="state.emailLogin.email" type="email" :placeholder="t('common.placeholders.email')" /></label>
+        <label>{{ t('auth.identifierCode') }} <input v-model="state.emailLogin.code" type="text" maxlength="6" :placeholder="t('common.placeholders.identifierCode')" /></label>
       </div>
       <div class="actions">
         <button :disabled="state.loading" @click="loginEmailWithIdentifier">{{ t('auth.loginWithIdentifier') }}</button>
@@ -1382,8 +1219,8 @@ async function submitSignature() {
     <section v-if="isEmailSignupPage" class="card">
       <h2>{{ t('auth.emailSignup') }}</h2>
       <div class="grid">
-        <label>{{ t('auth.email') }} <input v-model="state.emailLogin.email" type="email" /></label>
-        <label>{{ t('auth.identifierCode') }} <input v-model="state.emailLogin.code" type="text" maxlength="6" /></label>
+        <label>{{ t('auth.email') }} <input v-model="state.emailLogin.email" type="email" :placeholder="t('common.placeholders.email')" /></label>
+        <label>{{ t('auth.identifierCode') }} <input v-model="state.emailLogin.code" type="text" maxlength="6" :placeholder="t('common.placeholders.identifierCode')" /></label>
       </div>
       <div class="actions">
         <button :disabled="state.loading" @click="doEmailLogin">{{ t('auth.sendCode') }}</button>
@@ -1429,5 +1266,7 @@ async function submitSignature() {
     <p v-if="state.error" class="error">{{ state.error }}</p>
   </main>
 </template>
+
+
 
 
