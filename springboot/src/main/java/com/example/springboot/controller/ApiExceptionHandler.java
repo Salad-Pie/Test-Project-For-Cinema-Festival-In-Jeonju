@@ -1,6 +1,8 @@
 package com.example.springboot.controller;
 
 import com.example.springboot.dto.ApiErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,8 +12,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        log.info("Handled bad request. message={}", ex.getMessage());
         return ResponseEntity.badRequest().body(new ApiErrorResponse("BAD_REQUEST", ex.getMessage(), null));
     }
 
@@ -26,6 +31,7 @@ public class ApiExceptionHandler {
                     : fieldError.getDefaultMessage();
         }
 
+        log.info("Handled validation error. field={} message={}", field, message);
         return ResponseEntity.badRequest().body(new ApiErrorResponse("VALIDATION_ERROR", message, field));
     }
 
@@ -35,6 +41,7 @@ public class ApiExceptionHandler {
         if (message == null || message.isBlank()) {
             message = "unexpected server error.";
         }
+        log.info("Handled unexpected error. type={} message={}", ex.getClass().getSimpleName(), message);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiErrorResponse("INTERNAL_SERVER_ERROR", message, null));
     }
