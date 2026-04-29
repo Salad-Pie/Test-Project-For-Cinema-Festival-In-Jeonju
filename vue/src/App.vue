@@ -873,10 +873,10 @@ async function submitSignature() {
           <div class="col-12 col-xl-10">
             <div class="text-center mb-4">
               <span class="badge rounded-pill text-bg-light border border-info-subtle text-info-emphasis px-3 py-2 mb-3">
-                Bootstrap
+                BackToScreen
               </span>
-              <h1 class="h2 fw-bold mb-2">{{ t('bootstrapHub.title') }}</h1>
-              <p class="text-secondary mb-0">{{ t('bootstrapHub.subtitle') }}</p>
+              <h1 class="h2 fw-bold mb-2">폐영화관 재생프로젝트</h1>
+              <p class="text-secondary mb-0">AX 융복합 서예 전시</p>
             </div>
             <div class="row g-3">
               <div v-for="page in bootstrapPages" :key="page.href" class="col-12 col-md-6 col-lg-4">
