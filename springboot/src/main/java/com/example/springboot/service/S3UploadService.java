@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Locale;
 import java.time.Duration;
 import java.util.UUID;
 import javax.imageio.IIOImage;
@@ -57,6 +58,7 @@ public class S3UploadService {
         }
 
         String originalFilename = file.getOriginalFilename() == null ? "unknown" : file.getOriginalFilename();
+        validateSupportedImage(file, originalFilename);
         String key = "idea-memo/" + UUID.randomUUID() + "-" + toWebpFilename(originalFilename);
 
         try {
@@ -81,6 +83,26 @@ public class S3UploadService {
         }
     }
 
+    private void validateSupportedImage(MultipartFile file, String originalFilename) {
+        String extension = getExtension(originalFilename);
+        if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
+            throw new IllegalArgumentException("only jpg, jpeg, png image files are supported.");
+        }
+
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        if (!contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
+            throw new IllegalArgumentException("only jpg, jpeg, png image files are supported.");
+        }
+    }
+
+    private String getExtension(String filename) {
+        int extensionIndex = filename.lastIndexOf('.');
+        if (extensionIndex < 0 || extensionIndex == filename.length() - 1) {
+            return "";
+        }
+        return filename.substring(extensionIndex + 1).toLowerCase(Locale.ROOT);
+    }
+
     private byte[] convertToWebp(MultipartFile file) throws IOException {
         BufferedImage image = ImageIO.read(file.getInputStream());
         if (image == null) {
@@ -100,6 +122,10 @@ public class S3UploadService {
             ImageWriteParam writeParam = writer.getDefaultWriteParam();
             if (writeParam.canWriteCompressed()) {
                 writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                String[] compressionTypes = writeParam.getCompressionTypes();
+                if (compressionTypes != null && compressionTypes.length > 0) {
+                    writeParam.setCompressionType(compressionTypes[0]);
+                }
                 writeParam.setCompressionQuality(WEBP_COMPRESSION_QUALITY);
             }
 
