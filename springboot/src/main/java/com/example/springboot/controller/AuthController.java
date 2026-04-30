@@ -29,7 +29,7 @@ public class AuthController {
 
     @PostMapping("/login/email/send-code")
     public ResponseEntity<Void> sendEmailCode(@Valid @RequestBody EmailCodeSendRequest request) {
-        authService.sendEmailLoginCode(request.email());
+        authService.sendEmailLoginCode(request.email(), request.language());
         return ResponseEntity.ok().build();
     }
 

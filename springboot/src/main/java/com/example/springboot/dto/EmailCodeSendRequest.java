@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 public record EmailCodeSendRequest(
         @NotBlank(message = "email is required.")
         @Email(message = "email format is invalid.")
-        String email
+        String email,
+        String language
 ) {
 }

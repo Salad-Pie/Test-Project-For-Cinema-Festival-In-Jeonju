@@ -39,15 +39,16 @@ public class NotificationService {
         this.restClient = RestClient.builder().build();
     }
 
-    public void sendEmailCode(String email, String code) {
+    public void sendEmailCode(String email, String code, String language) {
         if (email == null || email.isBlank()) {
             return;
         }
 
+        EmailCodeMessage message = emailCodeMessage(language, code);
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(email);
-        mailMessage.setSubject("OTT Identifier Code");
-        mailMessage.setText("Your verification code is: " + code);
+        mailMessage.setSubject(message.subject());
+        mailMessage.setText(message.body());
         mailSender.send(mailMessage);
     }
 
@@ -103,5 +104,29 @@ public class NotificationService {
         }
 
         throw new IllegalArgumentException("phoneNumber must be E.164 or KR domestic format.");
+    }
+
+    private EmailCodeMessage emailCodeMessage(String language, String code) {
+        return switch (language) {
+            case "en" -> new EmailCodeMessage(
+                    "BackToScreen Verification Code",
+                    "Your verification code is: " + code
+            );
+            case "zh" -> new EmailCodeMessage(
+                    "BackToScreen 验证码",
+                    "您的验证码是：" + code
+            );
+            case "ja" -> new EmailCodeMessage(
+                    "BackToScreen 認証コード",
+                    "認証コードは " + code + " です。"
+            );
+            default -> new EmailCodeMessage(
+                    "BackToScreen 인증 코드",
+                    "인증 코드는 " + code + " 입니다."
+            );
+        };
+    }
+
+    private record EmailCodeMessage(String subject, String body) {
     }
 }

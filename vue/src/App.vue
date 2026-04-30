@@ -649,6 +649,7 @@ async function exchangeOAuthCode() {
     const payload = {
       code: callbackCode,
       state: callbackState,
+      language: locale.value,
     }
     const authBase = shouldUseIdeaContestAuthApi() ? ideaAuthApiBase : apiBase
     const result = await apiFetchWithBase(authBase, '/oauth/exchange', {
@@ -678,7 +679,7 @@ async function doEmailLogin() {
     const authBase = shouldUseIdeaContestAuthApi() ? ideaAuthApiBase : apiBase
     await apiFetchWithBase(authBase, '/login/email/send-code', {
       method: 'POST',
-      body: JSON.stringify({ email: state.emailLogin.email }),
+      body: JSON.stringify({ email: state.emailLogin.email, language: locale.value }),
     })
     state.message = t('auth.codeSentToEmail')
   } catch (e) {

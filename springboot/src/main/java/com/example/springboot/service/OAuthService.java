@@ -99,7 +99,7 @@ public class OAuthService {
                 ? fetchGoogleProfile(accessToken)
                 : fetchKakaoProfile(accessToken);
 
-        return authService.loginByOAuth(provider, profile);
+        return authService.loginByOAuth(provider, profile, request.language());
     }
 
     private void validateState(String state, SignupProvider provider) {

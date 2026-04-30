@@ -6,6 +6,7 @@ public record OAuthExchangeRequest(
         @NotBlank(message = "code is required.")
         String code,
         @NotBlank(message = "state is required.")
-        String state
+        String state,
+        String language
 ) {
 }

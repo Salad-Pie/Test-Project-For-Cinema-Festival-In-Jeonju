@@ -73,21 +73,22 @@ public class AuthService {
         user.setPhoneNumber(phone);
         user = userRepository.save(user);
 
-        return issueIdentifierAndRegisterToken(user);
+        return issueIdentifierAndRegisterToken(user, "ko");
     }
 
-    public void sendEmailLoginCode(String emailRaw) {
+    public void sendEmailLoginCode(String emailRaw, String languageRaw) {
         String email = blankToNull(emailRaw);
         if (email == null) {
             throw new IllegalArgumentException("email is required.");
         }
+        String language = normalizeLanguage(languageRaw);
 
         String code = generate6DigitCode();
         EmailIdentifierCode entity = emailIdentifierCodeRepository.findByEmail(email).orElseGet(EmailIdentifierCode::new);
         entity.setEmail(email);
         entity.setCode(code);
         emailIdentifierCodeRepository.save(entity);
-        notificationService.sendEmailCode(email, code);
+        notificationService.sendEmailCode(email, code, language);
     }
 
     public LoginResponse verifyEmailLoginCode(String emailRaw, String codeRaw) {
@@ -143,9 +144,10 @@ public class AuthService {
         return issueTabletTokenForExisting(user);
     }
 
-    public LoginResponse loginByOAuth(SignupProvider provider, OAuthProfile profile) {
+    public LoginResponse loginByOAuth(SignupProvider provider, OAuthProfile profile, String languageRaw) {
         String email = blankToNull(profile.email());
         String phone = blankToNull(profile.phoneNumber());
+        String language = normalizeLanguage(languageRaw);
 
         Optional<User> existingUser = findExistingUser(email, phone);
         if (existingUser.isPresent()) {
@@ -162,7 +164,7 @@ public class AuthService {
         user.setPhoneNumber(phone);
         user = userRepository.save(user);
 
-        return issueIdentifierAndRegisterToken(user);
+        return issueIdentifierAndRegisterToken(user, language);
     }
 
     public VerifyResponse verify(String token, String code) {
@@ -207,14 +209,14 @@ public class AuthService {
         signatureRepository.save(signature);
     }
 
-    private LoginResponse issueIdentifierAndRegisterToken(User user) {
+    private LoginResponse issueIdentifierAndRegisterToken(User user, String language) {
         String sentTo = "NONE";
         boolean codeSent = false;
 
         if (user.getEmail() != null) {
             String code = generate6DigitCode();
             saveIdentifierCode(user, code);
-            notificationService.sendEmailCode(user.getEmail(), code);
+            notificationService.sendEmailCode(user.getEmail(), code, language);
             sentTo = "EMAIL:" + user.getEmail();
             codeSent = true;
         } else if (user.getPhoneNumber() != null) {
@@ -286,6 +288,17 @@ public class AuthService {
             return null;
         }
         return value;
+    }
+
+    private String normalizeLanguage(String languageRaw) {
+        String language = blankToNull(languageRaw);
+        if (language == null) {
+            return "ko";
+        }
+        return switch (language.toLowerCase()) {
+            case "en", "zh", "ja" -> language.toLowerCase();
+            default -> "ko";
+        };
     }
 
     private void saveIdentifierCode(User user, String code) {
