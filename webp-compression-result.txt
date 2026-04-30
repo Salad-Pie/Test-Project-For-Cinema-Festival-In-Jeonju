@@ -1,0 +1,28 @@
+﻿WebP Compression Test Result
+Generated: 2026-04-30
+
+Test target:
+- jpg/jpeg/png image upload conversion to WebP
+- Compression quality: 0.8
+- S3 upload not executed; conversion logic only
+
+filename	originalBytes	webpBytes	compressionRatio	reductionPercent
+zdo sp포인트.png	580267	81030	0.1396	86.04%
+스크린샷 2026-03-26 143029.png	54881	15586	0.2840	71.60%
+스크린샷 2026-03-26 143441.png	26587	12544	0.4718	52.82%
+스크린샷 2026-04-02 123059.png	35434	24302	0.6858	31.42%
+스크린샷 2026-04-02 132711.png	65318	26108	0.3997	60.03%
+스크린샷 2026-04-04 095137.png	16734	6920	0.4135	58.65%
+스크린샷 2026-04-04 203524.png	169776	70322	0.4142	58.58%
+스크린샷 2026-03-26 162748.png	141847	52380	0.3693	63.07%
+스크린샷 2026-04-04 200804.png	562225	70778	0.1259	87.41%
+
+Summary:
+- Total original bytes: 1,652,069
+- Total WebP bytes: 360,000
+- Total compression ratio: 0.2179
+- Total reduction percent: 78.21%
+
+Interpretation:
+- compressionRatio = webpBytes / originalBytes
+- reductionPercent = (1 - compressionRatio) * 100

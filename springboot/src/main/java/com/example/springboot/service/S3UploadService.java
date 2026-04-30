@@ -70,11 +70,15 @@ public class S3UploadService {
                     .build();
 
             s3Client.putObject(request, RequestBody.fromBytes(webpBytes));
+            double compressionRatio = file.getSize() == 0 ? 0 : (double) webpBytes.length / file.getSize();
+            double reductionPercent = file.getSize() == 0 ? 0 : (1 - compressionRatio) * 100;
             log.info(
-                    "Memo image converted and uploaded. originalFilename={} originalSize={} webpSize={} s3Key={}",
+                    "Memo image converted and uploaded. originalFilename={} originalSize={} webpSize={} compressionRatio={} reductionPercent={} s3Key={}",
                     originalFilename,
                     file.getSize(),
                     webpBytes.length,
+                    String.format("%.4f", compressionRatio),
+                    String.format("%.2f", reductionPercent),
                     key
             );
             return new UploadedImage(key, (long) webpBytes.length);
