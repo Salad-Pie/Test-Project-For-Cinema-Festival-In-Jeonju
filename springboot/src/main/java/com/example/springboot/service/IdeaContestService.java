@@ -60,12 +60,12 @@ public class IdeaContestService {
             if (image == null || image.isEmpty()) {
                 continue;
             }
-            String s3Key = s3UploadService.uploadMemoImage(image);
+            S3UploadService.UploadedImage uploadedImage = s3UploadService.uploadMemoImage(image);
 
             MemoImage memoImage = new MemoImage();
             memoImage.setOriginalFilename(image.getOriginalFilename() == null ? "unknown" : image.getOriginalFilename());
-            memoImage.setS3Key(s3Key);
-            memoImage.setFileSize(image.getSize());
+            memoImage.setS3Key(uploadedImage.s3Key());
+            memoImage.setFileSize(uploadedImage.fileSize());
             ideaContest.addMemoImage(memoImage);
         }
 

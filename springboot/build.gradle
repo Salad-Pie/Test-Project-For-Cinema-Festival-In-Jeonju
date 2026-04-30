@@ -24,6 +24,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	implementation 'software.amazon.awssdk:s3:2.30.21'
+	implementation 'com.github.usefulness:webp-imageio:0.10.2'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	runtimeOnly 'com.h2database:h2'
