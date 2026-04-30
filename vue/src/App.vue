@@ -642,9 +642,6 @@ async function exchangeOAuthCode() {
     state.loginResult = result
     saveIdeaContestLogin(result.userId)
     saveIdeaContestAuthToken(result.registerToken)
-    state.message = result.existingUser
-      ? t('auth.existingUserRedirect')
-      : t('auth.newUserRedirect', { sentTo: result.sentTo })
     const redirectPath = getGlobalRedirectPath() || getRedirectPathFromOAuthState()
     if (redirectPath) {
       setGlobalRedirectPath(redirectPath)
@@ -1231,13 +1228,6 @@ async function submitSignature() {
     <section v-if="isOauthCallbackPage" class="card">
       <h2>{{ t('auth.callbackTitle') }}</h2>
       <p>{{ t('auth.callbackDesc') }}</p>
-    </section>
-
-    <section v-if="(isEmailLoginPage || isEmailSignupPage || isOauthCallbackPage) && state.loginResult" class="card">
-      <h2>{{ t('auth.loginResult') }}</h2>
-      <p>{{ t('auth.userId') }}: {{ state.loginResult.userId }}</p>
-      <p>{{ t('auth.sentTo') }}: {{ state.loginResult.sentTo }}</p>
-      <p>{{ t('auth.tabletUrl') }}: {{ state.loginResult.tabletUrl }}</p>
     </section>
 
     <section v-if="isTabletPage" class="card">
