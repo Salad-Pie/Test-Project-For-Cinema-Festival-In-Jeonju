@@ -90,6 +90,7 @@ public class IdeaContestService {
                 memoImage.getId(),
                 memoImage.getOriginalFilename(),
                 memoImage.getS3Key(),
+                s3UploadService.createPresignedDownloadUrl(memoImage.getS3Key()),
                 memoImage.getFileSize()
         );
     }

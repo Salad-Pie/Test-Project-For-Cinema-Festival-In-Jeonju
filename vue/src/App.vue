@@ -32,6 +32,7 @@ const isEmailLoginPage = computed(() => routePath.startsWith('/login/email'))
 const isEmailSignupPage = computed(() => routePath.startsWith('/signup/email'))
 const isOauthCallbackPage = computed(() => routePath.startsWith('/oauth/callback'))
 const isTabletPage = computed(() => routePath.startsWith('/tablet'))
+const isSuccessPage = computed(() => routePath === '/success')
 const isBootstrapLoginPage = computed(() => !isOriginalRoute && routePath.startsWith('/login-page'))
 const isIdeaContestLoginPage = computed(() => isOriginalRoute && routePath.startsWith('/login-page'))
 const isIdeaContestPage = computed(() => routePath.startsWith('/idea-contest') && !isIdeaContestLoginPage.value)
@@ -86,6 +87,7 @@ const callbackCode = q.get('code') || ''
 const callbackState = q.get('state') || ''
 const loginRedirectPath = q.get('redirect') || ''
 const localeStorageKey = 'zdo.locale'
+const successMessageStorageKey = 'zdo.successMessage'
 
 const state = reactive({
   loading: false,
@@ -147,6 +149,7 @@ const state = reactive({
   axShopShop: { phoneNumber: '', date: axShopShopDate, hour: axShopShopHour },
   pdRecruit: { phoneNumber: '', date: pdRecruitDate, hour: pdRecruitHour },
   mapError: '',
+  successMessage: '',
   verifyCode: '',
   verifiedToken: '',
 })
@@ -188,6 +191,13 @@ function setSafeError(error) {
   state.error = error?.exposeToUser ? error.message : t('common.requestFailed')
 }
 
+function goToSuccessPage(message) {
+  try {
+    sessionStorage.setItem(successMessageStorageKey, message)
+  } catch (_) {}
+  window.location.href = pageHref('/success')
+}
+
 onMounted(() => {
   try {
     const savedLocale = localStorage.getItem(localeStorageKey)
@@ -195,6 +205,14 @@ onMounted(() => {
       locale.value = savedLocale
     }
   } catch (_) {}
+
+  if (isSuccessPage.value) {
+    try {
+      state.successMessage = sessionStorage.getItem(successMessageStorageKey) || ''
+    } catch (_) {
+      state.successMessage = ''
+    }
+  }
 
   if (window.location.hostname === 'localhost') {
     const canonicalUrl = new URL(window.location.href)
@@ -330,7 +348,7 @@ async function submitIdeaContest() {
     }
 
     const json = await res.json()
-    state.message = t('idea.submitted', { id: json.id, count: json.images?.length ?? 0 })
+    goToSuccessPage(t('idea.submitted', { count: json.images?.length ?? 0 }))
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -375,9 +393,8 @@ async function submitSponsorship() {
       throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
-    const json = await res.json()
-    state.message = t('sponsorship.submitted', { id: json.id })
-    window.location.href = pageHref('/sponsorship-thanks')
+    await res.json()
+    goToSuccessPage(t('sponsorship.submitted'))
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -414,9 +431,8 @@ async function submitStreetCollaboration() {
       throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
-    const json = await res.json()
-    state.message = t('street.submitted', { id: json.id })
-    await fetchStreetAvailability()
+    await res.json()
+    goToSuccessPage(t('street.submitted'))
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -451,8 +467,8 @@ async function submitArtistMeetingReservation() {
       throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
 
-    const json = await res.json()
-    state.message = t('artistMeeting.submitted', { id: json.id })
+    await res.json()
+    goToSuccessPage(t('artistMeeting.submitted'))
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -549,7 +565,7 @@ async function submitProjectRecruitment(projectKey, phoneNumber, date, hour) {
     if (!res.ok) {
       throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     }
-    state.message = t('common.applicationCompleted')
+    goToSuccessPage(t('common.applicationCompleted'))
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -883,6 +899,21 @@ async function submitSignature() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="isSuccessPage" class="split-page">
+      <div class="split-page-top"></div>
+      <div class="split-page-body">
+        <div class="card idea-pane">
+          <div class="idea-form">
+            <h2>{{ t('common.successTitle') }}</h2>
+            <p>{{ state.successMessage || t('common.applicationCompleted') }}</p>
+          </div>
+        </div>
+        <div class="card idea-pane">
+          <div class="idea-poster"><img :src="ideaPosterUrl" alt="Success" /></div>
         </div>
       </div>
     </section>

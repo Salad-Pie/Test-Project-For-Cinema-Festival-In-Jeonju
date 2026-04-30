@@ -70,5 +70,6 @@ app:
     s3:
       bucket: ${AWS_S3_BUCKET:}
       region: ${AWS_REGION:ap-northeast-2}
+      presigned-download-expiration-minutes: ${AWS_S3_PRESIGNED_DOWNLOAD_EXPIRATION_MINUTES:10}
   security:
     data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:}
