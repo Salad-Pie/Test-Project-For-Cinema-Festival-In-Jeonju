@@ -14,6 +14,7 @@ import {
 } from './utils/authStorage'
 import { combineAddress, formatPhoneInput } from './utils/format'
 import { parseJwtPayload } from './utils/jwt'
+import artistMeetingPosterUrl from './assets/artist-meeting-poster.png'
 
 const { t, locale } = useI18n()
 const path = window.location.pathname.toLowerCase()
@@ -940,7 +941,7 @@ async function submitSignature() {
       </div>
       <div class="card idea-pane">
         <div class="idea-poster">
-          <img :src="ideaPosterUrl" alt="Poster Placeholder" />
+          <img :src="artistMeetingPosterUrl" alt="전시 작가와의 만남 포스터" />
         </div>
       </div>
     </section>
