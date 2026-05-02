@@ -18,10 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ProjectRecruitmentReservationService {
 
+    private static final String AX_SHOP_SHOP_PROJECT_KEY = "ax-shop-shop";
+    private static final String PHONE_NUMBER_PATTERN = "^[0-9\\-+() ]{8,20}$";
+
     private static final Map<String, Slot> ALLOWED_SLOT_BY_PROJECT = Map.of(
             "ax-space", new Slot(LocalDate.of(2026, 5, 8), LocalTime.of(20, 0)),
             "k-art-ax", new Slot(LocalDate.of(2026, 5, 9), LocalTime.of(16, 0)),
-            "ax-shop-shop", new Slot(LocalDate.of(2026, 5, 9), LocalTime.of(14, 0)),
+            AX_SHOP_SHOP_PROJECT_KEY, new Slot(LocalDate.of(2026, 5, 9), LocalTime.of(14, 0)),
             "pd-writer-edit-sound", new Slot(LocalDate.of(2026, 5, 9), LocalTime.of(19, 0))
     );
 
@@ -66,6 +69,8 @@ public class ProjectRecruitmentReservationService {
             throw new IllegalArgumentException("duplicate reservation: same user already reserved this project slot.");
         }
 
+        validatePhoneNumber(projectKey, request.phoneNumber());
+
         ProjectRecruitmentReservation entity = new ProjectRecruitmentReservation();
         entity.setProjectKey(projectKey);
         entity.setUser(user);
@@ -87,7 +92,22 @@ public class ProjectRecruitmentReservationService {
         return authorization.substring("Bearer ".length()).trim();
     }
 
+    private void validatePhoneNumber(String projectKey, String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            if (AX_SHOP_SHOP_PROJECT_KEY.equals(projectKey)) {
+                return;
+            }
+            throw new IllegalArgumentException("phoneNumber is required.");
+        }
+        if (!phoneNumber.matches(PHONE_NUMBER_PATTERN)) {
+            throw new IllegalArgumentException("phoneNumber format is invalid.");
+        }
+    }
+
     private String normalizePhone(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            return "";
+        }
         String digits = phoneNumber.replaceAll("[^0-9]", "");
         if (digits.length() == 11) return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
         if (digits.length() == 10) return digits.substring(0, 3) + "-" + digits.substring(3, 6) + "-" + digits.substring(6);
@@ -96,4 +116,3 @@ public class ProjectRecruitmentReservationService {
 
     private record Slot(LocalDate date, LocalTime time) {}
 }
-

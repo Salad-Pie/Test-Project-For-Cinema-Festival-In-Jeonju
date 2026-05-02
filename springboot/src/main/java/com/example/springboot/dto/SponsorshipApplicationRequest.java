@@ -11,8 +11,12 @@ public record SponsorshipApplicationRequest(
         @Pattern(regexp = "^[0-9\\-+() ]{8,20}$", message = "phoneNumber format is invalid.")
         String phoneNumber,
         @NotBlank(message = "bankAccount is required.")
-        @Pattern(regexp = "^[0-9\\- ]{8,40}$", message = "bankAccount format is invalid.")
         String bankAccount,
+        @NotBlank(message = "paymentMethodType is required.")
+        @Pattern(regexp = "^(BANK|PAYMENT|CARD)$", message = "paymentMethodType format is invalid.")
+        String paymentMethodType,
+        @NotBlank(message = "paymentProviderName is required.")
+        String paymentProviderName,
         @Min(value = 1, message = "amount must be greater than 0.")
         Long amount,
         @NotBlank(message = "address is required.")

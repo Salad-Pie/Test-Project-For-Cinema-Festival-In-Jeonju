@@ -5,6 +5,8 @@ public record SponsorshipApplicationResponse(
         String name,
         String phoneNumber,
         String bankAccount,
+        String paymentMethodType,
+        String paymentProviderName,
         Long amount,
         String address
 ) {

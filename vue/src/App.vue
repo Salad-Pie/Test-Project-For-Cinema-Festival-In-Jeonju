@@ -82,6 +82,12 @@ const locationAddress = '전북특별자치도 전주시 완산구 전주객사3
 const kakaoDirectionsUrl = `https://map.kakao.com/link/search/${encodeURIComponent(locationAddress)}`
 const naverDirectionsUrl = `https://map.naver.com/p/search/${encodeURIComponent(locationAddress)}`
 const ideaPosterUrl = 'https://zdo.co.kr/theme/home/html/image/top_logo_m.png'
+const customPaymentProviderValue = '__CUSTOM__'
+const sponsorshipPaymentProviderOptionsByType = {
+  BANK: ['국민은행', '신한은행', '우리은행', '하나은행', '농협은행', '기업은행', '카카오뱅크', '토스뱅크', '케이뱅크'],
+  PAYMENT: ['카카오페이', '네이버페이', '토스페이', '페이코', 'PayPal'],
+  CARD: ['신한카드', '삼성카드', 'KB국민카드', '현대카드', '롯데카드', '우리카드', '하나카드', 'BC카드', 'Visa', 'Mastercard'],
+}
 
 const q = new URLSearchParams(window.location.search)
 const callbackCode = q.get('code') || ''
@@ -106,6 +112,9 @@ const state = reactive({
     name: '',
     phoneNumber: '',
     bankAccount: '',
+    paymentMethodType: 'BANK',
+    paymentProviderPreset: '',
+    paymentProviderName: '',
     amount: '',
     address: '',
     addressDetail: '',
@@ -158,6 +167,12 @@ const state = reactive({
 const tabletToken = computed(() => new URLSearchParams(window.location.search).get('token') || '')
 const canvasRef = ref(null)
 const drawing = ref(false)
+const sponsorshipPaymentProviderOptions = computed(
+  () => sponsorshipPaymentProviderOptionsByType[state.sponsorship.paymentMethodType] || []
+)
+const isCustomSponsorshipPaymentProvider = computed(
+  () => state.sponsorship.paymentProviderPreset === customPaymentProviderValue
+)
 const apiFetch = createApiFetch(apiBase, () => t('common.requestFailed'))
 const emailLoginHref = computed(() => {
   const redirectPath = getGlobalRedirectPath()
@@ -322,6 +337,25 @@ watch(
   }
 )
 
+watch(
+  () => state.sponsorship.paymentMethodType,
+  () => {
+    state.sponsorship.paymentProviderPreset = ''
+    state.sponsorship.paymentProviderName = ''
+  },
+)
+
+watch(
+  () => state.sponsorship.paymentProviderPreset,
+  (nextProvider) => {
+    if (nextProvider !== customPaymentProviderValue) {
+      state.sponsorship.paymentProviderName = nextProvider
+    } else {
+      state.sponsorship.paymentProviderName = ''
+    }
+  },
+)
+
 async function submitIdeaContest() {
   state.loading = true
   state.error = ''
@@ -378,6 +412,8 @@ async function submitSponsorship() {
       name: state.sponsorship.name,
       phoneNumber: state.sponsorship.phoneNumber,
       bankAccount: state.sponsorship.bankAccount,
+      paymentMethodType: state.sponsorship.paymentMethodType,
+      paymentProviderName: state.sponsorship.paymentProviderName,
       amount: Number(state.sponsorship.amount),
       address: combineAddress(state.sponsorship.address, state.sponsorship.addressDetail),
     }
@@ -1027,6 +1063,21 @@ async function submitSignature() {
           <div class="grid">
             <label>{{ t('sponsorship.name') }} <input v-model="state.sponsorship.name" type="text" :placeholder="t('common.placeholders.name')" /></label>
             <label>{{ t('sponsorship.phone') }} <input v-model="state.sponsorship.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onSponsorshipPhoneInput" /></label>
+            <label>{{ t('sponsorship.paymentMethodType') }}
+              <select v-model="state.sponsorship.paymentMethodType">
+                <option value="BANK">{{ t('sponsorship.paymentMethods.bank') }}</option>
+                <option value="PAYMENT">{{ t('sponsorship.paymentMethods.payment') }}</option>
+                <option value="CARD">{{ t('sponsorship.paymentMethods.card') }}</option>
+              </select>
+            </label>
+            <label>{{ t('sponsorship.paymentProviderName') }}
+              <select v-model="state.sponsorship.paymentProviderPreset">
+                <option disabled value="">{{ t('common.placeholders.paymentProviderName') }}</option>
+                <option v-for="provider in sponsorshipPaymentProviderOptions" :key="provider" :value="provider">{{ provider }}</option>
+                <option :value="customPaymentProviderValue">{{ t('sponsorship.paymentProviderCustom') }}</option>
+              </select>
+            </label>
+            <label v-if="isCustomSponsorshipPaymentProvider">{{ t('sponsorship.paymentProviderCustom') }} <input v-model="state.sponsorship.paymentProviderName" type="text" :placeholder="t('common.placeholders.paymentProviderName')" /></label>
             <label>{{ t('sponsorship.bankAccount') }} <input v-model="state.sponsorship.bankAccount" type="text" :placeholder="t('common.placeholders.bankAccount')" /></label>
             <label>{{ t('sponsorship.amount') }} <input v-model="state.sponsorship.amount" type="number" min="1" :placeholder="t('common.placeholders.amount')" /></label>
           </div>
@@ -1220,7 +1271,7 @@ async function submitSignature() {
       <div class="grid">
         <label>{{ t('project.reservationDate') }} <input v-model="state.axShopShop.date" type="date" readonly :placeholder="t('common.placeholders.date')" /></label>
         <label>{{ t('project.reservationTime') }} <input :value="`${state.axShopShop.hour}:00`" type="text" readonly :placeholder="t('common.placeholders.time')" /></label>
-        <label>{{ t('project.phone') }} <input v-model="state.axShopShop.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onAxShopShopPhoneInput" /></label>
+        <label>{{ t('project.phone') }}{{ t('common.optionalSuffix') }} <input v-model="state.axShopShop.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onAxShopShopPhoneInput" /></label>
       </div>
       <button :disabled="state.loading" @click="submitProjectRecruitment('ax-shop-shop', state.axShopShop.phoneNumber, state.axShopShop.date, state.axShopShop.hour)">{{ t('project.submit') }}</button>
     </section>

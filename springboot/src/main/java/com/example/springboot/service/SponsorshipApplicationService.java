@@ -31,18 +31,23 @@ public class SponsorshipApplicationService {
         String normalizedPhone = normalizePhone(request.phoneNumber());
         String normalizedBankAccount = normalizeBankAccount(request.bankAccount());
         String normalizedAddress = request.address().trim();
-        String bankAccountHash = dataHashService.sha256(normalizedBankAccount);
+        String paymentMethodType = request.paymentMethodType().trim().toUpperCase();
+        String paymentProviderName = request.paymentProviderName().trim();
+        String paymentIdentity = String.join("|", paymentMethodType, paymentProviderName, normalizedBankAccount);
+        String bankAccountHash = dataHashService.sha256(paymentIdentity);
 
         LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
         boolean duplicated = repository.existsByBankAccountHashAndCreatedAtAfter(bankAccountHash, tenMinutesAgo);
         if (duplicated) {
-            throw new IllegalArgumentException("duplicate application is not allowed within 10 minutes for the same bank account.");
+            throw new IllegalArgumentException("duplicate application is not allowed within 10 minutes for the same payment identifier.");
         }
 
         SponsorshipApplication entity = new SponsorshipApplication();
         entity.setName(normalizedName);
         entity.setPhoneNumber(normalizedPhone);
         entity.setBankAccount(dataEncryptionService.encrypt(normalizedBankAccount));
+        entity.setPaymentMethodType(paymentMethodType);
+        entity.setPaymentProviderName(paymentProviderName);
         entity.setBankAccountMasked(maskBankAccount(normalizedBankAccount));
         entity.setBankAccountHash(bankAccountHash);
         entity.setAmount(request.amount());
@@ -54,6 +59,8 @@ public class SponsorshipApplicationService {
                 saved.getName(),
                 saved.getPhoneNumber(),
                 saved.getBankAccountMasked(),
+                saved.getPaymentMethodType(),
+                saved.getPaymentProviderName(),
                 saved.getAmount(),
                 saved.getAddress()
         );
@@ -71,7 +78,7 @@ public class SponsorshipApplicationService {
     }
 
     private String normalizeBankAccount(String bankAccount) {
-        return bankAccount.replaceAll("[^0-9]", "");
+        return bankAccount.replaceAll("\\s+", "").trim();
     }
 
     private String maskBankAccount(String bankAccount) {

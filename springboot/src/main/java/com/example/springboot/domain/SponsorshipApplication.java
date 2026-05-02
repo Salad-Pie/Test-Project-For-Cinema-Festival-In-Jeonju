@@ -20,6 +20,12 @@ public class SponsorshipApplication {
     @Column(nullable = false, length = 100)
     private String bankAccount;
 
+    @Column(length = 30)
+    private String paymentMethodType;
+
+    @Column(length = 100)
+    private String paymentProviderName;
+
     @Column(nullable = false, length = 40)
     private String bankAccountMasked;
 
@@ -66,6 +72,22 @@ public class SponsorshipApplication {
 
     public void setBankAccount(String bankAccount) {
         this.bankAccount = bankAccount;
+    }
+
+    public String getPaymentMethodType() {
+        return paymentMethodType;
+    }
+
+    public void setPaymentMethodType(String paymentMethodType) {
+        this.paymentMethodType = paymentMethodType;
+    }
+
+    public String getPaymentProviderName() {
+        return paymentProviderName;
+    }
+
+    public void setPaymentProviderName(String paymentProviderName) {
+        this.paymentProviderName = paymentProviderName;
     }
 
     public String getBankAccountMasked() {
