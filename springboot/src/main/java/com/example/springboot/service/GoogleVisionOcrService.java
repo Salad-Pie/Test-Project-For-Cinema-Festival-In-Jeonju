@@ -14,13 +14,19 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class GoogleVisionOcrService {
+
+    private static final Logger log = LoggerFactory.getLogger(GoogleVisionOcrService.class);
 
     private final RestClient restClient;
     private final String apiKey;
@@ -37,7 +43,8 @@ public class GoogleVisionOcrService {
 
     public OcrResult extractSignatureText(MultipartFile image) {
         if (apiKey == null || apiKey.isBlank()) {
-            throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
+            log.info("Google Vision OCR API key is not configured.");
+            throw new BusinessException(ErrorCode.OCR_NOT_CONFIGURED);
         }
 
         List<byte[]> candidates = createImageCandidates(image);
@@ -69,9 +76,39 @@ public class GoogleVisionOcrService {
                     .body(request)
                     .retrieve()
                     .body(Map.class);
+            validateVisionResponse(response, featureType);
             return parseResult(response);
-        } catch (RuntimeException e) {
-            return OcrResult.empty();
+        } catch (RestClientResponseException e) {
+            log.info(
+                    "Google Vision OCR HTTP error. featureType={} status={} response={}",
+                    featureType,
+                    e.getStatusCode(),
+                    summarize(e.getResponseBodyAsString())
+            );
+            throw new BusinessException(ErrorCode.OCR_SERVICE_ERROR);
+        } catch (ResourceAccessException e) {
+            log.info("Google Vision OCR network error. featureType={} message={}", featureType, e.getMessage());
+            throw new BusinessException(ErrorCode.OCR_SERVICE_ERROR);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateVisionResponse(Map<String, Object> response, String featureType) {
+        if (response == null) {
+            log.info("Google Vision OCR returned empty response. featureType={}", featureType);
+            throw new BusinessException(ErrorCode.OCR_SERVICE_ERROR);
+        }
+
+        Object responsesObj = response.get("responses");
+        if (!(responsesObj instanceof List<?> responses) || responses.isEmpty()) {
+            log.info("Google Vision OCR returned invalid response shape. featureType={}", featureType);
+            throw new BusinessException(ErrorCode.OCR_SERVICE_ERROR);
+        }
+
+        Object first = responses.get(0);
+        if (first instanceof Map<?, ?> firstMap && firstMap.get("error") != null) {
+            log.info("Google Vision OCR response contains error. featureType={} error={}", featureType, firstMap.get("error"));
+            throw new BusinessException(ErrorCode.OCR_SERVICE_ERROR);
         }
     }
 
@@ -170,6 +207,17 @@ public class GoogleVisionOcrService {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ImageIO.write(image, "png", output);
         return output.toByteArray();
+    }
+
+    private String summarize(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        String compact = value.replaceAll("\\s+", " ").trim();
+        if (compact.length() <= 500) {
+            return compact;
+        }
+        return compact.substring(0, 500);
     }
 
     public record OcrResult(String text, double confidence) {
