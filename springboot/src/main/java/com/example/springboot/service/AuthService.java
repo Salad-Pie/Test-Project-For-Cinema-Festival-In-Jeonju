@@ -9,7 +9,9 @@ import com.example.springboot.domain.SignupProvider;
 import com.example.springboot.domain.User;
 import com.example.springboot.domain.EmailIdentifierCode;
 import com.example.springboot.dto.EmailLoginRequest;
+import com.example.springboot.dto.CertificateSampleRequest;
 import com.example.springboot.dto.LoginResponse;
+import com.example.springboot.dto.SignatureRenderRequest;
 import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyResponse;
 import com.example.springboot.exception.BusinessException;
@@ -39,6 +41,9 @@ public class AuthService {
     private final NotificationService notificationService;
     private final GoogleVisionOcrService googleVisionOcrService;
     private final S3UploadService s3UploadService;
+    private final EnglishKoreanNameService englishKoreanNameService;
+    private final GoogleTranslationService googleTranslationService;
+    private final SignatureImageService signatureImageService;
     private final JwtTokenProvider jwtTokenProvider;
     private final String tabletBaseUrl;
 
@@ -50,6 +55,9 @@ public class AuthService {
             NotificationService notificationService,
             GoogleVisionOcrService googleVisionOcrService,
             S3UploadService s3UploadService,
+            EnglishKoreanNameService englishKoreanNameService,
+            GoogleTranslationService googleTranslationService,
+            SignatureImageService signatureImageService,
             JwtTokenProvider jwtTokenProvider,
             @Value("${app.tablet-base-url}") String tabletBaseUrl
     ) {
@@ -60,6 +68,9 @@ public class AuthService {
         this.notificationService = notificationService;
         this.googleVisionOcrService = googleVisionOcrService;
         this.s3UploadService = s3UploadService;
+        this.englishKoreanNameService = englishKoreanNameService;
+        this.googleTranslationService = googleTranslationService;
+        this.signatureImageService = signatureImageService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.tabletBaseUrl = tabletBaseUrl;
     }
@@ -235,6 +246,8 @@ public class AuthService {
         if (recognizedText == null || language == null) {
             throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
         }
+        String koreanText = resolveKoreanText(recognizedText, language);
+        String koreanMeaningText = resolveKoreanMeaningText(recognizedText, language);
 
         Signature signature = signatureRepository.findByUserId(userId).orElseGet(Signature::new);
         signature.setUser(user);
@@ -242,6 +255,8 @@ public class AuthService {
         signature.setOriginalFileSize(uploadedImage.fileSize());
         signature.setOriginalContentType("image/png");
         signature.setRecognizedText(recognizedText);
+        signature.setKoreanText(koreanText);
+        signature.setKoreanMeaningText(koreanMeaningText);
         signature.setDetectedLanguage(language);
         signature.setOcrConfidence(ocrResult.confidence());
         signature.setOcrProvider(OcrProvider.GOOGLE_VISION);
@@ -252,10 +267,46 @@ public class AuthService {
         return new SignatureResponse(
                 saved.getId(),
                 saved.getRecognizedText(),
+                saved.getKoreanText(),
+                saved.getKoreanMeaningText(),
                 saved.getDetectedLanguage(),
                 saved.getOcrStatus(),
                 saved.getOcrConfidence()
         );
+    }
+
+    public byte[] renderSignatureImage(String verifiedToken, SignatureRenderRequest request) {
+        validateTokenType(verifiedToken, TokenType.VERIFIED);
+        Long userId = jwtTokenProvider.extractUserId(verifiedToken);
+        Signature signature = signatureRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("signature not found."));
+        String text = request == null ? null : request.text();
+        if (text == null || text.isBlank()) {
+            text = signature.getKoreanText() == null ? signature.getRecognizedText() : signature.getKoreanText();
+        }
+        return signatureImageService.renderSignature(
+                text,
+                request == null ? null : request.fontFamily(),
+                request == null ? null : request.fontSize(),
+                request == null ? null : request.width(),
+                request == null ? null : request.height()
+        );
+    }
+
+    public byte[] renderCertificateSample(String verifiedToken, CertificateSampleRequest request) {
+        validateTokenType(verifiedToken, TokenType.VERIFIED);
+        Long userId = jwtTokenProvider.extractUserId(verifiedToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("user not found."));
+        Signature signature = signatureRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("signature not found."));
+
+        String defaultName = user.getName();
+        if (defaultName == null || defaultName.isBlank()) {
+            defaultName = user.getNickname();
+        }
+        String defaultSignature = signature.getKoreanText() == null ? signature.getRecognizedText() : signature.getKoreanText();
+        return signatureImageService.renderCertificateSample(request, defaultName, defaultSignature);
     }
 
     private LoginResponse issueIdentifierAndRegisterToken(User user, String language) {
@@ -377,6 +428,20 @@ public class AuthService {
             return SignatureLanguage.KO;
         }
         return SignatureLanguage.EN;
+    }
+
+    private String resolveKoreanText(String recognizedText, SignatureLanguage language) {
+        if (language == SignatureLanguage.KO) {
+            return recognizedText;
+        }
+        return englishKoreanNameService.toKoreanPronunciation(recognizedText);
+    }
+
+    private String resolveKoreanMeaningText(String recognizedText, SignatureLanguage language) {
+        if (language == SignatureLanguage.KO) {
+            return recognizedText;
+        }
+        return googleTranslationService.translateEnglishToKorean(recognizedText);
     }
 
     private void saveIdentifierCode(User user, String code) {

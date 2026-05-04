@@ -56,6 +56,9 @@ const ko = {
     verifiedDone: '인증이 완료되었습니다. 아래에서 서명하세요.',
     signatureSaved: '서명 저장 완료. OCR은 백엔드(Google Vision API)에서 처리됩니다.',
     signatureImageFailed: '서명 이미지를 생성하지 못했습니다. 다시 시도해 주세요.',
+    renderSignature: '서명 이미지 다운로드',
+    renderCertificate: '증명서 샘플 다운로드',
+    artifactDownloaded: '이미지 다운로드가 완료되었습니다.',
   },
   sponsorship: {
     title: '영화관 재생 프로젝트 후원 상품 신청',
@@ -283,6 +286,9 @@ const en = {
     verifiedDone: 'Verification complete. Please sign below.',
     signatureSaved: 'Signature saved. OCR is processed by backend (Google Vision API).',
     signatureImageFailed: 'Failed to create the signature image. Please try again.',
+    renderSignature: 'Download Signature Image',
+    renderCertificate: 'Download Certificate Sample',
+    artifactDownloaded: 'Image download completed.',
   },
   sponsorship: {
     title: 'Cinema Revival Project Sponsorship Application',
@@ -511,6 +517,9 @@ const zh = {
     verifiedDone: '认证完成。请在下方签名。',
     signatureSaved: '签名已保存。OCR 由后端（Google Vision API）处理。',
     signatureImageFailed: '无法生成签名图片。请重试。',
+    renderSignature: '下载签名图片',
+    renderCertificate: '下载证书样本',
+    artifactDownloaded: '图片下载已完成。',
   },
   sponsorship: {
     title: '影院再生项目赞助申请',
@@ -739,6 +748,9 @@ const ja = {
     verifiedDone: '認証が完了しました。下で署名してください。',
     signatureSaved: '署名を保存しました。OCR はバックエンド（Google Vision API）で処理されます。',
     signatureImageFailed: '署名画像を作成できませんでした。もう一度お試しください。',
+    renderSignature: '署名画像をダウンロード',
+    renderCertificate: '証明書サンプルをダウンロード',
+    artifactDownloaded: '画像のダウンロードが完了しました。',
   },
   sponsorship: {
     title: '映画館再生プロジェクト後援申請',

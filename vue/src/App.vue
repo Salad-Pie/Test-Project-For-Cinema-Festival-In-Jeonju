@@ -947,6 +947,57 @@ async function submitSignature() {
     state.loading = false
   }
 }
+
+async function downloadSignatureArtifact(path, filename, payload = {}) {
+  state.loading = true
+  state.error = ''
+  try {
+    const res = await fetch(`${apiRoot}${path}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${state.verifiedToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+    state.message = t('tablet.artifactDownloaded')
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
+function downloadSignatureImage() {
+  return downloadSignatureArtifact('/auth/signature/render', 'signature-render.png', {
+    fontFamily: 'Serif',
+    fontSize: 88,
+    width: 800,
+    height: 240,
+  })
+}
+
+function downloadCertificateSample() {
+  return downloadSignatureArtifact('/auth/signature/certificate-sample', 'certificate-sample.png', {
+    title: 'BackToScreen 참여 증명서',
+    fontFamily: 'Serif',
+    nameX: 700,
+    nameY: 540,
+    signatureX: 1050,
+    signatureY: 830,
+  })
+}
 </script>
 
 <template>
@@ -1483,6 +1534,10 @@ async function submitSignature() {
       <div class="actions">
         <button :disabled="state.loading" @click="clearSignature">{{ t('tablet.clear') }}</button>
         <button :disabled="state.loading || !state.verifiedToken" @click="submitSignature">{{ t('tablet.save') }}</button>
+      </div>
+      <div class="actions">
+        <button :disabled="state.loading || !state.verifiedToken" @click="downloadSignatureImage">{{ t('tablet.renderSignature') }}</button>
+        <button :disabled="state.loading || !state.verifiedToken" @click="downloadCertificateSample">{{ t('tablet.renderCertificate') }}</button>
       </div>
     </section>
 

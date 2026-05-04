@@ -27,6 +27,14 @@ public class Signature {
     @Lob
     private String recognizedText;
 
+    @Lob
+    @Column(name = "korean_text")
+    private String koreanText;
+
+    @Lob
+    @Column(name = "korean_meaning_text")
+    private String koreanMeaningText;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "detected_language", nullable = false, length = 10)
     private SignatureLanguage detectedLanguage;
@@ -118,6 +126,22 @@ public class Signature {
 
     public void setRecognizedText(String recognizedText) {
         this.recognizedText = recognizedText;
+    }
+
+    public String getKoreanText() {
+        return koreanText;
+    }
+
+    public void setKoreanText(String koreanText) {
+        this.koreanText = koreanText;
+    }
+
+    public String getKoreanMeaningText() {
+        return koreanMeaningText;
+    }
+
+    public void setKoreanMeaningText(String koreanMeaningText) {
+        this.koreanMeaningText = koreanMeaningText;
     }
 
     public SignatureLanguage getDetectedLanguage() {

@@ -1,9 +1,11 @@
 package com.example.springboot.controller;
 
 import com.example.springboot.dto.EmailLoginRequest;
+import com.example.springboot.dto.CertificateSampleRequest;
 import com.example.springboot.dto.EmailCodeSendRequest;
 import com.example.springboot.dto.EmailCodeVerifyRequest;
 import com.example.springboot.dto.LoginResponse;
+import com.example.springboot.dto.SignatureRenderRequest;
 import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyCodeRequest;
 import com.example.springboot.dto.VerifyResponse;
@@ -57,5 +59,27 @@ public class AuthController {
     ) {
         String token = authorization.replace("Bearer ", "");
         return ResponseEntity.ok(authService.saveSignature(token, signatureImage));
+    }
+
+    @PostMapping(value = "/signature/render", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> renderSignature(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody(required = false) SignatureRenderRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(authService.renderSignatureImage(token, request));
+    }
+
+    @PostMapping(value = "/signature/certificate-sample", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> renderCertificateSample(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody(required = false) CertificateSampleRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(authService.renderCertificateSample(token, request));
     }
 }
