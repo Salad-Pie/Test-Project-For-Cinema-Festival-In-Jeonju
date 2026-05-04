@@ -18,9 +18,16 @@ import org.springframework.stereotype.Service;
 public class SignatureImageService {
 
     private static final String[] KOREAN_FONT_CANDIDATES = {
+            "Nanum Brush Script",
+            "Nanum Pen Script",
+            "NanumMyeongjo",
+            "Noto Serif CJK KR",
+            "Noto Serif KR",
             "Noto Sans CJK KR",
             "Noto Sans KR",
             "NanumGothic",
+            "Batang",
+            "Gungsuh",
             "Malgun Gothic",
             "Apple SD Gothic Neo",
             "Dialog"

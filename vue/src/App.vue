@@ -981,7 +981,7 @@ async function downloadSignatureArtifact(path, filename, payload = {}) {
 
 function downloadSignatureImage() {
   return downloadSignatureArtifact('/auth/signature/render', 'signature-render.png', {
-    fontFamily: 'Serif',
+    fontFamily: 'Nanum Brush Script',
     fontSize: 88,
     width: 800,
     height: 240,
@@ -991,7 +991,7 @@ function downloadSignatureImage() {
 function downloadCertificateSample() {
   return downloadSignatureArtifact('/auth/signature/certificate-sample', 'certificate-sample.png', {
     title: 'BackToScreen 참여 증명서',
-    fontFamily: 'Serif',
+    fontFamily: 'Nanum Brush Script',
     nameX: 700,
     nameY: 540,
     signatureX: 1050,
