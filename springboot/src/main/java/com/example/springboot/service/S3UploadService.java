@@ -12,6 +12,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,7 +56,7 @@ public class S3UploadService {
             throw new IllegalStateException("AWS_S3_BUCKET is not configured.");
         }
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("image file is empty.");
+            throw new BusinessException(ErrorCode.INVALID_FILE);
         }
 
         String originalFilename = file.getOriginalFilename() == null ? "unknown" : file.getOriginalFilename();
@@ -90,12 +92,12 @@ public class S3UploadService {
     private void validateSupportedImage(MultipartFile file, String originalFilename) {
         String extension = getExtension(originalFilename);
         if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
-            throw new IllegalArgumentException("only jpg, jpeg, png image files are supported.");
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
 
         String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
         if (!contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
-            throw new IllegalArgumentException("only jpg, jpeg, png image files are supported.");
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
     }
 
@@ -110,7 +112,7 @@ public class S3UploadService {
     private byte[] convertToWebp(MultipartFile file) throws IOException {
         BufferedImage image = ImageIO.read(file.getInputStream());
         if (image == null) {
-            throw new IllegalArgumentException("unsupported image file.");
+            throw new BusinessException(ErrorCode.INVALID_FILE);
         }
 
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(WEBP_CONTENT_TYPE);

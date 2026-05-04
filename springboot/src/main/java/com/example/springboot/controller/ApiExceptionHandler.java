@@ -1,8 +1,10 @@
 package com.example.springboot.controller;
 
 import com.example.springboot.dto.ApiErrorResponse;
+import com.example.springboot.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,7 +17,17 @@ public class ApiExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
     private static final String BAD_REQUEST_MESSAGE = "요청 값을 확인해 주세요.";
     private static final String VALIDATION_ERROR_MESSAGE = "입력값을 확인해 주세요.";
+    private static final String FORBIDDEN_MESSAGE = "관리자 권한이 필요합니다.";
+    private static final String DUPLICATE_MESSAGE = "이미 신청된 내역이 있습니다.";
     private static final String INTERNAL_SERVER_ERROR_MESSAGE = "서버 내부 오류가 발생했습니다.";
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusiness(BusinessException ex) {
+        var errorCode = ex.getErrorCode();
+        log.info("Handled business error. code={} message={}", errorCode.name(), errorCode.getMessage());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(new ApiErrorResponse(errorCode.name(), errorCode.getMessage(), null));
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
@@ -34,6 +46,20 @@ public class ApiExceptionHandler {
                 fieldError == null ? ex.getMessage() : fieldError.getDefaultMessage()
         );
         return ResponseEntity.badRequest().body(new ApiErrorResponse("VALIDATION_ERROR", VALIDATION_ERROR_MESSAGE, field));
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ApiErrorResponse> handleSecurity(SecurityException ex) {
+        log.info("Handled forbidden request. message={}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiErrorResponse("FORBIDDEN", FORBIDDEN_MESSAGE, null));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.info("Handled data integrity error. message={}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse("DUPLICATE_APPLICATION", DUPLICATE_MESSAGE, null));
     }
 
     @ExceptionHandler(Exception.class)

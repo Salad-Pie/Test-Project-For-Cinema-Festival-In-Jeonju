@@ -3,6 +3,8 @@ package com.example.springboot.service;
 import com.example.springboot.domain.ExhibitionSurvey;
 import com.example.springboot.dto.ExhibitionSurveyRequest;
 import com.example.springboot.dto.SimpleCreatedResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.ExhibitionSurveyRepository;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,7 @@ public class ExhibitionSurveyService {
                 normalizedName, normalizedPhone, LocalDateTime.now().minusMinutes(10)
         );
         if (duplicateIn10m) {
-            throw new IllegalArgumentException("duplicate survey: cannot submit within 10 minutes.");
+            throw new BusinessException(ErrorCode.DUPLICATE_SURVEY);
         }
 
         ExhibitionSurvey entity = new ExhibitionSurvey();
@@ -49,4 +51,3 @@ public class ExhibitionSurveyService {
         return phoneNumber.trim();
     }
 }
-

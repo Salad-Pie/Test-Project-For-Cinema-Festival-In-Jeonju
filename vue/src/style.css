@@ -657,6 +657,42 @@ button:disabled {
   margin: 0;
 }
 
+.admin-reservations {
+  max-width: 100%;
+}
+
+.admin-table-wrap {
+  margin-top: 18px;
+  overflow-x: auto;
+  border: 1px solid #d8ecff;
+  border-radius: 10px;
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 1200px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e6f3ff;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table th {
+  background: #eef8ff;
+  color: #145f8f;
+  font-weight: 700;
+}
+
+.admin-table tbody tr:hover {
+  background: #f8fcff;
+}
+
 .location-info-card-wide {
   grid-column: 1 / -1;
 }

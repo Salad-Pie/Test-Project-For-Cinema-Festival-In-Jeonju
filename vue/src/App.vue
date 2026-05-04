@@ -52,6 +52,8 @@ const isStreamingRecruitPage = computed(() => routePath.startsWith('/streaming-r
 const isAxShopShopPage = computed(() => routePath.startsWith('/ax-shop-shop'))
 const isPdRecruitPage = computed(() => routePath.startsWith('/pd-recruit'))
 const isLocationPage = computed(() => routePath.startsWith('/location'))
+const isAdminDashboardPage = computed(() => routePath === '/admin' || routePath === '/admin/')
+const isAdminReservationsPage = computed(() => routePath.startsWith('/admin/reservations'))
 const bootstrapPages = [
   { key: 'nav.loginPage', href: '/login-page' },
   { key: 'nav.ideaContest', href: '/idea-contest' },
@@ -63,6 +65,7 @@ const bootstrapPages = [
   { key: 'nav.projectParticipant', href: '/project-participant' },
   { key: 'nav.streamingRecruit', href: '/streaming-recruit' },
   { key: 'nav.location', href: '/location' },
+  { key: 'nav.adminReservations', href: '/admin/reservations' },
 ]
 const streetHourOptions = [17, 18, 19, 20, 21, 22]
 const artistMeetingDateOptions = ['2026-05-02', '2026-05-04']
@@ -158,10 +161,19 @@ const state = reactive({
   kArtAx: { phoneNumber: '', date: kArtAxDate, hour: kArtAxHour },
   axShopShop: { phoneNumber: '', date: axShopShopDate, hour: axShopShopHour },
   pdRecruit: { phoneNumber: '', date: pdRecruitDate, hour: pdRecruitHour },
+  adminReservations: {
+    types: [],
+    items: [],
+    selectedType: '',
+    date: '',
+    time: '',
+    projectKey: '',
+  },
   mapError: '',
   successMessage: '',
   verifyCode: '',
   verifiedToken: '',
+  adminAccess: null,
 })
 
 const tabletToken = computed(() => new URLSearchParams(window.location.search).get('token') || '')
@@ -214,7 +226,7 @@ function goToSuccessPage(message) {
   window.location.href = pageHref('/success')
 }
 
-onMounted(() => {
+onMounted(async () => {
   try {
     const savedLocale = localStorage.getItem(localeStorageKey)
     if (savedLocale && ['ko', 'en', 'zh', 'ja'].includes(savedLocale)) {
@@ -281,6 +293,22 @@ onMounted(() => {
   }
   if (isPdRecruitPage.value && !isIdeaContestLoggedIn()) {
     redirectToLogin(currentRedirectPath.value)
+    return
+  }
+  if (isAdminDashboardPage.value || isAdminReservationsPage.value) {
+    if (!isIdeaContestLoggedIn()) {
+      redirectToLogin(currentRedirectPath.value)
+      return
+    }
+    try {
+      await fetchAdminReservationTypes()
+      state.adminAccess = true
+      if (isAdminReservationsPage.value) {
+        await fetchAdminReservations()
+      }
+    } catch (e) {
+      state.adminAccess = false
+    }
     return
   }
 
@@ -656,6 +684,42 @@ function onAxShopShopPhoneInput(event) {
 
 function onPdRecruitPhoneInput(event) {
   state.pdRecruit.phoneNumber = formatPhoneInput(event)
+}
+
+async function fetchAdminReservationTypes() {
+  const authToken = getIdeaContestAuthToken()
+  if (!authToken) throw userError(t('common.loginTokenRequired'))
+  const res = await fetch(`${apiRoot}/admin/reservations/types`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
+  if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+  state.adminReservations.types = await res.json()
+}
+
+async function fetchAdminReservations() {
+  state.loading = true
+  state.error = ''
+  try {
+    const authToken = getIdeaContestAuthToken()
+    if (!authToken) throw userError(t('common.loginTokenRequired'))
+
+    const params = new URLSearchParams()
+    if (state.adminReservations.selectedType) params.set('type', state.adminReservations.selectedType)
+    if (state.adminReservations.date) params.set('date', state.adminReservations.date)
+    if (state.adminReservations.time) params.set('time', `${state.adminReservations.time}:00`)
+    if (state.adminReservations.projectKey) params.set('projectKey', state.adminReservations.projectKey)
+
+    const query = params.toString()
+    const res = await fetch(`${apiRoot}/admin/reservations${query ? `?${query}` : ''}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    state.adminReservations.items = await res.json()
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
 }
 
 async function startOAuth(provider) {
@@ -1294,6 +1358,85 @@ async function submitSignature() {
       </div>
       <div class="actions">
         <button :disabled="state.loading" @click="loginEmailWithIdentifier">{{ t('auth.loginWithIdentifier') }}</button>
+      </div>
+    </section>
+
+    <section v-if="isAdminDashboardPage && state.adminAccess === true" class="card admin-dashboard">
+      <h2>{{ t('admin.dashboardTitle') }}</h2>
+      <div class="actions">
+        <a class="route-button" :href="pageHref('/admin/reservations')">{{ t('admin.goToReservations') }}</a>
+      </div>
+    </section>
+
+    <section v-if="(isAdminDashboardPage || isAdminReservationsPage) && state.adminAccess === false" class="card">
+      <h2>{{ t('common.error') }}</h2>
+      <p class="error">{{ t('admin.accessDenied') }}</p>
+    </section>
+
+    <section v-if="isAdminReservationsPage && state.adminAccess === true" class="card admin-reservations">
+      <h2>{{ t('adminReservations.title') }}</h2>
+      <div class="grid">
+        <label>{{ t('adminReservations.type') }}
+          <select v-model="state.adminReservations.selectedType">
+            <option value="">{{ t('adminReservations.allTypes') }}</option>
+            <option v-for="type in state.adminReservations.types" :key="type.type" :value="type.type">
+              {{ type.label }} ({{ type.count }})
+            </option>
+          </select>
+        </label>
+        <label>{{ t('adminReservations.date') }}
+          <input v-model="state.adminReservations.date" type="date" :placeholder="t('common.placeholders.date')" />
+        </label>
+        <label>{{ t('adminReservations.time') }}
+          <input v-model="state.adminReservations.time" type="time" step="3600" :placeholder="t('common.placeholders.time')" />
+        </label>
+        <label>{{ t('adminReservations.projectKey') }}
+          <input v-model="state.adminReservations.projectKey" type="text" :placeholder="t('adminReservations.projectKeyPlaceholder')" />
+        </label>
+      </div>
+      <div class="actions">
+        <button :disabled="state.loading" @click="fetchAdminReservations">{{ t('adminReservations.search') }}</button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ t('adminReservations.type') }}</th>
+              <th>{{ t('adminReservations.id') }}</th>
+              <th>{{ t('adminReservations.name') }}</th>
+              <th>{{ t('adminReservations.phone') }}</th>
+              <th>{{ t('adminReservations.email') }}</th>
+              <th>{{ t('adminReservations.projectKey') }}</th>
+              <th>{{ t('adminReservations.reservationDate') }}</th>
+              <th>{{ t('adminReservations.reservationTime') }}</th>
+              <th>{{ t('adminReservations.amount') }}</th>
+              <th>{{ t('adminReservations.payment') }}</th>
+              <th>{{ t('adminReservations.provider') }}</th>
+              <th>{{ t('adminReservations.account') }}</th>
+              <th>{{ t('adminReservations.createdAt') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in state.adminReservations.items" :key="`${item.type}-${item.id}`">
+              <td>{{ item.type }}</td>
+              <td>{{ item.id || '-' }}</td>
+              <td>{{ item.name || '-' }}</td>
+              <td>{{ item.phoneNumber || '-' }}</td>
+              <td>{{ item.userEmail || '-' }}</td>
+              <td>{{ item.projectKey || '-' }}</td>
+              <td>{{ item.date || '-' }}</td>
+              <td>{{ item.time || '-' }}</td>
+              <td>{{ item.amount || '-' }}</td>
+              <td>{{ item.paymentMethodType || '-' }}</td>
+              <td>{{ item.paymentProviderName || '-' }}</td>
+              <td>{{ item.bankAccountMasked || '-' }}</td>
+              <td>{{ item.createdAt || '-' }}</td>
+            </tr>
+            <tr v-if="state.adminReservations.items.length === 0">
+              <td colspan="13">{{ t('adminReservations.empty') }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 

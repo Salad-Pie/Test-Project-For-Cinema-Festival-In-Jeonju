@@ -45,6 +45,9 @@ public class User {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Column(length = 20)
+    private String role;
+
     @Column(name = "is_verified_identity", nullable = false)
     private boolean isVerifiedIdentity;
 
@@ -79,6 +82,9 @@ public class User {
         }
         if (this.status == null || this.status.isBlank()) {
             this.status = "active";
+        }
+        if (this.role == null || this.role.isBlank()) {
+            this.role = "USER";
         }
     }
 
@@ -177,6 +183,14 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public boolean isVerifiedIdentity() {

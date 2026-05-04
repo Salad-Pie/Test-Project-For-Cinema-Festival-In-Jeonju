@@ -3,6 +3,8 @@ package com.example.springboot.service;
 import com.example.springboot.domain.SponsorshipApplication;
 import com.example.springboot.dto.SponsorshipApplicationRequest;
 import com.example.springboot.dto.SponsorshipApplicationResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.SponsorshipApplicationRepository;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,7 @@ public class SponsorshipApplicationService {
         LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
         boolean duplicated = repository.existsByBankAccountHashAndCreatedAtAfter(bankAccountHash, tenMinutesAgo);
         if (duplicated) {
-            throw new IllegalArgumentException("duplicate application is not allowed within 10 minutes for the same payment identifier.");
+            throw new BusinessException(ErrorCode.DUPLICATE_APPLICATION);
         }
 
         SponsorshipApplication entity = new SponsorshipApplication();

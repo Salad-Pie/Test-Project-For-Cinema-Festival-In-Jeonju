@@ -4,6 +4,8 @@ import com.example.springboot.domain.StreetCollaborationReservation;
 import com.example.springboot.dto.StreetCollaborationAvailabilityResponse;
 import com.example.springboot.dto.StreetCollaborationReservationRequest;
 import com.example.springboot.dto.StreetCollaborationReservationResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.StreetCollaborationReservationRepository;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
@@ -31,12 +33,12 @@ public class StreetCollaborationReservationService {
                 normalizedPhone
         );
         if (alreadyReserved) {
-            throw new IllegalArgumentException("duplicate reservation: same name/phone already exists for this time slot.");
+            throw new BusinessException(ErrorCode.DUPLICATE_RESERVATION);
         }
 
         StreetCollaborationAvailabilityResponse availability = getAvailability(request.reservationAt());
         if (!availability.available()) {
-            throw new IllegalArgumentException("this time slot is full (max 50).");
+            throw new BusinessException(ErrorCode.CAPACITY_FULL);
         }
 
         StreetCollaborationReservation entity = new StreetCollaborationReservation();
@@ -83,10 +85,10 @@ public class StreetCollaborationReservationService {
     private void validateReservationAt(java.time.LocalDateTime reservationAt) {
         int hour = reservationAt.getHour();
         if (hour < 17 || hour > 22) {
-            throw new IllegalArgumentException("reservation hour must be between 17 and 22.");
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_SLOT);
         }
         if (reservationAt.getMinute() != 0 || reservationAt.getSecond() != 0 || reservationAt.getNano() != 0) {
-            throw new IllegalArgumentException("reservation time must be in hour units only (minute=00).");
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_SLOT);
         }
     }
 }

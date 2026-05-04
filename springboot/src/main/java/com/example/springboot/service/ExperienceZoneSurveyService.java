@@ -3,6 +3,8 @@ package com.example.springboot.service;
 import com.example.springboot.domain.ExperienceZoneSurvey;
 import com.example.springboot.dto.ExperienceZoneSurveyRequest;
 import com.example.springboot.dto.SimpleCreatedResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.ExperienceZoneSurveyRepository;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,7 @@ public class ExperienceZoneSurveyService {
                 normalizedName, normalizedPhone, LocalDateTime.now().minusMinutes(10)
         );
         if (duplicateIn10m) {
-            throw new IllegalArgumentException("duplicate survey: cannot submit within 10 minutes.");
+            throw new BusinessException(ErrorCode.DUPLICATE_SURVEY);
         }
 
         ExperienceZoneSurvey entity = new ExperienceZoneSurvey();
@@ -48,4 +50,3 @@ public class ExperienceZoneSurveyService {
         return phoneNumber.trim();
     }
 }
-

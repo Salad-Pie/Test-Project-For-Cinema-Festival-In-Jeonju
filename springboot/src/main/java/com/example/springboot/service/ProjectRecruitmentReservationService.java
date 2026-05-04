@@ -4,6 +4,8 @@ import com.example.springboot.domain.ProjectRecruitmentReservation;
 import com.example.springboot.domain.User;
 import com.example.springboot.dto.ProjectRecruitmentReservationRequest;
 import com.example.springboot.dto.ProjectRecruitmentReservationResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.ProjectRecruitmentReservationRepository;
 import com.example.springboot.repository.UserRepository;
 import com.example.springboot.security.JwtTokenProvider;
@@ -49,10 +51,10 @@ public class ProjectRecruitmentReservationService {
     ) {
         Slot allowedSlot = ALLOWED_SLOT_BY_PROJECT.get(projectKey);
         if (allowedSlot == null) {
-            throw new IllegalArgumentException("unsupported projectKey: " + projectKey);
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_SLOT);
         }
         if (!allowedSlot.date().equals(request.date()) || !allowedSlot.time().equals(request.time())) {
-            throw new IllegalArgumentException("reservation is available only for predefined slot.");
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_SLOT);
         }
 
         String token = extractBearerToken(authorization);
@@ -66,7 +68,7 @@ public class ProjectRecruitmentReservationService {
 
         boolean exists = repository.existsByProjectKeyAndUserIdAndDateAndTime(projectKey, userId, request.date(), request.time());
         if (exists) {
-            throw new IllegalArgumentException("duplicate reservation: same user already reserved this project slot.");
+            throw new BusinessException(ErrorCode.DUPLICATE_RESERVATION);
         }
 
         validatePhoneNumber(projectKey, request.phoneNumber());

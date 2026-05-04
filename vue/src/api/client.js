@@ -10,7 +10,7 @@ export async function apiFetchWithBase(baseUrl, pathname, options = {}, fallback
   })
 
   if (!res.ok) {
-    throw new Error(fallbackMessage)
+    throw new Error(await parseErrorResponse(res, fallbackMessage))
   }
 
   if (res.status === 204) return null
@@ -28,6 +28,15 @@ export function createApiFetch(baseUrl, fallbackMessageProvider) {
 }
 
 export async function parseErrorResponse(res, fallbackMessage) {
-  await res.text().catch(() => '')
+  const text = await res.text().catch(() => '')
+  if (!text) return fallbackMessage
+
+  try {
+    const payload = JSON.parse(text)
+    if (typeof payload?.message === 'string' && payload.message.trim()) {
+      return payload.message
+    }
+  } catch (_) {}
+
   return fallbackMessage
 }

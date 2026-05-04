@@ -4,6 +4,8 @@ import com.example.springboot.domain.ExhibitionArtistMeetingReservation;
 import com.example.springboot.domain.User;
 import com.example.springboot.dto.ExhibitionArtistMeetingReservationRequest;
 import com.example.springboot.dto.ExhibitionArtistMeetingReservationResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.ExhibitionArtistMeetingReservationRepository;
 import com.example.springboot.repository.UserRepository;
 import com.example.springboot.security.JwtTokenProvider;
@@ -56,7 +58,7 @@ public class ExhibitionArtistMeetingReservationService {
 
         boolean alreadyReserved = repository.existsByUserIdAndDateAndTime(userId, request.date(), request.time());
         if (alreadyReserved) {
-            throw new IllegalArgumentException("duplicate reservation: same user already reserved this slot.");
+            throw new BusinessException(ErrorCode.DUPLICATE_RESERVATION);
         }
 
         ExhibitionArtistMeetingReservation entity = new ExhibitionArtistMeetingReservation();
@@ -84,7 +86,7 @@ public class ExhibitionArtistMeetingReservationService {
     private void validateAllowedSlot(LocalDate date, LocalTime time) {
         Set<LocalTime> allowedTimes = ALLOWED_SLOTS.get(date);
         if (allowedTimes == null || !allowedTimes.contains(time)) {
-            throw new IllegalArgumentException("reservation is available only for predefined exhibition artist meeting slots.");
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_SLOT);
         }
     }
 }
