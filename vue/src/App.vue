@@ -65,7 +65,6 @@ const bootstrapPages = [
   { key: 'nav.projectParticipant', href: '/project-participant' },
   { key: 'nav.streamingRecruit', href: '/streaming-recruit' },
   { key: 'nav.location', href: '/location' },
-  { key: 'nav.adminReservations', href: '/admin/reservations' },
 ]
 const streetHourOptions = [17, 18, 19, 20, 21, 22]
 const artistMeetingDateOptions = ['2026-05-02', '2026-05-04']
@@ -871,7 +870,7 @@ async function verifyOnTablet() {
   try {
     const result = await apiFetch('/verify', {
       method: 'POST',
-      body: JSON.stringify({ token: tabletToken.value, code: state.verifyCode }),
+      body: JSON.stringify({ code: state.verifyCode }),
     })
     state.verifiedToken = result.verifiedToken
     state.message = t('tablet.verifiedDone')
@@ -926,13 +925,21 @@ async function submitSignature() {
   state.loading = true
   state.error = ''
   try {
-    const signatureDataUrl = canvas.toDataURL('image/png')
+    const signatureBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(userError(t('tablet.signatureImageFailed')))
+      }, 'image/png')
+    })
+    const formData = new FormData()
+    formData.append('signatureImage', signatureBlob, 'signature.png')
 
-    await apiFetch('/signature', {
+    const res = await fetch(`${apiRoot}/auth/signature`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${state.verifiedToken}` },
-      body: JSON.stringify({ signatureDataUrl }),
+      body: formData,
     })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     state.message = t('tablet.signatureSaved')
   } catch (e) {
     setSafeError(e)
@@ -1460,7 +1467,7 @@ async function submitSignature() {
     <section v-if="isTabletPage" class="card">
       <h2>{{ t('tablet.verifyTitle') }}</h2>
       <input v-model="state.verifyCode" type="text" maxlength="6" :placeholder="t('tablet.verifyPlaceholder')" />
-      <button :disabled="state.loading || !tabletToken" @click="verifyOnTablet">{{ t('tablet.verify') }}</button>
+      <button :disabled="state.loading" @click="verifyOnTablet">{{ t('tablet.verify') }}</button>
 
       <h2>{{ t('tablet.signatureTitle') }}</h2>
       <canvas

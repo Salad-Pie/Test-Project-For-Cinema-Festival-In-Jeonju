@@ -1,13 +1,19 @@
 package com.example.springboot.service;
 
 import com.example.springboot.domain.IdentifierCode;
+import com.example.springboot.domain.OcrProvider;
+import com.example.springboot.domain.OcrStatus;
 import com.example.springboot.domain.Signature;
+import com.example.springboot.domain.SignatureLanguage;
 import com.example.springboot.domain.SignupProvider;
 import com.example.springboot.domain.User;
 import com.example.springboot.domain.EmailIdentifierCode;
 import com.example.springboot.dto.EmailLoginRequest;
 import com.example.springboot.dto.LoginResponse;
+import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyResponse;
+import com.example.springboot.exception.BusinessException;
+import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.EmailIdentifierCodeRepository;
 import com.example.springboot.repository.IdentifierCodeRepository;
 import com.example.springboot.repository.SignatureRepository;
@@ -20,6 +26,7 @@ import java.util.Random;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
@@ -31,6 +38,7 @@ public class AuthService {
     private final SignatureRepository signatureRepository;
     private final NotificationService notificationService;
     private final GoogleVisionOcrService googleVisionOcrService;
+    private final S3UploadService s3UploadService;
     private final JwtTokenProvider jwtTokenProvider;
     private final String tabletBaseUrl;
 
@@ -41,6 +49,7 @@ public class AuthService {
             SignatureRepository signatureRepository,
             NotificationService notificationService,
             GoogleVisionOcrService googleVisionOcrService,
+            S3UploadService s3UploadService,
             JwtTokenProvider jwtTokenProvider,
             @Value("${app.tablet-base-url}") String tabletBaseUrl
     ) {
@@ -50,6 +59,7 @@ public class AuthService {
         this.signatureRepository = signatureRepository;
         this.notificationService = notificationService;
         this.googleVisionOcrService = googleVisionOcrService;
+        this.s3UploadService = s3UploadService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.tabletBaseUrl = tabletBaseUrl;
     }
@@ -116,6 +126,8 @@ public class AuthService {
             return userRepository.save(newUser);
         });
 
+        saveIdentifierCode(user, code);
+
         TokenType tokenType = user.isVerified() ? TokenType.VERIFIED : TokenType.REGISTER;
         String token = jwtTokenProvider.generateToken(user.getId(), tokenType);
         String tabletUrl = tabletBaseUrl + "?token=" + token;
@@ -168,6 +180,10 @@ public class AuthService {
     }
 
     public VerifyResponse verify(String token, String code) {
+        if (blankToNull(token) == null) {
+            return verifyByIdentifierCode(code);
+        }
+
         validateTokenType(token, TokenType.REGISTER);
         Long userId = jwtTokenProvider.extractUserId(token);
 
@@ -186,7 +202,22 @@ public class AuthService {
         return new VerifyResponse(userId, verifiedToken, true);
     }
 
-    public void saveSignature(String verifiedToken, String signatureDataUrl, String recognizedText) {
+    private VerifyResponse verifyByIdentifierCode(String codeRaw) {
+        String code = blankToNull(codeRaw);
+        if (code == null) {
+            throw new IllegalArgumentException("identifier code is required.");
+        }
+
+        IdentifierCode identifierCode = identifierCodeRepository.findTopByCodeOrderByIdDesc(code)
+                .orElseThrow(() -> new IllegalArgumentException("identifier code is invalid."));
+        User user = identifierCode.getUser();
+        user.setVerifiedAt(LocalDateTime.now());
+
+        String verifiedToken = jwtTokenProvider.generateToken(user.getId(), TokenType.VERIFIED);
+        return new VerifyResponse(user.getId(), verifiedToken, true);
+    }
+
+    public SignatureResponse saveSignature(String verifiedToken, MultipartFile signatureImage) {
         validateTokenType(verifiedToken, TokenType.VERIFIED);
         Long userId = jwtTokenProvider.extractUserId(verifiedToken);
 
@@ -197,16 +228,34 @@ public class AuthService {
             throw new IllegalArgumentException("only verified users can save signature.");
         }
 
+        S3UploadService.UploadedImage uploadedImage = s3UploadService.uploadSignatureOriginal(userId, signatureImage);
+        GoogleVisionOcrService.OcrResult ocrResult = googleVisionOcrService.extractSignatureText(signatureImage);
+        String recognizedText = normalizeOcrText(ocrResult.text());
+        SignatureLanguage language = detectKoOrEn(recognizedText);
+        if (recognizedText == null || language == null) {
+            throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
+        }
+
         Signature signature = signatureRepository.findByUserId(userId).orElseGet(Signature::new);
         signature.setUser(user);
-        signature.setSignatureDataUrl(signatureDataUrl);
-        String ocrText = googleVisionOcrService.extractTextFromDataUrl(signatureDataUrl);
-        String finalText = blankToNull(ocrText);
-        if (finalText == null) {
-            finalText = blankToNull(recognizedText);
-        }
-        signature.setRecognizedText(finalText);
-        signatureRepository.save(signature);
+        signature.setOriginalS3Key(uploadedImage.s3Key());
+        signature.setOriginalFileSize(uploadedImage.fileSize());
+        signature.setOriginalContentType("image/png");
+        signature.setRecognizedText(recognizedText);
+        signature.setDetectedLanguage(language);
+        signature.setOcrConfidence(ocrResult.confidence());
+        signature.setOcrProvider(OcrProvider.GOOGLE_VISION);
+        signature.setOcrStatus(OcrStatus.SUCCESS);
+        signature.setOcrErrorMessage(null);
+        signature.setOcrProcessedAt(LocalDateTime.now());
+        Signature saved = signatureRepository.save(signature);
+        return new SignatureResponse(
+                saved.getId(),
+                saved.getRecognizedText(),
+                saved.getDetectedLanguage(),
+                saved.getOcrStatus(),
+                saved.getOcrConfidence()
+        );
     }
 
     private LoginResponse issueIdentifierAndRegisterToken(User user, String language) {
@@ -299,6 +348,35 @@ public class AuthService {
             case "en", "zh", "ja" -> language.toLowerCase();
             default -> "ko";
         };
+    }
+
+    private String normalizeOcrText(String rawText) {
+        String value = blankToNull(rawText);
+        if (value == null) {
+            return null;
+        }
+        return value.replaceAll("\\s+", " ").trim();
+    }
+
+    private SignatureLanguage detectKoOrEn(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+
+        long koreanCount = text.chars()
+                .filter(ch -> (ch >= 0xAC00 && ch <= 0xD7A3) || (ch >= 0x3131 && ch <= 0x318E))
+                .count();
+        long englishCount = text.chars()
+                .filter(ch -> (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))
+                .count();
+
+        if (koreanCount == 0 && englishCount == 0) {
+            return null;
+        }
+        if (koreanCount >= englishCount) {
+            return SignatureLanguage.KO;
+        }
+        return SignatureLanguage.EN;
     }
 
     private void saveIdentifierCode(User user, String code) {

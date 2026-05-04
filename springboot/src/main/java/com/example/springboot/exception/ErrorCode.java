@@ -9,7 +9,9 @@ public enum ErrorCode {
     CAPACITY_FULL(HttpStatus.CONFLICT, "해당 시간은 신청이 마감되었습니다."),
     INVALID_RESERVATION_SLOT(HttpStatus.BAD_REQUEST, "신청 가능한 날짜와 시간을 확인해 주세요."),
     INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "JPG, JPEG, PNG 파일만 업로드할 수 있습니다."),
-    INVALID_FILE(HttpStatus.BAD_REQUEST, "업로드할 이미지 파일을 확인해 주세요.");
+    INVALID_FILE(HttpStatus.BAD_REQUEST, "업로드할 이미지 파일을 확인해 주세요."),
+    STORAGE_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "파일 저장 설정이 필요합니다. 관리자에게 문의해 주세요."),
+    OCR_RECOGNITION_FAILED(HttpStatus.BAD_REQUEST, "서명을 인식하지 못했습니다. 조금 더 또렷하게 다시 작성해 주세요.");
 
     private final HttpStatus status;
     private final String message;

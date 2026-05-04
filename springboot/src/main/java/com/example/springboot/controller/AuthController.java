@@ -4,13 +4,15 @@ import com.example.springboot.dto.EmailLoginRequest;
 import com.example.springboot.dto.EmailCodeSendRequest;
 import com.example.springboot.dto.EmailCodeVerifyRequest;
 import com.example.springboot.dto.LoginResponse;
-import com.example.springboot.dto.SaveSignatureRequest;
+import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyCodeRequest;
 import com.example.springboot.dto.VerifyResponse;
 import com.example.springboot.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -48,13 +50,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.verify(request.token(), request.code()));
     }
 
-    @PostMapping("/signature")
-    public ResponseEntity<Void> saveSignature(
+    @PostMapping(value = "/signature", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SignatureResponse> saveSignature(
             @RequestHeader("Authorization") String authorization,
-            @Valid @RequestBody SaveSignatureRequest request
+            @RequestPart("signatureImage") MultipartFile signatureImage
     ) {
         String token = authorization.replace("Bearer ", "");
-        authService.saveSignature(token, request.signatureDataUrl(), request.recognizedText());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(authService.saveSignature(token, signatureImage));
     }
 }

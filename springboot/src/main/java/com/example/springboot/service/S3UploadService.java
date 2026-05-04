@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -53,7 +55,7 @@ public class S3UploadService {
 
     public UploadedImage uploadMemoImage(MultipartFile file) {
         if (bucket == null || bucket.isBlank()) {
-            throw new IllegalStateException("AWS_S3_BUCKET is not configured.");
+            throw new BusinessException(ErrorCode.STORAGE_NOT_CONFIGURED);
         }
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_FILE);
@@ -86,6 +88,35 @@ public class S3UploadService {
             return new UploadedImage(key, (long) webpBytes.length);
         } catch (IOException e) {
             throw new IllegalStateException("failed to convert image to webp.", e);
+        }
+    }
+
+    public UploadedImage uploadSignatureOriginal(Long userId, MultipartFile file) {
+        if (bucket == null || bucket.isBlank()) {
+            throw new BusinessException(ErrorCode.STORAGE_NOT_CONFIGURED);
+        }
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_FILE);
+        }
+
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        if (!contentType.equals("image/png")) {
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
+        }
+
+        String datePath = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String key = "signatures/original/" + userId + "/" + datePath + "/" + UUID.randomUUID() + ".png";
+        try {
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType("image/png")
+                    .build();
+            s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
+            log.info("Signature original image uploaded. userId={} fileSize={} s3Key={}", userId, file.getSize(), key);
+            return new UploadedImage(key, file.getSize());
+        } catch (IOException e) {
+            throw new IllegalStateException("failed to upload signature image.", e);
         }
     }
 
@@ -155,7 +186,7 @@ public class S3UploadService {
 
     public String createPresignedDownloadUrl(String key) {
         if (bucket == null || bucket.isBlank()) {
-            throw new IllegalStateException("AWS_S3_BUCKET is not configured.");
+            throw new BusinessException(ErrorCode.STORAGE_NOT_CONFIGURED);
         }
         if (key == null || key.isBlank()) {
             throw new IllegalArgumentException("s3 key is required.");

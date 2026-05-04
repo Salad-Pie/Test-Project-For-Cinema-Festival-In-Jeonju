@@ -55,6 +55,7 @@ const ko = {
     verifiedDirect: '기존 인증 사용자입니다. 바로 서명할 수 있습니다.',
     verifiedDone: '인증이 완료되었습니다. 아래에서 서명하세요.',
     signatureSaved: '서명 저장 완료. OCR은 백엔드(Google Vision API)에서 처리됩니다.',
+    signatureImageFailed: '서명 이미지를 생성하지 못했습니다. 다시 시도해 주세요.',
   },
   sponsorship: {
     title: '영화관 재생 프로젝트 후원 상품 신청',
@@ -281,6 +282,7 @@ const en = {
     verifiedDirect: 'Already verified. You can sign immediately.',
     verifiedDone: 'Verification complete. Please sign below.',
     signatureSaved: 'Signature saved. OCR is processed by backend (Google Vision API).',
+    signatureImageFailed: 'Failed to create the signature image. Please try again.',
   },
   sponsorship: {
     title: 'Cinema Revival Project Sponsorship Application',
@@ -508,6 +510,7 @@ const zh = {
     verifiedDirect: '您已通过认证，可直接签名。',
     verifiedDone: '认证完成。请在下方签名。',
     signatureSaved: '签名已保存。OCR 由后端（Google Vision API）处理。',
+    signatureImageFailed: '无法生成签名图片。请重试。',
   },
   sponsorship: {
     title: '影院再生项目赞助申请',
@@ -735,6 +738,7 @@ const ja = {
     verifiedDirect: '既に認証済みです。すぐ署名できます。',
     verifiedDone: '認証が完了しました。下で署名してください。',
     signatureSaved: '署名を保存しました。OCR はバックエンド（Google Vision API）で処理されます。',
+    signatureImageFailed: '署名画像を作成できませんでした。もう一度お試しください。',
   },
   sponsorship: {
     title: '映画館再生プロジェクト後援申請',
