@@ -36,10 +36,10 @@ public class SignatureImageService {
         Graphics2D graphics = image.createGraphics();
         try {
             applyQuality(graphics);
-            graphics.setColor(new Color(255, 255, 255, 0));
+            graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 0, imageWidth, imageHeight);
             graphics.setColor(Color.BLACK);
-            graphics.setFont(createFont(fontFamily, Font.PLAIN, size));
+            graphics.setFont(createFont(fontFamily, Font.PLAIN, size, value));
 
             FontMetrics metrics = graphics.getFontMetrics();
             int x = Math.max(24, (imageWidth - metrics.stringWidth(value)) / 2);
@@ -57,7 +57,7 @@ public class SignatureImageService {
         String title = blankToDefault(request == null ? null : request.title(), "BackToScreen 참여 증명서");
         String name = blankToDefault(request == null ? null : request.name(), defaultName);
         String signature = blankToDefault(request == null ? null : request.signatureText(), defaultSignature);
-        String fontFamily = defaultFont(request == null ? null : request.fontFamily());
+        String fontFamily = request == null ? null : request.fontFamily();
 
         int nameX = defaultNumber(request == null ? null : request.nameX(), 700);
         int nameY = defaultNumber(request == null ? null : request.nameY(), 540);
@@ -71,24 +71,27 @@ public class SignatureImageService {
             drawCertificateBackground(graphics, width, height);
 
             graphics.setColor(new Color(24, 45, 79));
-            graphics.setFont(createFont(null, Font.BOLD, 72));
+            graphics.setFont(createFont(null, Font.BOLD, 72, title));
             drawCentered(graphics, title, width / 2, 220);
 
-            graphics.setFont(createFont(null, Font.PLAIN, 34));
-            drawCentered(graphics, "본인은 폐영화관 재생 프로젝트에 참여하였음을 증명합니다.", width / 2, 360);
+            String description = "본인은 폐영화관 재생 프로젝트에 참여하였음을 증명합니다.";
+            graphics.setFont(createFont(null, Font.PLAIN, 34, description));
+            drawCentered(graphics, description, width / 2, 360);
 
-            graphics.setFont(createFont(null, Font.BOLD, 52));
+            graphics.setFont(createFont(null, Font.BOLD, 52, "이름"));
             graphics.drawString("이름", 500, nameY);
-            graphics.setFont(createFont(fontFamily, Font.PLAIN, 64));
+            graphics.setFont(createFont(fontFamily, Font.PLAIN, 64, name));
             graphics.drawString(name, nameX, nameY);
 
-            graphics.setFont(createFont(null, Font.PLAIN, 34));
-            graphics.drawString("발급일: 2026.05.04", 500, 700);
-            graphics.drawString("장소: 전주 영화관 재생 프로젝트 공간", 500, 760);
+            String issuedAt = "발급일: 2026.05.04";
+            String place = "장소: 전주 영화관 재생 프로젝트 공간";
+            graphics.setFont(createFont(null, Font.PLAIN, 34, issuedAt + place));
+            graphics.drawString(issuedAt, 500, 700);
+            graphics.drawString(place, 500, 760);
 
-            graphics.setFont(createFont(fontFamily, Font.PLAIN, 64));
+            graphics.setFont(createFont(fontFamily, Font.PLAIN, 64, signature));
             graphics.drawString(signature, signatureX, signatureY);
-            graphics.setFont(createFont(null, Font.PLAIN, 26));
+            graphics.setFont(createFont(null, Font.PLAIN, 26, "서명"));
             graphics.drawString("서명", signatureX, signatureY + 54);
 
             return toPng(image);
@@ -139,24 +142,48 @@ public class SignatureImageService {
         return value.trim();
     }
 
-    private String defaultFont(String fontFamily) {
-        return blankToDefault(fontFamily, findAvailableKoreanFont());
+    private Font createFont(String fontFamily, int style, int size, String sampleText) {
+        return new Font(resolveDisplayableFont(fontFamily, sampleText), style, size);
     }
 
-    private Font createFont(String fontFamily, int style, int size) {
-        return new Font(defaultFont(fontFamily), style, size);
+    private String resolveDisplayableFont(String preferredFont, String sampleText) {
+        String preferred = blankToDefault(preferredFont, "");
+        if (!preferred.isBlank()) {
+            Font font = new Font(preferred, Font.PLAIN, 12);
+            if (canDisplay(font, sampleText)) {
+                return preferred;
+            }
+        }
+
+        String koreanFont = findAvailableKoreanFont(sampleText);
+        if (koreanFont != null) {
+            return koreanFont;
+        }
+        return "Dialog";
     }
 
-    private String findAvailableKoreanFont() {
+    private String findAvailableKoreanFont(String sampleText) {
         String[] availableFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         for (String candidate : KOREAN_FONT_CANDIDATES) {
             for (String availableFont : availableFonts) {
-                if (availableFont.equalsIgnoreCase(candidate)) {
+                if (availableFont.equalsIgnoreCase(candidate) && canDisplay(new Font(availableFont, Font.PLAIN, 12), sampleText)) {
                     return availableFont;
                 }
             }
         }
-        return "Dialog";
+        for (String availableFont : availableFonts) {
+            if (canDisplay(new Font(availableFont, Font.PLAIN, 12), sampleText)) {
+                return availableFont;
+            }
+        }
+        return null;
+    }
+
+    private boolean canDisplay(Font font, String sampleText) {
+        if (sampleText == null || sampleText.isBlank()) {
+            return true;
+        }
+        return font.canDisplayUpTo(sampleText) < 0;
     }
 
     private int defaultNumber(Integer value, int defaultValue) {
