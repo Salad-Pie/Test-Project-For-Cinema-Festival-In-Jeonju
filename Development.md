@@ -41,6 +41,7 @@
 | 서명/OCR | 서명 이미지 저장, Google Vision API OCR, 영어 OCR 결과의 발음/의미 기준 한글 변환 | `/api/auth/signature` |
 | 서명 이미지화 | 저장된 서명 텍스트에 Font를 적용한 PNG 이미지 응답 | `/api/auth/signature/render` |
 | 증명서 샘플 합성 | 샘플 증명서 템플릿 좌표에 이름/서명 텍스트를 삽입한 PNG 응답 | `/api/auth/signature/certificate-sample` |
+| 한글 폰트 렌더링 | Java AWT 렌더링 시 사용 가능한 한글 폰트 우선 선택, Docker 런타임에 Noto CJK 설치 | `SignatureImageService`, `springboot/Dockerfile` |
 | 아이디어 공모 | 로그인 유저 기준 이미지 업로드, 메모 이미지 저장 | `/api/idea-contests` |
 | S3 업로드 | S3 업로드, presigned download URL 구조 | S3UploadService |
 | 이미지 최적화 | jpg/jpeg/png만 허용, WebP 변환/압축 후 업로드 | S3UploadService |

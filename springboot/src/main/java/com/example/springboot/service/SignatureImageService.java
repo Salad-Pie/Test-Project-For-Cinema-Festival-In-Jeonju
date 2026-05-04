@@ -5,6 +5,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.GraphicsEnvironment;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -15,6 +16,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class SignatureImageService {
+
+    private static final String[] KOREAN_FONT_CANDIDATES = {
+            "Noto Sans CJK KR",
+            "Noto Sans KR",
+            "NanumGothic",
+            "Malgun Gothic",
+            "Apple SD Gothic Neo",
+            "Dialog"
+    };
 
     public byte[] renderSignature(String text, String fontFamily, Integer fontSize, Integer width, Integer height) {
         String value = defaultText(text);
@@ -29,7 +39,7 @@ public class SignatureImageService {
             graphics.setColor(new Color(255, 255, 255, 0));
             graphics.fillRect(0, 0, imageWidth, imageHeight);
             graphics.setColor(Color.BLACK);
-            graphics.setFont(new Font(defaultFont(fontFamily), Font.PLAIN, size));
+            graphics.setFont(createFont(fontFamily, Font.PLAIN, size));
 
             FontMetrics metrics = graphics.getFontMetrics();
             int x = Math.max(24, (imageWidth - metrics.stringWidth(value)) / 2);
@@ -61,24 +71,24 @@ public class SignatureImageService {
             drawCertificateBackground(graphics, width, height);
 
             graphics.setColor(new Color(24, 45, 79));
-            graphics.setFont(new Font("Serif", Font.BOLD, 72));
+            graphics.setFont(createFont(null, Font.BOLD, 72));
             drawCentered(graphics, title, width / 2, 220);
 
-            graphics.setFont(new Font("Serif", Font.PLAIN, 34));
+            graphics.setFont(createFont(null, Font.PLAIN, 34));
             drawCentered(graphics, "본인은 폐영화관 재생 프로젝트에 참여하였음을 증명합니다.", width / 2, 360);
 
-            graphics.setFont(new Font("Dialog", Font.BOLD, 52));
+            graphics.setFont(createFont(null, Font.BOLD, 52));
             graphics.drawString("이름", 500, nameY);
-            graphics.setFont(new Font(fontFamily, Font.PLAIN, 64));
+            graphics.setFont(createFont(fontFamily, Font.PLAIN, 64));
             graphics.drawString(name, nameX, nameY);
 
-            graphics.setFont(new Font("Dialog", Font.PLAIN, 34));
+            graphics.setFont(createFont(null, Font.PLAIN, 34));
             graphics.drawString("발급일: 2026.05.04", 500, 700);
             graphics.drawString("장소: 전주 영화관 재생 프로젝트 공간", 500, 760);
 
-            graphics.setFont(new Font(fontFamily, Font.PLAIN, 64));
+            graphics.setFont(createFont(fontFamily, Font.PLAIN, 64));
             graphics.drawString(signature, signatureX, signatureY);
-            graphics.setFont(new Font("Dialog", Font.PLAIN, 26));
+            graphics.setFont(createFont(null, Font.PLAIN, 26));
             graphics.drawString("서명", signatureX, signatureY + 54);
 
             return toPng(image);
@@ -130,7 +140,23 @@ public class SignatureImageService {
     }
 
     private String defaultFont(String fontFamily) {
-        return blankToDefault(fontFamily, "Serif");
+        return blankToDefault(fontFamily, findAvailableKoreanFont());
+    }
+
+    private Font createFont(String fontFamily, int style, int size) {
+        return new Font(defaultFont(fontFamily), style, size);
+    }
+
+    private String findAvailableKoreanFont() {
+        String[] availableFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        for (String candidate : KOREAN_FONT_CANDIDATES) {
+            for (String availableFont : availableFonts) {
+                if (availableFont.equalsIgnoreCase(candidate)) {
+                    return availableFont;
+                }
+            }
+        }
+        return "Dialog";
     }
 
     private int defaultNumber(Integer value, int defaultValue) {
