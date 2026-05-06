@@ -258,3 +258,29 @@
 | 중복 방지 | 새 코드 발급 시 `identifier_codes` 전체에서 코드 중복을 검사하고 충돌 시 재생성 |
 | 제거한 코드 | `EmailIdentifierCode`, `EmailIdentifierCodeRepository` 제거 |
 | DB 주의사항 | 기존 DB에 이미 생성된 `email_identifier_codes` 테이블은 `ddl-auto=update`로 자동 삭제되지 않으므로, 운영 DB 정리는 별도 migration으로 처리 필요 |
+
+## 식별자 코드 재발급 API
+
+| 항목 | 내용 |
+|---|---|
+| API | `POST /api/auth/identifier-code/reissue` |
+| 목적 | 사용자가 6자리 식별자 코드를 잊었을 때 새 코드를 안전하게 재발급 |
+| 입력 | `email` 또는 `phoneNumber`, `language` |
+| 기준 테이블 | `identifier_codes` |
+| 발급 방식 | 등록된 User를 찾은 경우에만 새 6자리 코드를 `identifier_codes`에 저장하고 해당 채널로 전송 |
+| 보안 응답 | User 존재 여부와 관계없이 동일 메시지 반환 |
+| Rate Limit | IP + 이메일/전화번호 기준 10분 동안 5회 초과 시 실제 발송 없이 동일 응답 |
+| 로그 정책 | 이메일/전화번호 마스킹, 코드 원문 미노출, 코드 뒤 2자리만 기록 |
+| 기존 코드 처리 | 기존 코드는 삭제하지 않고 새 row 추가, 인증 흐름은 최신 코드 기준 사용 |
+
+## 식별자 코드 재발급 페이지 추가
+
+| 항목 | 내용 |
+|---|---|
+| 페이지 경로 | `/identifier-code-reissue` |
+| 접근 조건 | 로그인된 사용자만 접근 가능. 미로그인 시 `/login-page`로 이동 |
+| API | `POST /api/auth/identifier-code/reissue` |
+| 인증 방식 | `Authorization: Bearer {JWT}` 필수 |
+| 재발급 대상 | 로그인 JWT의 User를 기준으로 이메일이 있으면 이메일, 없고 전화번호가 있으면 SMS 발송 |
+| 사용자 입력 | 별도 이메일/전화번호 입력 없음. 로그인 사용자 정보만 사용 |
+| 루트 노출 | `/` Bootstrap 허브 버튼 목록에 추가, `/admin` 계열은 계속 미노출 |

@@ -83,6 +83,12 @@ const ko = {
     invalidCode: '6자리 숫자 코드를 입력해 주세요.',
     downloaded: '다운로드가 완료되었습니다.',
   },
+  identifierReissue: {
+    title: '식별자 코드 재발급',
+    description: '로그인된 사용자에게 등록된 이메일 또는 전화번호로 새 6자리 식별자 코드를 전송합니다.',
+    submit: '식별자 코드 재발급',
+    sent: '입력하신 정보가 등록되어 있다면 새 식별자 코드를 전송했습니다.',
+  },
   sponsorship: {
     title: '영화관 재생 프로젝트 후원 상품 신청',
     name: '이름',
@@ -335,6 +341,12 @@ const en = {
     certificatePdf: 'Download Certificate',
     invalidCode: 'Please enter a 6-digit numeric code.',
     downloaded: 'Download completed.',
+  },
+  identifierReissue: {
+    title: 'Reissue Identifier Code',
+    description: 'A new 6-digit identifier code will be sent to the email or phone number registered to the logged-in user.',
+    submit: 'Reissue Identifier Code',
+    sent: 'If your information is registered, a new identifier code has been sent.',
   },
   sponsorship: {
     title: 'Cinema Revival Project Sponsorship Application',
@@ -590,6 +602,12 @@ const zh = {
     invalidCode: '请输入6位数字验证码。',
     downloaded: '下载已完成。',
   },
+  identifierReissue: {
+    title: '重新发送识别码',
+    description: '将向已登录用户登记的邮箱或手机号发送新的6位识别码。',
+    submit: '重新发送识别码',
+    sent: '如果您的信息已登记，新的识别码已发送。',
+  },
   sponsorship: {
     title: '影院再生项目赞助申请',
     name: '姓名',
@@ -843,6 +861,12 @@ const ja = {
     certificatePdf: '証明書をダウンロード',
     invalidCode: '6桁の数字コードを入力してください。',
     downloaded: 'ダウンロードが完了しました。',
+  },
+  identifierReissue: {
+    title: '識別コード再発行',
+    description: 'ログイン中のユーザーに登録されたメールまたは電話番号へ新しい6桁の識別コードを送信します。',
+    submit: '識別コードを再発行',
+    sent: '登録情報が確認できた場合、新しい識別コードを送信しました。',
   },
   sponsorship: {
     title: '映画館再生プロジェクト後援申請',

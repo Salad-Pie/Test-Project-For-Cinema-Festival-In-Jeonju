@@ -34,6 +34,7 @@ const isEmailSignupPage = computed(() => routePath.startsWith('/signup/email'))
 const isOauthCallbackPage = computed(() => routePath.startsWith('/oauth/callback'))
 const isTabletPage = computed(() => routePath.startsWith('/tablet'))
 const isCertificateDownloadPage = computed(() => routePath.startsWith('/certificate-download'))
+const isIdentifierCodeReissuePage = computed(() => routePath.startsWith('/identifier-code-reissue'))
 const isSuccessPage = computed(() => routePath === '/success')
 const isBootstrapLoginPage = computed(() => !isOriginalRoute && routePath.startsWith('/login-page'))
 const isIdeaContestLoginPage = computed(() => isOriginalRoute && routePath.startsWith('/login-page'))
@@ -55,8 +56,13 @@ const isPdRecruitPage = computed(() => routePath.startsWith('/pd-recruit'))
 const isLocationPage = computed(() => routePath.startsWith('/location'))
 const isAdminDashboardPage = computed(() => routePath === '/admin' || routePath === '/admin/')
 const isAdminReservationsPage = computed(() => routePath.startsWith('/admin/reservations'))
-const bootstrapPages = [
+const publicRoutePages = [
   { key: 'nav.loginPage', href: '/login-page' },
+  { key: 'auth.emailLogin', href: '/login/email' },
+  { key: 'auth.emailSignup', href: '/signup/email' },
+  { key: 'identifierReissue.title', href: '/identifier-code-reissue' },
+  { key: 'tablet.verifyTitle', href: '/tablet' },
+  { key: 'certificateDownload.title', href: '/certificate-download' },
   { key: 'nav.ideaContest', href: '/idea-contest' },
   { key: 'nav.sponsorshipApplication', href: '/sponsorship-application' },
   { key: 'nav.streetCollaboration', href: '/street-collaboration' },
@@ -64,9 +70,14 @@ const bootstrapPages = [
   { key: 'nav.exhibitionSurvey', href: '/exhibition-survey' },
   { key: 'nav.experienceZoneSurvey', href: '/experience-zone-survey' },
   { key: 'nav.projectParticipant', href: '/project-participant' },
+  { key: 'project.axSpaceTitle', href: '/ax-space' },
+  { key: 'project.kArtAxTitle', href: '/k-art-ax' },
   { key: 'nav.streamingRecruit', href: '/streaming-recruit' },
+  { key: 'project.axShopShopTitle', href: '/ax-shop-shop' },
+  { key: 'project.pdRecruitTitle', href: '/pd-recruit' },
   { key: 'nav.location', href: '/location' },
 ]
+const bootstrapPages = publicRoutePages
 const streetHourOptions = [17, 18, 19, 20, 21, 22]
 const artistMeetingDateOptions = ['2026-05-02', '2026-05-04']
 const artistMeetingHourMap = {
@@ -174,6 +185,9 @@ const state = reactive({
   verifyCode: '',
   verifiedToken: '',
   certificateDownloadCode: '',
+  identifierReissue: {
+    message: '',
+  },
   signatureNameLanguage: 'EN',
   signatureKoreanName: '',
   adminAccess: null,
@@ -272,6 +286,11 @@ onMounted(async () => {
       state.verifiedToken = tabletToken.value
       state.message = t('tablet.verifiedDirect')
     }
+  }
+
+  if (isIdentifierCodeReissuePage.value && !isIdeaContestLoggedIn()) {
+    redirectToLogin(currentRedirectPath.value)
+    return
   }
 
   if (isIdeaContestPage.value && !isIdeaContestLoggedIn()) {
@@ -823,6 +842,30 @@ async function verifyEmailLoginCode() {
     saveIdeaContestAuthToken(result.registerToken)
     state.message = t('auth.emailSignupSuccess')
     redirectAfterLogin()
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
+async function reissueIdentifierCode() {
+  state.loading = true
+  state.error = ''
+  state.identifierReissue.message = ''
+  try {
+    const authToken = getIdeaContestAuthToken()
+    if (!authToken) {
+      throw userError(t('common.loginTokenRequired'))
+    }
+
+    const result = await apiFetch('/identifier-code/reissue', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify({ language: locale.value }),
+    })
+    state.identifierReissue.message = result.message || t('identifierReissue.sent')
+    state.message = state.identifierReissue.message
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -1448,6 +1491,15 @@ function downloadStoredCertificatePdf() {
         <label>{{ t('project.phone') }} <input v-model="state.pdRecruit.phoneNumber" type="text" :placeholder="t('common.placeholders.phone')" @input="onPdRecruitPhoneInput" /></label>
       </div>
       <button :disabled="state.loading" @click="submitProjectRecruitment('pd-writer-edit-sound', state.pdRecruit.phoneNumber, state.pdRecruit.date, state.pdRecruit.hour)">{{ t('project.submit') }}</button>
+    </section>
+
+    <section v-if="isIdentifierCodeReissuePage" class="card">
+      <h2>{{ t('identifierReissue.title') }}</h2>
+      <p>{{ t('identifierReissue.description') }}</p>
+      <div class="actions">
+        <button :disabled="state.loading" @click="reissueIdentifierCode">{{ t('identifierReissue.submit') }}</button>
+      </div>
+      <p v-if="state.identifierReissue.message" class="ok">{{ state.identifierReissue.message }}</p>
     </section>
 
     <section v-if="isEmailLoginPage" class="card">

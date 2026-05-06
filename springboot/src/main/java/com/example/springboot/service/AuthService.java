@@ -11,6 +11,8 @@ import com.example.springboot.domain.SignupProvider;
 import com.example.springboot.domain.User;
 import com.example.springboot.dto.EmailLoginRequest;
 import com.example.springboot.dto.CertificateSampleRequest;
+import com.example.springboot.dto.IdentifierCodeReissueRequest;
+import com.example.springboot.dto.IdentifierCodeReissueResponse;
 import com.example.springboot.dto.LoginResponse;
 import com.example.springboot.dto.SignatureRenderRequest;
 import com.example.springboot.dto.SignatureResponse;
@@ -22,9 +24,12 @@ import com.example.springboot.repository.SignatureRepository;
 import com.example.springboot.repository.UserRepository;
 import com.example.springboot.security.JwtTokenProvider;
 import com.example.springboot.security.TokenType;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +43,9 @@ public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private static final int CODE_GENERATION_MAX_ATTEMPTS = 20;
+    private static final int IDENTIFIER_REISSUE_MAX_ATTEMPTS = 5;
+    private static final Duration IDENTIFIER_REISSUE_WINDOW = Duration.ofMinutes(10);
+    private static final String IDENTIFIER_REISSUE_RESPONSE_MESSAGE = "입력하신 정보가 등록되어 있다면 새 식별자 코드를 전송했습니다.";
 
     private final UserRepository userRepository;
     private final IdentifierCodeRepository identifierCodeRepository;
@@ -51,6 +59,7 @@ public class AuthService {
     private final CertificatePdfService certificatePdfService;
     private final JwtTokenProvider jwtTokenProvider;
     private final String tabletBaseUrl;
+    private final Map<String, ReissueRateLimit> identifierReissueRateLimits = new ConcurrentHashMap<>();
 
     public AuthService(
             UserRepository userRepository,
@@ -165,6 +174,40 @@ public class AuthService {
 
         User user = savedCode.getUser();
         return issueTabletTokenForExisting(user);
+    }
+
+    public IdentifierCodeReissueResponse reissueIdentifierCode(IdentifierCodeReissueRequest request, String token, String remoteAddr) {
+        String language = normalizeLanguage(request.language());
+
+        validateLoggedInToken(token);
+        Long userId = jwtTokenProvider.extractUserId(token);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("user not found."));
+
+        String email = blankToNull(user.getEmail());
+        String phone = blankToNull(user.getPhoneNumber());
+        String rateLimitKey = buildReissueRateLimitKey(userId, remoteAddr);
+        if (isIdentifierReissueRateLimited(rateLimitKey)) {
+            log.info("Identifier code reissue rate limited. key={}", maskRateLimitKey(rateLimitKey));
+            return new IdentifierCodeReissueResponse(IDENTIFIER_REISSUE_RESPONSE_MESSAGE);
+        }
+
+        if (email != null) {
+            String code = issueIdentifierCode(user);
+            notificationService.sendEmailCode(email, code, language);
+            log.info("Identifier code reissued by email. userId={} email={} codeSuffix={}", user.getId(), maskEmail(email), codeSuffix(code));
+            return new IdentifierCodeReissueResponse(IDENTIFIER_REISSUE_RESPONSE_MESSAGE);
+        }
+
+        if (phone != null) {
+            String code = issueIdentifierCode(user);
+            notificationService.sendSmsCode(phone, code);
+            log.info("Identifier code reissued by phone. userId={} phone={} codeSuffix={}", user.getId(), maskPhone(phone), codeSuffix(code));
+            return new IdentifierCodeReissueResponse(IDENTIFIER_REISSUE_RESPONSE_MESSAGE);
+        }
+
+        log.info("Identifier code reissue skipped because user has no delivery channel. userId={}", user.getId());
+        return new IdentifierCodeReissueResponse(IDENTIFIER_REISSUE_RESPONSE_MESSAGE);
     }
 
     public LoginResponse loginByOAuth(SignupProvider provider, OAuthProfile profile, String languageRaw) {
@@ -429,6 +472,13 @@ public class AuthService {
         }
     }
 
+    private void validateLoggedInToken(String token) {
+        TokenType tokenType = jwtTokenProvider.extractTokenType(token);
+        if (tokenType != TokenType.REGISTER && tokenType != TokenType.VERIFIED) {
+            throw new IllegalArgumentException("token type is not valid for this request.");
+        }
+    }
+
     private String generate6DigitCode() {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }
@@ -450,6 +500,37 @@ public class AuthService {
         throw new IllegalStateException("failed to generate unique identifier code.");
     }
 
+    private boolean isIdentifierReissueRateLimited(String key) {
+        LocalDateTime now = LocalDateTime.now();
+        ReissueRateLimit current = identifierReissueRateLimits.get(key);
+
+        if (current == null || current.windowStartedAt().plus(IDENTIFIER_REISSUE_WINDOW).isBefore(now)) {
+            identifierReissueRateLimits.put(key, new ReissueRateLimit(now, 1));
+            return false;
+        }
+
+        int nextAttempts = current.attempts() + 1;
+        identifierReissueRateLimits.put(key, new ReissueRateLimit(current.windowStartedAt(), nextAttempts));
+        return nextAttempts > IDENTIFIER_REISSUE_MAX_ATTEMPTS;
+    }
+
+    private String buildReissueRateLimitKey(Long userId, String remoteAddr) {
+        String target = "user:" + userId;
+        String ip = blankToNull(remoteAddr) == null ? "unknown" : remoteAddr;
+        return ip + "|" + target;
+    }
+
+    private String maskRateLimitKey(String key) {
+        if (key == null || key.isBlank()) {
+            return "";
+        }
+        int separator = key.indexOf('|');
+        if (separator < 0) {
+            return "***";
+        }
+        return key.substring(0, separator) + "|***";
+    }
+
     private String maskEmail(String email) {
         if (email == null || email.isBlank()) {
             return "";
@@ -459,6 +540,17 @@ public class AuthService {
             return "***";
         }
         return email.charAt(0) + "***" + email.substring(atIndex);
+    }
+
+    private String maskPhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return "";
+        }
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() <= 4) {
+            return "****";
+        }
+        return "***-****-" + digits.substring(digits.length() - 4);
     }
 
     private String codeSuffix(String code) {
@@ -594,5 +686,11 @@ public class AuthService {
         identifierCode.setUser(user);
         identifierCode.setCode(code);
         identifierCodeRepository.save(identifierCode);
+    }
+
+    private record ReissueRateLimit(
+            LocalDateTime windowStartedAt,
+            int attempts
+    ) {
     }
 }

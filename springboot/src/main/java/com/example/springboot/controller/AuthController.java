@@ -4,11 +4,14 @@ import com.example.springboot.dto.EmailLoginRequest;
 import com.example.springboot.dto.CertificateSampleRequest;
 import com.example.springboot.dto.EmailCodeSendRequest;
 import com.example.springboot.dto.EmailCodeVerifyRequest;
+import com.example.springboot.dto.IdentifierCodeReissueRequest;
+import com.example.springboot.dto.IdentifierCodeReissueResponse;
 import com.example.springboot.dto.LoginResponse;
 import com.example.springboot.dto.SignatureRenderRequest;
 import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyCodeRequest;
 import com.example.springboot.dto.VerifyResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import com.example.springboot.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -45,6 +48,16 @@ public class AuthController {
     @PostMapping("/login/email/identifier")
     public ResponseEntity<LoginResponse> loginEmailWithIdentifier(@Valid @RequestBody EmailCodeVerifyRequest request) {
         return ResponseEntity.ok(authService.loginEmailWithIdentifier(request.email(), request.code()));
+    }
+
+    @PostMapping("/identifier-code/reissue")
+    public ResponseEntity<IdentifierCodeReissueResponse> reissueIdentifierCode(
+            @Valid @RequestBody IdentifierCodeReissueRequest request,
+            @RequestHeader("Authorization") String authorization,
+            HttpServletRequest httpRequest
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(authService.reissueIdentifierCode(request, token, httpRequest.getRemoteAddr()));
     }
 
     @PostMapping("/verify")
