@@ -27,7 +27,10 @@ public class SignatureImageService {
             "Noto Sans KR",
             "NanumGothic",
             "Batang",
+            "궁서체",
+            "궁서",
             "Gungsuh",
+            "GungsuhChe",
             "Malgun Gothic",
             "Apple SD Gothic Neo",
             "Dialog"
@@ -154,7 +157,7 @@ public class SignatureImageService {
     }
 
     private String resolveDisplayableFont(String preferredFont, String sampleText) {
-        String preferred = blankToDefault(preferredFont, "");
+        String preferred = normalizeFontFamily(blankToDefault(preferredFont, ""));
         if (!preferred.isBlank()) {
             Font font = new Font(preferred, Font.PLAIN, 12);
             if (canDisplay(font, sampleText)) {
@@ -184,6 +187,16 @@ public class SignatureImageService {
             }
         }
         return null;
+    }
+
+    private String normalizeFontFamily(String fontFamily) {
+        if (fontFamily == null || fontFamily.isBlank()) {
+            return "";
+        }
+        return switch (fontFamily.trim()) {
+            case "궁서", "궁서체" -> "Gungsuh";
+            default -> fontFamily.trim();
+        };
     }
 
     private boolean canDisplay(Font font, String sampleText) {
