@@ -773,6 +773,13 @@ button:disabled {
   padding: 24px;
 }
 
+.ending-credits-shell-fullscreen {
+  grid-template-rows: minmax(0, 1fr);
+  height: 100vh;
+  min-height: 100vh;
+  padding: 24px;
+}
+
 .ending-credits-shell-fullscreen .ending-credits-control-card,
 .ending-credits-shell-fullscreen .ending-credits-result-card {
   display: none;
@@ -783,6 +790,11 @@ button:disabled {
   grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
   gap: 18px;
   align-items: stretch;
+  min-height: 0;
+}
+
+.ending-credits-shell-fullscreen .ending-credits-hero {
+  height: 100%;
   min-height: 0;
 }
 
@@ -817,6 +829,12 @@ button:disabled {
   min-height: 100%;
   overflow: hidden;
   position: relative;
+}
+
+.ending-credits-shell-fullscreen .ending-credits-message-card,
+.ending-credits-shell-fullscreen .ending-credits-poster-card {
+  height: 100%;
+  min-height: 0;
 }
 
 .ending-credits-message-card::before,
