@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface IdentifierCodeRepository extends JpaRepository<IdentifierCode, Long> {
     Optional<IdentifierCode> findTopByUserIdOrderByIdDesc(Long userId);
+    Optional<IdentifierCode> findTopByUserEmailOrderByIdDesc(String email);
     Optional<IdentifierCode> findTopByCodeOrderByIdDesc(String code);
+    boolean existsByCode(String code);
 }

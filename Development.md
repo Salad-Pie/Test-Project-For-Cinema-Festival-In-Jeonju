@@ -246,3 +246,15 @@
 | 기존 호환 | 태블릿 인증용 `identifier_codes` 저장은 유지하여 기존 인증 흐름과 충돌 방지 |
 | 로그 | 코드 발급/충돌 로그는 이메일 마스킹, 코드 뒤 2자리만 출력 |
 | 검증 | Spring Boot `compileJava`, 전체 `test`, Vue `npm run build` 성공 |
+
+## 6자리 식별자 코드 전용 테이블 통일
+
+| 항목 | 내용 |
+|---|---|
+| 기준 테이블 | `identifier_codes` |
+| 적용 범위 | 이메일 로그인/회원가입, OAuth 신규 가입, 전화번호 코드, 태블릿 인증, 서명 이미지/증명서 다운로드 |
+| 저장 정책 | User 기준으로 6자리 코드를 발급하고 `identifier_codes.user_id`, `identifier_codes.code`에 저장 |
+| 검증 정책 | 이메일 로그인은 이메일로 User를 찾고 최신 코드 검증, 태블릿/다운로드는 코드 단독으로 최신 코드 조회 |
+| 중복 방지 | 새 코드 발급 시 `identifier_codes` 전체에서 코드 중복을 검사하고 충돌 시 재생성 |
+| 제거한 코드 | `EmailIdentifierCode`, `EmailIdentifierCodeRepository` 제거 |
+| DB 주의사항 | 기존 DB에 이미 생성된 `email_identifier_codes` 테이블은 `ddl-auto=update`로 자동 삭제되지 않으므로, 운영 DB 정리는 별도 migration으로 처리 필요 |

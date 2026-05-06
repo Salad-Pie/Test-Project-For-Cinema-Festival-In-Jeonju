@@ -1,13 +1,11 @@
 package com.example.springboot.service;
 
-import com.example.springboot.domain.EmailIdentifierCode;
+import com.example.springboot.domain.IdentifierCode;
 import com.example.springboot.domain.Signature;
-import com.example.springboot.domain.User;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
-import com.example.springboot.repository.EmailIdentifierCodeRepository;
+import com.example.springboot.repository.IdentifierCodeRepository;
 import com.example.springboot.repository.SignatureRepository;
-import com.example.springboot.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,21 +18,18 @@ public class CertificateDownloadService {
     private static final int SIGNATURE_IMAGE_WIDTH = 1400;
     private static final int SIGNATURE_IMAGE_HEIGHT = 520;
 
-    private final EmailIdentifierCodeRepository emailIdentifierCodeRepository;
-    private final UserRepository userRepository;
+    private final IdentifierCodeRepository identifierCodeRepository;
     private final SignatureRepository signatureRepository;
     private final SignatureImageService signatureImageService;
     private final CertificatePdfService certificatePdfService;
 
     public CertificateDownloadService(
-            EmailIdentifierCodeRepository emailIdentifierCodeRepository,
-            UserRepository userRepository,
+            IdentifierCodeRepository identifierCodeRepository,
             SignatureRepository signatureRepository,
             SignatureImageService signatureImageService,
             CertificatePdfService certificatePdfService
     ) {
-        this.emailIdentifierCodeRepository = emailIdentifierCodeRepository;
-        this.userRepository = userRepository;
+        this.identifierCodeRepository = identifierCodeRepository;
         this.signatureRepository = signatureRepository;
         this.signatureImageService = signatureImageService;
         this.certificatePdfService = certificatePdfService;
@@ -59,11 +54,9 @@ public class CertificateDownloadService {
     }
 
     private Signature findSignatureByCode(String code) {
-        EmailIdentifierCode identifierCode = emailIdentifierCodeRepository.findFirstByCodeOrderByUpdatedAtDesc(code)
+        IdentifierCode identifierCode = identifierCodeRepository.findTopByCodeOrderByIdDesc(code)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CERTIFICATE_DOWNLOAD_CODE_INVALID));
-        User user = userRepository.findFirstByEmail(identifierCode.getEmail())
-                .orElseThrow(() -> new BusinessException(ErrorCode.CERTIFICATE_DOWNLOAD_CODE_INVALID));
-        return signatureRepository.findByUserId(user.getId())
+        return signatureRepository.findByUserId(identifierCode.getUser().getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CERTIFICATE_SIGNATURE_NOT_FOUND));
     }
 

@@ -9,7 +9,6 @@ import com.example.springboot.domain.Signature;
 import com.example.springboot.domain.SignatureLanguage;
 import com.example.springboot.domain.SignupProvider;
 import com.example.springboot.domain.User;
-import com.example.springboot.domain.EmailIdentifierCode;
 import com.example.springboot.dto.EmailLoginRequest;
 import com.example.springboot.dto.CertificateSampleRequest;
 import com.example.springboot.dto.LoginResponse;
@@ -18,7 +17,6 @@ import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyResponse;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
-import com.example.springboot.repository.EmailIdentifierCodeRepository;
 import com.example.springboot.repository.IdentifierCodeRepository;
 import com.example.springboot.repository.SignatureRepository;
 import com.example.springboot.repository.UserRepository;
@@ -42,7 +40,6 @@ public class AuthService {
     private static final int CODE_GENERATION_MAX_ATTEMPTS = 20;
 
     private final UserRepository userRepository;
-    private final EmailIdentifierCodeRepository emailIdentifierCodeRepository;
     private final IdentifierCodeRepository identifierCodeRepository;
     private final SignatureRepository signatureRepository;
     private final NotificationService notificationService;
@@ -57,7 +54,6 @@ public class AuthService {
 
     public AuthService(
             UserRepository userRepository,
-            EmailIdentifierCodeRepository emailIdentifierCodeRepository,
             IdentifierCodeRepository identifierCodeRepository,
             SignatureRepository signatureRepository,
             NotificationService notificationService,
@@ -71,7 +67,6 @@ public class AuthService {
             @Value("${app.tablet-base-url}") String tabletBaseUrl
     ) {
         this.userRepository = userRepository;
-        this.emailIdentifierCodeRepository = emailIdentifierCodeRepository;
         this.identifierCodeRepository = identifierCodeRepository;
         this.signatureRepository = signatureRepository;
         this.notificationService = notificationService;
@@ -114,7 +109,14 @@ public class AuthService {
         }
         String language = normalizeLanguage(languageRaw);
 
-        String code = issueEmailIdentifierCode(email);
+        User user = userRepository.findFirstByEmail(email).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setProvider(SignupProvider.EMAIL);
+            newUser.setProviderUserId(null);
+            newUser.setEmail(email);
+            return userRepository.save(newUser);
+        });
+        String code = issueIdentifierCode(user);
         log.info("Email login identifier code issued. email={} codeSuffix={}", maskEmail(email), codeSuffix(code));
         notificationService.sendEmailCode(email, code, language);
     }
@@ -130,21 +132,13 @@ public class AuthService {
             throw new IllegalArgumentException("code is required.");
         }
 
-        EmailIdentifierCode savedCode = emailIdentifierCodeRepository.findByEmail(email)
+        IdentifierCode savedCode = identifierCodeRepository.findTopByUserEmailOrderByIdDesc(email)
                 .orElseThrow(() -> new IllegalArgumentException("identifier code not found for email."));
         if (!savedCode.getCode().equals(code)) {
             throw new IllegalArgumentException("identifier code is invalid.");
         }
 
-        User user = userRepository.findFirstByEmail(email).orElseGet(() -> {
-            User newUser = new User();
-            newUser.setProvider(SignupProvider.EMAIL);
-            newUser.setProviderUserId(null);
-            newUser.setEmail(email);
-            return userRepository.save(newUser);
-        });
-
-        saveIdentifierCode(user, code);
+        User user = savedCode.getUser();
 
         TokenType tokenType = user.isVerified() ? TokenType.VERIFIED : TokenType.REGISTER;
         String token = jwtTokenProvider.generateToken(user.getId(), tokenType);
@@ -163,14 +157,13 @@ public class AuthService {
             throw new IllegalArgumentException("code is required.");
         }
 
-        EmailIdentifierCode savedCode = emailIdentifierCodeRepository.findByEmail(email)
+        IdentifierCode savedCode = identifierCodeRepository.findTopByUserEmailOrderByIdDesc(email)
                 .orElseThrow(() -> new IllegalArgumentException("identifier code not found for email."));
         if (!savedCode.getCode().equals(code)) {
             throw new IllegalArgumentException("identifier code is invalid.");
         }
 
-        User user = userRepository.findFirstByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("user not found for email."));
+        User user = savedCode.getUser();
         return issueTabletTokenForExisting(user);
     }
 
@@ -373,14 +366,12 @@ public class AuthService {
         boolean codeSent = false;
 
         if (user.getEmail() != null) {
-            String code = issueEmailIdentifierCode(user.getEmail());
-            saveIdentifierCode(user, code);
+            String code = issueIdentifierCode(user);
             notificationService.sendEmailCode(user.getEmail(), code, language);
             sentTo = "EMAIL:" + user.getEmail();
             codeSent = true;
         } else if (user.getPhoneNumber() != null) {
-            String code = generate6DigitCode();
-            saveIdentifierCode(user, code);
+            String code = issueIdentifierCode(user);
             notificationService.sendSmsCode(user.getPhoneNumber(), code);
             sentTo = "PHONE:" + user.getPhoneNumber();
             codeSent = true;
@@ -442,28 +433,21 @@ public class AuthService {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }
 
-    private String issueEmailIdentifierCode(String email) {
-        String normalizedEmail = blankToNull(email);
-        if (normalizedEmail == null) {
-            throw new IllegalArgumentException("email is required.");
-        }
-        String code = generateUniqueEmailIdentifierCode(normalizedEmail);
-        EmailIdentifierCode entity = emailIdentifierCodeRepository.findByEmail(normalizedEmail).orElseGet(EmailIdentifierCode::new);
-        entity.setEmail(normalizedEmail);
-        entity.setCode(code);
-        emailIdentifierCodeRepository.save(entity);
+    private String issueIdentifierCode(User user) {
+        String code = generateUniqueIdentifierCode();
+        saveIdentifierCode(user, code);
         return code;
     }
 
-    private String generateUniqueEmailIdentifierCode(String email) {
+    private String generateUniqueIdentifierCode() {
         for (int attempt = 1; attempt <= CODE_GENERATION_MAX_ATTEMPTS; attempt++) {
             String code = generate6DigitCode();
-            if (!emailIdentifierCodeRepository.existsByCodeAndEmailNot(code, email)) {
+            if (!identifierCodeRepository.existsByCode(code)) {
                 return code;
             }
-            log.info("Email identifier code collision detected. attempt={} codeSuffix={}", attempt, codeSuffix(code));
+            log.info("Identifier code collision detected. attempt={} codeSuffix={}", attempt, codeSuffix(code));
         }
-        throw new IllegalStateException("failed to generate unique email identifier code.");
+        throw new IllegalStateException("failed to generate unique identifier code.");
     }
 
     private String maskEmail(String email) {
