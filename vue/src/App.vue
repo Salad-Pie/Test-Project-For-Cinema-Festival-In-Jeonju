@@ -763,12 +763,7 @@ async function exchangeOAuthCode() {
     state.loginResult = result
     saveIdeaContestLogin(result.userId)
     saveIdeaContestAuthToken(result.registerToken)
-    const redirectPath = getGlobalRedirectPath() || getRedirectPathFromOAuthState()
-    if (redirectPath) {
-      setGlobalRedirectPath(redirectPath)
-      clearGlobalRedirectPath()
-      window.location.href = redirectPath
-    }
+    redirectAfterLogin()
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -806,11 +801,7 @@ async function loginEmailWithIdentifier() {
     saveIdeaContestLogin(result.userId)
     saveIdeaContestAuthToken(result.registerToken)
     state.message = t('auth.emailLoginSuccess')
-    const redirectPath = getGlobalRedirectPath()
-    if (redirectPath) {
-      clearGlobalRedirectPath()
-      window.location.href = redirectPath
-    }
+    redirectAfterLogin()
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -831,11 +822,7 @@ async function verifyEmailLoginCode() {
     saveIdeaContestLogin(result.userId)
     saveIdeaContestAuthToken(result.registerToken)
     state.message = t('auth.emailSignupSuccess')
-    const redirectPath = getGlobalRedirectPath()
-    if (redirectPath) {
-      clearGlobalRedirectPath()
-      window.location.href = redirectPath
-    }
+    redirectAfterLogin()
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -862,6 +849,12 @@ function getRedirectPathFromOAuthState() {
   const payload = parseJwtPayload(callbackState)
   const redirect = typeof payload?.redirect === 'string' ? payload.redirect : ''
   return redirect.startsWith('/') ? redirect : ''
+}
+
+function redirectAfterLogin() {
+  const redirectPath = getGlobalRedirectPath() || getRedirectPathFromOAuthState() || '/'
+  clearGlobalRedirectPath()
+  window.location.href = redirectPath
 }
 
 function goEmailLoginPage() {
