@@ -299,6 +299,12 @@ public class AuthService {
         NameConversionSource nameConversionSource = resolveNameConversionSource(language, nameConversion, koreanNameOverride);
 
         Signature signature = signatureRepository.findByUserId(userId).orElseGet(Signature::new);
+        if (signature.getId() != null) {
+            log.info("Existing signature row will be updated. userId={} signatureId={}", userId, signature.getId());
+            deletePreviousSignatureFiles(signature);
+        }
+
+        // 기존 서명 정보를 갱신하지 않고, 항상 신규 row를 생성하여 삽입한다.
         signature.setUser(user);
         signature.setOriginalS3Key(uploadedImage.s3Key());
         signature.setOriginalFileSize(uploadedImage.fileSize());
@@ -332,6 +338,20 @@ public class AuthService {
                 saved.getOcrStatus(),
                 saved.getOcrConfidence()
         );
+    }
+
+    private void deletePreviousSignatureFiles(Signature signature) {
+        if (signature.getOriginalS3Key() != null && !signature.getOriginalS3Key().isBlank()) {
+            s3UploadService.deleteObject(signature.getOriginalS3Key());
+        }
+        if (signature.getPreprocessedS3Key() != null && !signature.getPreprocessedS3Key().isBlank()) {
+            s3UploadService.deleteObject(signature.getPreprocessedS3Key());
+            signature.setPreprocessedS3Key(null);
+        }
+        if (signature.getOcrRawResponseS3Key() != null && !signature.getOcrRawResponseS3Key().isBlank()) {
+            s3UploadService.deleteObject(signature.getOcrRawResponseS3Key());
+            signature.setOcrRawResponseS3Key(null);
+        }
     }
 
     public byte[] renderSignatureImage(String verifiedToken, SignatureRenderRequest request) {

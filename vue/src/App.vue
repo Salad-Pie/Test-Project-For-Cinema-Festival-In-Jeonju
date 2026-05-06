@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { apiFetchWithBase, createApiFetch, parseErrorResponse } from './api/client'
 import { apiBase, apiRoot, ideaAuthApiBase } from './config/api'
@@ -34,6 +34,7 @@ const isEmailSignupPage = computed(() => routePath.startsWith('/signup/email'))
 const isOauthCallbackPage = computed(() => routePath.startsWith('/oauth/callback'))
 const isTabletPage = computed(() => routePath.startsWith('/tablet'))
 const isCertificateDownloadPage = computed(() => routePath.startsWith('/certificate-download'))
+const isEndingCreditsPage = computed(() => routePath.startsWith('/ending-credits'))
 const isIdentifierCodeReissuePage = computed(() => routePath.startsWith('/identifier-code-reissue'))
 const isSuccessPage = computed(() => routePath === '/success')
 const isBootstrapLoginPage = computed(() => !isOriginalRoute && routePath.startsWith('/login-page'))
@@ -64,6 +65,7 @@ const publicRoutePages = [
   { key: 'identifierReissue.title', href: '/identifier-code-reissue' },
   { key: 'tablet.verifyTitle', href: '/tablet' },
   { key: 'certificateDownload.title', href: '/certificate-download' },
+  { href: '/ending-credits', label: '인도네시아 팸투어 엔딩 크레딧' },
   { key: 'nav.ideaContest', href: '/idea-contest' },
   { key: 'nav.sponsorshipApplication', href: '/sponsorship-application' },
   { key: 'nav.streetCollaboration', href: '/street-collaboration' },
@@ -189,6 +191,15 @@ const state = reactive({
   verifyCode: '',
   verifiedToken: '',
   certificateDownloadCode: '',
+  endingCredits: {
+    code: '',
+    entries: [],
+    isFullscreen: false,
+    leadMessage: '',
+    rollDurationSeconds: 18,
+    rollGapPx: 72,
+    highlightedCodes: {},
+  },
   identifierReissue: {
     message: '',
   },
@@ -199,9 +210,92 @@ const state = reactive({
 
 const tabletToken = computed(() => new URLSearchParams(window.location.search).get('token') || '')
 const canvasRef = ref(null)
+const endingCreditsShellRef = ref(null)
+const endingCreditsHighlightTimer = ref(null)
 const drawing = ref(false)
 const sponsorshipPaymentProviderOptions = computed(
   () => sponsorshipPaymentProviderOptionsByType[state.sponsorship.paymentMethodType] || []
+)
+const endingCreditsRouteLabel = computed(() => {
+  if (locale.value === 'ko') return '인도네시아 팸투어 엔딩 크레딧'
+  if (locale.value === 'ja') return 'インドネシア ファムツアー エンディングクレジット'
+  if (locale.value === 'zh') return '印度尼西亚考察团片尾字幕'
+  return 'Indonesia Fam Tour Ending Credits'
+})
+const endingCreditsText = computed(() => {
+  if (locale.value === 'ko') {
+    return {
+      title: '인도네시아 팸투어 엔딩 크레딧',
+      description: '식별자 코드를 입력하면 참여자의 영어 이름, 한글 이름, 서예 서명 이미지를 화면에 표시합니다.',
+      groupTitle: 'Special Thanks',
+      groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
+      inputLabel: '6자리 식별자 코드',
+      inputPlaceholder: '숫자 6자리를 입력하세요',
+      button: '엔딩 크레딧 불러오기',
+      englishName: '영어 이름',
+      koreanName: '한글 이름',
+      signature: '서예 서명',
+      resultTitle: 'Ending Credit Cast',
+    }
+  }
+  if (locale.value === 'ja') {
+    return {
+      title: 'インドネシア ファムツアー エンディングクレジット',
+      description: '識別コードを入力すると、英語名、韓国語名、書芸署名を表示します。',
+      groupTitle: 'Special Thanks',
+      groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
+      inputLabel: '6桁の識別コード',
+      inputPlaceholder: '6桁の数字を入力してください',
+      button: 'エンディングクレジットを表示',
+      englishName: 'English Name',
+      koreanName: 'Korean Name',
+      signature: 'Calligraphy Signature',
+      resultTitle: 'Ending Credit Cast',
+    }
+  }
+  if (locale.value === 'zh') {
+    return {
+      title: '印度尼西亚考察团片尾字幕',
+      description: '输入识别码后，可显示英文名、韩文名和书法签名图像。',
+      groupTitle: 'Special Thanks',
+      groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
+      inputLabel: '6位识别码',
+      inputPlaceholder: '请输入6位数字',
+      button: '加载片尾字幕',
+      englishName: 'English Name',
+      koreanName: 'Korean Name',
+      signature: 'Calligraphy Signature',
+      resultTitle: 'Ending Credit Cast',
+    }
+  }
+  return {
+    title: 'Indonesia Fam Tour Ending Credits',
+    description: 'Enter the 6-digit identifier code to display the participant English name, Korean name, and calligraphy signature.',
+    groupTitle: 'Special Thanks',
+    groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
+    inputLabel: '6-digit identifier code',
+    inputPlaceholder: 'Enter 6 digits',
+    button: 'Load Ending Credits',
+    englishName: 'English Name',
+    koreanName: 'Korean Name',
+    signature: 'Calligraphy Signature',
+    resultTitle: 'Ending Credit Cast',
+  }
+})
+const endingCreditsMessageGroups = computed(() => [
+  ...(state.endingCredits.leadMessage.trim()
+    ? [{
+        id: 'lead',
+        title: 'Opening Message',
+        lines: state.endingCredits.leadMessage
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean),
+      }]
+    : []),
+])
+const endingCreditsRollEntries = computed(() =>
+  state.endingCredits.entries.filter((entry) => entry.hasKoreanName || entry.hasSignature || entry.hasEnglishName)
 )
 const isCustomSponsorshipPaymentProvider = computed(
   () => state.sponsorship.paymentProviderPreset === customPaymentProviderValue
@@ -221,6 +315,60 @@ const currentRedirectPath = computed(() => window.location.pathname)
 
 function pageHref(pathname) {
   return isOriginalRoute ? `/original${pathname}` : pathname
+}
+
+function syncEndingCreditsFullscreenState() {
+  state.endingCredits.isFullscreen = !!document.fullscreenElement
+}
+
+function clearEndingCreditsHighlightInterval() {
+  if (endingCreditsHighlightTimer.value) {
+    clearInterval(endingCreditsHighlightTimer.value)
+    endingCreditsHighlightTimer.value = null
+  }
+}
+
+function markEndingCreditsHighlight(code) {
+  if (!code || state.endingCredits.highlightedCodes[code]) {
+    return
+  }
+  state.endingCredits.highlightedCodes[code] = true
+  window.setTimeout(() => {
+    delete state.endingCredits.highlightedCodes[code]
+  }, 1000)
+}
+
+function monitorEndingCreditsCenterLine() {
+  const shell = endingCreditsShellRef.value
+  if (!shell) {
+    return
+  }
+
+  const messageCard = shell.querySelector('.ending-credits-message-card')
+  if (!messageCard) {
+    return
+  }
+
+  const cardRect = messageCard.getBoundingClientRect()
+  const centerY = cardRect.top + cardRect.height / 2
+  const threshold = Math.max(16, Math.min(44, cardRect.height * 0.04))
+  const items = shell.querySelectorAll('.ending-credits-cast-group[data-code]')
+
+  items.forEach((item) => {
+    const rect = item.getBoundingClientRect()
+    const itemCenterY = rect.top + rect.height / 2
+    if (Math.abs(itemCenterY - centerY) <= threshold) {
+      markEndingCreditsHighlight(item.dataset.code)
+    }
+  })
+}
+
+function ensureEndingCreditsHighlightInterval() {
+  clearEndingCreditsHighlightInterval()
+  if (!isEndingCreditsPage.value) {
+    return
+  }
+  endingCreditsHighlightTimer.value = window.setInterval(monitorEndingCreditsCenterLine, 120)
 }
 
 function setLocale(next) {
@@ -345,6 +493,14 @@ onMounted(async () => {
     setGlobalRedirectPath(loginRedirectPath)
   }
 
+  document.addEventListener('fullscreenchange', syncEndingCreditsFullscreenState)
+  ensureEndingCreditsHighlightInterval()
+
+})
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', syncEndingCreditsFullscreenState)
+  clearEndingCreditsHighlightInterval()
 })
 
 async function copyLocationAddress() {
@@ -411,6 +567,21 @@ watch(
       state.sponsorship.paymentProviderName = ''
     }
   },
+)
+
+watch(
+  () => [
+    isEndingCreditsPage.value,
+    state.endingCredits.entries.length,
+    state.endingCredits.rollDurationSeconds,
+    state.endingCredits.rollGapPx,
+    state.endingCredits.leadMessage,
+  ],
+  () => {
+    window.setTimeout(() => {
+      ensureEndingCreditsHighlightInterval()
+    }, 0)
+  }
 )
 
 async function submitIdeaContest() {
@@ -1081,6 +1252,107 @@ async function downloadCertificateArtifactByCode(path, filename) {
   }
 }
 
+function revokeEndingCreditsSignatureImage() {
+  for (const entry of state.endingCredits.entries) {
+    if (entry.signatureImageUrl) {
+      URL.revokeObjectURL(entry.signatureImageUrl)
+      entry.signatureImageUrl = ''
+    }
+  }
+}
+
+function onEndingCreditsCodeInput(event) {
+  state.endingCredits.code = String(event.target.value || '').replace(/\D/g, '').slice(0, 6)
+}
+
+function onEndingCreditsDurationInput(event) {
+  const next = Number(event.target.value || 18)
+  state.endingCredits.rollDurationSeconds = Math.min(60, Math.max(8, next))
+}
+
+function onEndingCreditsGapInput(event) {
+  const next = Number(event.target.value || 72)
+  state.endingCredits.rollGapPx = Math.min(180, Math.max(24, next))
+}
+
+async function addEndingCreditsEntry() {
+  state.loading = true
+  state.error = ''
+  state.message = ''
+
+  try {
+    const code = state.endingCredits.code.trim()
+    if (!/^\d{6}$/.test(code)) {
+      throw userError(endingCreditsText.value.inputPlaceholder)
+    }
+
+    if (state.endingCredits.entries.some((entry) => entry.code === code)) {
+      throw userError('이미 추가된 식별자 코드입니다.')
+    }
+
+    const entryRes = await fetch(`${apiRoot}/ending-credits/lookup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+    if (!entryRes.ok) throw new Error(await parseErrorResponse(entryRes, t('common.requestFailed')))
+
+    const entry = await entryRes.json()
+
+    const signatureRes = await fetch(`${apiRoot}/certificate-download/signature-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+    if (!signatureRes.ok) throw new Error(await parseErrorResponse(signatureRes, t('common.requestFailed')))
+
+    const signatureBlob = await signatureRes.blob()
+    state.endingCredits.entries.push({
+      code,
+      englishName: entry.englishName || '',
+      koreanName: entry.koreanName || '',
+      hasEnglishName: !!entry.hasEnglishName,
+      hasKoreanName: !!entry.hasKoreanName,
+      hasSignature: !!entry.hasSignature,
+      signatureImageUrl: URL.createObjectURL(signatureBlob),
+    })
+    state.endingCredits.code = ''
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
+async function showEndingCreditsFullscreen() {
+  state.error = ''
+  if (endingCreditsRollEntries.value.length === 0) {
+    setSafeError(userError('먼저 식별자 코드를 추가해 주세요.'))
+    return
+  }
+
+  const target = endingCreditsShellRef.value
+  if (!target || !target.requestFullscreen) {
+    setSafeError(userError('전체화면을 지원하지 않는 환경입니다.'))
+    return
+  }
+
+  try {
+    await target.requestFullscreen()
+    state.endingCredits.isFullscreen = true
+  } catch (_) {
+    setSafeError(userError('전체화면 전환에 실패했습니다.'))
+  }
+}
+
+function removeEndingCreditsEntry(code) {
+  const target = state.endingCredits.entries.find((entry) => entry.code === code)
+  if (target?.signatureImageUrl) {
+    URL.revokeObjectURL(target.signatureImageUrl)
+  }
+  state.endingCredits.entries = state.endingCredits.entries.filter((entry) => entry.code !== code)
+}
+
 function downloadSignatureImage() {
   return downloadSignatureArtifact('/auth/signature/render', 'signature-render.png', {
     fontFamily: 'Nanum Brush Script',
@@ -1111,7 +1383,7 @@ function downloadStoredCertificatePdf() {
 </script>
 
 <template>
-  <main :class="['container', { 'bootstrap-mode': isBootstrapRoute }]">
+  <main :class="['container', { 'bootstrap-mode': isBootstrapRoute, 'ending-credits-layout': isEndingCreditsPage }]">
     <div class="actions" style="justify-content: flex-end; margin-bottom: 8px">
       <label class="locale-select-label">
         <select :value="locale" aria-label="Language Select" @change="setLocale($event.target.value)">
@@ -1164,12 +1436,163 @@ function downloadStoredCertificatePdf() {
             <div class="row g-3">
               <div v-for="page in bootstrapPages" :key="page.href" class="col-12 col-md-6 col-lg-4">
                 <a class="btn btn-light border border-info-subtle shadow-sm w-100 py-3 fw-semibold text-info-emphasis bootstrap-hub-link" :href="page.href">
-                  {{ t(page.key) }}
+                  {{ page.label || t(page.key) }}
                 </a>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section v-if="isEndingCreditsPage" class="ending-credits-page">
+      <div ref="endingCreditsShellRef" class="ending-credits-shell" :class="{ 'ending-credits-shell-fullscreen': state.endingCredits.isFullscreen }">
+        <div class="ending-credits-hero">
+          <article class="ending-credits-poster-card">
+            <img :src="artistMeetingPosterUrl" alt="BackToScreen Poster" />
+          </article>
+
+          <article class="ending-credits-message-card">
+            <div
+              class="ending-credits-roll"
+              :style="{
+                '--ending-roll-duration': `${state.endingCredits.rollDurationSeconds}s`,
+                '--ending-roll-gap': `${state.endingCredits.rollGapPx}px`,
+              }"
+            >
+              <div
+                v-for="group in endingCreditsMessageGroups"
+                :key="group.id"
+                class="ending-credits-group"
+              >
+                <p class="ending-credits-group-title">{{ group.title }}</p>
+                <p
+                  v-for="line in group.lines"
+                  :key="`${group.id}-${line}`"
+                  class="ending-credits-group-line"
+                >
+                  {{ line }}
+                </p>
+              </div>
+
+              <div
+                v-for="entry in endingCreditsRollEntries"
+                :key="`roll-${entry.code}`"
+                :class="['ending-credits-cast-group', { 'is-highlighted': state.endingCredits.highlightedCodes[entry.code] }]"
+                :data-code="entry.code"
+              >
+                <p class="ending-credits-cast-code">CODE {{ entry.code }}</p>
+                <p v-if="entry.englishName" class="ending-credits-cast-line">{{ entry.englishName }}</p>
+                <p v-if="entry.koreanName" class="ending-credits-cast-line ending-credits-cast-line-korean">{{ entry.koreanName }}</p>
+                <img
+                  v-if="entry.signatureImageUrl"
+                  class="ending-credits-cast-signature"
+                  :src="entry.signatureImageUrl"
+                  alt="Calligraphy Signature"
+                />
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <article class="ending-credits-control-card">
+          <div class="ending-credits-control-header">
+            <h2>{{ endingCreditsText.title }}</h2>
+            <p>{{ endingCreditsText.description }}</p>
+          </div>
+          <div class="ending-credits-settings-grid">
+            <label class="ending-credits-field ending-credits-field-wide">
+              <span>최상단 첫 문구</span>
+              <textarea
+                v-model="state.endingCredits.leadMessage"
+                rows="3"
+                placeholder="가장 먼저 올라갈 문구를 줄바꿈으로 입력하세요"
+              />
+            </label>
+            <label class="ending-credits-field">
+              <span>롤링 속도(초)</span>
+              <input
+                :value="state.endingCredits.rollDurationSeconds"
+                type="number"
+                min="8"
+                max="60"
+                step="1"
+                @input="onEndingCreditsDurationInput"
+              />
+            </label>
+            <label class="ending-credits-field">
+              <span>항목 간격(px)</span>
+              <input
+                :value="state.endingCredits.rollGapPx"
+                type="number"
+                min="24"
+                max="180"
+                step="4"
+                @input="onEndingCreditsGapInput"
+              />
+            </label>
+          </div>
+          <div class="ending-credits-control-row">
+            <label class="ending-credits-field">
+              <span>{{ endingCreditsText.inputLabel }}</span>
+              <input
+                :value="state.endingCredits.code"
+                type="text"
+                maxlength="6"
+                inputmode="numeric"
+                :placeholder="endingCreditsText.inputPlaceholder"
+                @input="onEndingCreditsCodeInput"
+              />
+            </label>
+            <button :disabled="state.loading" @click="addEndingCreditsEntry">{{ endingCreditsText.button }}</button>
+            <button :disabled="state.loading || endingCreditsRollEntries.length === 0" @click="showEndingCreditsFullscreen">엔딩 크레딧 보기</button>
+          </div>
+        </article>
+
+        <article class="ending-credits-result-card">
+          <p class="ending-credits-result-title">{{ endingCreditsText.resultTitle }}</p>
+          <div class="ending-credits-list-wrap">
+            <table class="ending-credits-list-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>{{ endingCreditsText.englishName }}</th>
+                  <th>{{ endingCreditsText.koreanName }}</th>
+                  <th>{{ endingCreditsText.signature }}</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="entry in state.endingCredits.entries" :key="entry.code">
+                  <td>{{ entry.code }}</td>
+                  <td>
+                    <span class="ending-credits-ready-badge" :class="{ 'is-ready': entry.hasEnglishName }">
+                      {{ entry.hasEnglishName ? '준비됨' : '없음' }}
+                    </span>
+                    <strong v-if="entry.englishName">{{ entry.englishName }}</strong>
+                  </td>
+                  <td>
+                    <span class="ending-credits-ready-badge" :class="{ 'is-ready': entry.hasKoreanName }">
+                      {{ entry.hasKoreanName ? '준비됨' : '없음' }}
+                    </span>
+                    <strong v-if="entry.koreanName">{{ entry.koreanName }}</strong>
+                  </td>
+                  <td>
+                    <span class="ending-credits-ready-badge" :class="{ 'is-ready': entry.hasSignature }">
+                      {{ entry.hasSignature ? '준비됨' : '없음' }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="ending-credits-delete-button" type="button" @click="removeEndingCreditsEntry(entry.code)">삭제</button>
+                  </td>
+                </tr>
+                <tr v-if="state.endingCredits.entries.length === 0">
+                  <td colspan="5">추가된 식별자 코드가 없습니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
       </div>
     </section>
 

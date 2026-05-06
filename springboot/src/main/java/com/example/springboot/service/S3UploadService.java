@@ -26,6 +26,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
@@ -219,6 +220,22 @@ public class S3UploadService {
                 .build();
         log.info("S3 object download requested. key={}", key);
         return s3Client.getObjectAsBytes(request).asByteArray();
+    }
+
+    public void deleteObject(String key) {
+        if (bucket == null || bucket.isBlank()) {
+            throw new BusinessException(ErrorCode.STORAGE_NOT_CONFIGURED);
+        }
+        if (key == null || key.isBlank()) {
+            return;
+        }
+
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+        s3Client.deleteObject(request);
+        log.info("S3 object deleted. key={}", key);
     }
 
     public record UploadedImage(String s3Key, Long fileSize) {

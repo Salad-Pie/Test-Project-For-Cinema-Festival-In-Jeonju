@@ -2,6 +2,7 @@ package com.example.springboot.service;
 
 import com.example.springboot.domain.IdentifierCode;
 import com.example.springboot.domain.Signature;
+import com.example.springboot.dto.EndingCreditsEntryResponse;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.IdentifierCodeRepository;
@@ -49,8 +50,31 @@ public class CertificateDownloadService {
         String koreanName = resolveKoreanName(signature);
         String englishName = resolveEnglishName(signature);
         log.info("Certificate PDF download requested. signatureId={} codeSuffix={}", signature.getId(), codeSuffix(code));
-        // 서명 이미지는 저장하지 않고 다운로드 요청마다 한글 이름 기준으로 서예 이미지화한다.
+        // 증명서 다운로드 시마다 저장된 이름을 기준으로 다시 서예 렌더링을 적용한다.
         return certificatePdfService.renderKoreanCalligraphyCertificate(englishName, koreanName, null);
+    }
+
+    @Transactional(readOnly = true)
+    public EndingCreditsEntryResponse lookupEndingCreditsByCode(String code) {
+        Signature signature = findSignatureByCode(code);
+        String englishName = normalizeBlank(signature.getEnglishName());
+        String koreanName = normalizeBlank(resolveKoreanName(signature));
+
+        log.info(
+                "Ending credits entry lookup requested. signatureId={} codeSuffix={} hasEnglishName={} hasKoreanName={}",
+                signature.getId(),
+                codeSuffix(code),
+                englishName != null,
+                koreanName != null
+        );
+
+        return new EndingCreditsEntryResponse(
+                englishName,
+                koreanName,
+                englishName != null,
+                koreanName != null,
+                true
+        );
     }
 
     private Signature findSignatureByCode(String code) {
@@ -72,6 +96,13 @@ public class CertificateDownloadService {
     private String blankToDefault(String value, String defaultValue) {
         if (value == null || value.isBlank()) {
             return defaultValue == null || defaultValue.isBlank() ? "서명" : defaultValue.trim();
+        }
+        return value.trim();
+    }
+
+    private String normalizeBlank(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
         }
         return value.trim();
     }
