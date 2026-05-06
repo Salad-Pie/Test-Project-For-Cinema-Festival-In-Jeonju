@@ -56,6 +56,7 @@ const isPdRecruitPage = computed(() => routePath.startsWith('/pd-recruit'))
 const isLocationPage = computed(() => routePath.startsWith('/location'))
 const isAdminDashboardPage = computed(() => routePath === '/admin' || routePath === '/admin/')
 const isAdminReservationsPage = computed(() => routePath.startsWith('/admin/reservations'))
+const isAdminSignaturesPage = computed(() => routePath.startsWith('/admin/signatures'))
 const publicRoutePages = [
   { key: 'nav.loginPage', href: '/login-page' },
   { key: 'auth.emailLogin', href: '/login/email' },
@@ -179,6 +180,9 @@ const state = reactive({
     date: '',
     time: '',
     projectKey: '',
+  },
+  adminSignatures: {
+    items: [],
   },
   mapError: '',
   successMessage: '',
@@ -317,7 +321,7 @@ onMounted(async () => {
     redirectToLogin(currentRedirectPath.value)
     return
   }
-  if (isAdminDashboardPage.value || isAdminReservationsPage.value) {
+  if (isAdminDashboardPage.value || isAdminReservationsPage.value || isAdminSignaturesPage.value) {
     if (!isIdeaContestLoggedIn()) {
       redirectToLogin(currentRedirectPath.value)
       return
@@ -327,6 +331,9 @@ onMounted(async () => {
       state.adminAccess = true
       if (isAdminReservationsPage.value) {
         await fetchAdminReservations()
+      }
+      if (isAdminSignaturesPage.value) {
+        await fetchAdminSignatures()
       }
     } catch (e) {
       state.adminAccess = false
@@ -737,6 +744,24 @@ async function fetchAdminReservations() {
     })
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     state.adminReservations.items = await res.json()
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
+async function fetchAdminSignatures() {
+  state.loading = true
+  state.error = ''
+  try {
+    const authToken = getIdeaContestAuthToken()
+    if (!authToken) throw userError(t('common.loginTokenRequired'))
+    const res = await fetch(`${apiRoot}/admin/signatures`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    state.adminSignatures.items = await res.json()
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -1517,10 +1542,11 @@ function downloadStoredCertificatePdf() {
       <h2>{{ t('admin.dashboardTitle') }}</h2>
       <div class="actions">
         <a class="route-button" :href="pageHref('/admin/reservations')">{{ t('admin.goToReservations') }}</a>
+        <a class="route-button" :href="pageHref('/admin/signatures')">{{ t('admin.goToSignatures') }}</a>
       </div>
     </section>
 
-    <section v-if="(isAdminDashboardPage || isAdminReservationsPage) && state.adminAccess === false" class="card">
+    <section v-if="(isAdminDashboardPage || isAdminReservationsPage || isAdminSignaturesPage) && state.adminAccess === false" class="card">
       <h2>{{ t('common.error') }}</h2>
       <p class="error">{{ t('admin.accessDenied') }}</p>
     </section>
@@ -1586,6 +1612,56 @@ function downloadStoredCertificatePdf() {
             </tr>
             <tr v-if="state.adminReservations.items.length === 0">
               <td colspan="13">{{ t('adminReservations.empty') }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section v-if="isAdminSignaturesPage && state.adminAccess === true" class="card admin-reservations">
+      <h2>{{ t('adminSignatures.title') }}</h2>
+      <div class="actions">
+        <button :disabled="state.loading" @click="fetchAdminSignatures">{{ t('adminSignatures.refresh') }}</button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>{{ t('adminSignatures.id') }}</th>
+              <th>{{ t('adminSignatures.userId') }}</th>
+              <th>{{ t('adminSignatures.originalName') }}</th>
+              <th>{{ t('adminSignatures.recognizedText') }}</th>
+              <th>{{ t('adminSignatures.englishName') }}</th>
+              <th>{{ t('adminSignatures.koreanName') }}</th>
+              <th>{{ t('adminSignatures.koreanMeaningText') }}</th>
+              <th>{{ t('adminSignatures.nameLanguage') }}</th>
+              <th>{{ t('adminSignatures.detectedLanguage') }}</th>
+              <th>{{ t('adminSignatures.conversionSource') }}</th>
+              <th>{{ t('adminSignatures.ocrStatus') }}</th>
+              <th>{{ t('adminSignatures.ocrConfidence') }}</th>
+              <th>{{ t('adminSignatures.ocrProcessedAt') }}</th>
+              <th>{{ t('adminSignatures.updatedAt') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in state.adminSignatures.items" :key="item.id">
+              <td>{{ item.id || '-' }}</td>
+              <td>{{ item.userId || '-' }}</td>
+              <td>{{ item.originalName || '-' }}</td>
+              <td>{{ item.recognizedText || '-' }}</td>
+              <td>{{ item.englishName || '-' }}</td>
+              <td>{{ item.koreanName || '-' }}</td>
+              <td>{{ item.koreanMeaningText || '-' }}</td>
+              <td>{{ item.nameLanguage || '-' }}</td>
+              <td>{{ item.detectedLanguage || '-' }}</td>
+              <td>{{ item.nameConversionSource || '-' }}</td>
+              <td>{{ item.ocrStatus || '-' }}</td>
+              <td>{{ item.ocrConfidence ?? '-' }}</td>
+              <td>{{ item.ocrProcessedAt || '-' }}</td>
+              <td>{{ item.updatedAt || '-' }}</td>
+            </tr>
+            <tr v-if="state.adminSignatures.items.length === 0">
+              <td colspan="14">{{ t('adminSignatures.empty') }}</td>
             </tr>
           </tbody>
         </table>
