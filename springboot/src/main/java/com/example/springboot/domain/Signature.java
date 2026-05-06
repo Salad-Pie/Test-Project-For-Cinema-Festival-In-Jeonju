@@ -27,6 +27,13 @@ public class Signature {
     @Lob
     private String recognizedText;
 
+    @Column(name = "original_name", length = 150)
+    private String originalName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "name_language", length = 20)
+    private NameLanguage nameLanguage;
+
     @Lob
     @Column(name = "korean_text")
     private String koreanText;
@@ -34,6 +41,16 @@ public class Signature {
     @Lob
     @Column(name = "korean_meaning_text")
     private String koreanMeaningText;
+
+    @Column(name = "english_name", length = 100)
+    private String englishName;
+
+    @Column(name = "korean_name", length = 100)
+    private String koreanName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "name_conversion_source", length = 30)
+    private NameConversionSource nameConversionSource;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "detected_language", nullable = false, length = 10)
@@ -128,6 +145,22 @@ public class Signature {
         this.recognizedText = recognizedText;
     }
 
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
+    }
+
+    public NameLanguage getNameLanguage() {
+        return nameLanguage;
+    }
+
+    public void setNameLanguage(NameLanguage nameLanguage) {
+        this.nameLanguage = nameLanguage;
+    }
+
     public String getKoreanText() {
         return koreanText;
     }
@@ -142,6 +175,30 @@ public class Signature {
 
     public void setKoreanMeaningText(String koreanMeaningText) {
         this.koreanMeaningText = koreanMeaningText;
+    }
+
+    public String getEnglishName() {
+        return englishName;
+    }
+
+    public void setEnglishName(String englishName) {
+        this.englishName = englishName;
+    }
+
+    public String getKoreanName() {
+        return koreanName;
+    }
+
+    public void setKoreanName(String koreanName) {
+        this.koreanName = koreanName;
+    }
+
+    public NameConversionSource getNameConversionSource() {
+        return nameConversionSource;
+    }
+
+    public void setNameConversionSource(NameConversionSource nameConversionSource) {
+        this.nameConversionSource = nameConversionSource;
     }
 
     public SignatureLanguage getDetectedLanguage() {

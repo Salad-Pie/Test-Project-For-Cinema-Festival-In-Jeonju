@@ -172,6 +172,8 @@ const state = reactive({
   successMessage: '',
   verifyCode: '',
   verifiedToken: '',
+  signatureNameLanguage: 'EN',
+  signatureKoreanName: '',
   adminAccess: null,
 })
 
@@ -933,6 +935,10 @@ async function submitSignature() {
     })
     const formData = new FormData()
     formData.append('signatureImage', signatureBlob, 'signature.png')
+    formData.append('nameLanguage', state.signatureNameLanguage)
+    if (state.signatureKoreanName.trim()) {
+      formData.append('koreanName', state.signatureKoreanName.trim())
+    }
 
     const res = await fetch(`${apiRoot}/auth/signature`, {
       method: 'POST',
@@ -1521,6 +1527,25 @@ function downloadCertificateSample() {
       <button :disabled="state.loading" @click="verifyOnTablet">{{ t('tablet.verify') }}</button>
 
       <h2>{{ t('tablet.signatureTitle') }}</h2>
+      <label class="field">
+        <span>{{ t('tablet.nameLanguage') }}</span>
+        <select v-model="state.signatureNameLanguage">
+          <option value="EN">{{ t('tablet.languageOptions.en') }}</option>
+          <option value="FR">{{ t('tablet.languageOptions.fr') }}</option>
+          <option value="DE">{{ t('tablet.languageOptions.de') }}</option>
+          <option value="JA">{{ t('tablet.languageOptions.ja') }}</option>
+          <option value="ZH">{{ t('tablet.languageOptions.zh') }}</option>
+          <option value="VI">{{ t('tablet.languageOptions.vi') }}</option>
+          <option value="ES">{{ t('tablet.languageOptions.es') }}</option>
+          <option value="IT">{{ t('tablet.languageOptions.it') }}</option>
+          <option value="OTHER">{{ t('tablet.languageOptions.other') }}</option>
+        </select>
+      </label>
+      <input
+        v-model="state.signatureKoreanName"
+        type="text"
+        :placeholder="t('tablet.koreanNamePlaceholder')"
+      />
       <canvas
         ref="canvasRef"
         class="signature"

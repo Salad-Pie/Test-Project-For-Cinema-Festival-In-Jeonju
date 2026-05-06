@@ -55,10 +55,12 @@ public class AuthController {
     @PostMapping(value = "/signature", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SignatureResponse> saveSignature(
             @RequestHeader("Authorization") String authorization,
-            @RequestPart("signatureImage") MultipartFile signatureImage
+            @RequestPart("signatureImage") MultipartFile signatureImage,
+            @RequestPart(value = "nameLanguage", required = false) String nameLanguage,
+            @RequestPart(value = "koreanName", required = false) String koreanName
     ) {
         String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(authService.saveSignature(token, signatureImage));
+        return ResponseEntity.ok(authService.saveSignature(token, signatureImage, nameLanguage, koreanName));
     }
 
     @PostMapping(value = "/signature/render", produces = MediaType.IMAGE_PNG_VALUE)
@@ -81,5 +83,25 @@ public class AuthController {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .body(authService.renderCertificateSample(token, request));
+    }
+
+    @PostMapping(value = "/signature/certificate-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> renderKoreanCalligraphyCertificatePdf(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody(required = false) CertificateSampleRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(authService.renderKoreanCalligraphyCertificatePdf(token, request));
+    }
+
+    @PostMapping(value = "/signature/certificate-pdf/sample", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> renderKoreanCalligraphyCertificatePdfSample(
+            @RequestBody(required = false) CertificateSampleRequest request
+    ) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(authService.renderKoreanCalligraphyCertificatePdfSample(request));
     }
 }

@@ -1,6 +1,8 @@
 package com.example.springboot.service;
 
 import com.example.springboot.domain.IdentifierCode;
+import com.example.springboot.domain.NameConversionSource;
+import com.example.springboot.domain.NameLanguage;
 import com.example.springboot.domain.OcrProvider;
 import com.example.springboot.domain.OcrStatus;
 import com.example.springboot.domain.Signature;
@@ -44,6 +46,7 @@ public class AuthService {
     private final EnglishKoreanNameService englishKoreanNameService;
     private final GoogleTranslationService googleTranslationService;
     private final SignatureImageService signatureImageService;
+    private final CertificatePdfService certificatePdfService;
     private final JwtTokenProvider jwtTokenProvider;
     private final String tabletBaseUrl;
 
@@ -58,6 +61,7 @@ public class AuthService {
             EnglishKoreanNameService englishKoreanNameService,
             GoogleTranslationService googleTranslationService,
             SignatureImageService signatureImageService,
+            CertificatePdfService certificatePdfService,
             JwtTokenProvider jwtTokenProvider,
             @Value("${app.tablet-base-url}") String tabletBaseUrl
     ) {
@@ -71,6 +75,7 @@ public class AuthService {
         this.englishKoreanNameService = englishKoreanNameService;
         this.googleTranslationService = googleTranslationService;
         this.signatureImageService = signatureImageService;
+        this.certificatePdfService = certificatePdfService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.tabletBaseUrl = tabletBaseUrl;
     }
@@ -228,7 +233,7 @@ public class AuthService {
         return new VerifyResponse(user.getId(), verifiedToken, true);
     }
 
-    public SignatureResponse saveSignature(String verifiedToken, MultipartFile signatureImage) {
+    public SignatureResponse saveSignature(String verifiedToken, MultipartFile signatureImage, String nameLanguageRaw, String koreanNameOverrideRaw) {
         validateTokenType(verifiedToken, TokenType.VERIFIED);
         Long userId = jwtTokenProvider.extractUserId(verifiedToken);
 
@@ -246,8 +251,14 @@ public class AuthService {
         if (recognizedText == null || language == null) {
             throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
         }
-        String koreanText = resolveKoreanText(recognizedText, language);
+        NameLanguage nameLanguage = normalizeNameLanguage(nameLanguageRaw, language);
+        String koreanNameOverride = blankToNull(koreanNameOverrideRaw);
+        EnglishKoreanNameService.ConversionResult nameConversion = resolveNameConversion(recognizedText, language, nameLanguage, koreanNameOverride);
+        String koreanText = resolveKoreanText(recognizedText, language, nameConversion);
         String koreanMeaningText = resolveKoreanMeaningText(recognizedText, language);
+        String englishName = resolveEnglishName(recognizedText, language);
+        String koreanName = resolveKoreanName(recognizedText, koreanText, language);
+        NameConversionSource nameConversionSource = resolveNameConversionSource(language, nameConversion, koreanNameOverride);
 
         Signature signature = signatureRepository.findByUserId(userId).orElseGet(Signature::new);
         signature.setUser(user);
@@ -255,8 +266,13 @@ public class AuthService {
         signature.setOriginalFileSize(uploadedImage.fileSize());
         signature.setOriginalContentType("image/png");
         signature.setRecognizedText(recognizedText);
+        signature.setOriginalName(recognizedText);
+        signature.setNameLanguage(nameLanguage);
         signature.setKoreanText(koreanText);
         signature.setKoreanMeaningText(koreanMeaningText);
+        signature.setEnglishName(englishName);
+        signature.setKoreanName(koreanName);
+        signature.setNameConversionSource(nameConversionSource);
         signature.setDetectedLanguage(language);
         signature.setOcrConfidence(ocrResult.confidence());
         signature.setOcrProvider(OcrProvider.GOOGLE_VISION);
@@ -267,8 +283,13 @@ public class AuthService {
         return new SignatureResponse(
                 saved.getId(),
                 saved.getRecognizedText(),
+                saved.getOriginalName(),
+                saved.getNameLanguage(),
                 saved.getKoreanText(),
                 saved.getKoreanMeaningText(),
+                saved.getEnglishName(),
+                saved.getKoreanName(),
+                saved.getNameConversionSource(),
                 saved.getDetectedLanguage(),
                 saved.getOcrStatus(),
                 saved.getOcrConfidence()
@@ -307,6 +328,33 @@ public class AuthService {
         }
         String defaultSignature = signature.getKoreanText() == null ? signature.getRecognizedText() : signature.getKoreanText();
         return signatureImageService.renderCertificateSample(request, defaultName, defaultSignature);
+    }
+
+    public byte[] renderKoreanCalligraphyCertificatePdf(String verifiedToken, CertificateSampleRequest request) {
+        validateTokenType(verifiedToken, TokenType.VERIFIED);
+        Long userId = jwtTokenProvider.extractUserId(verifiedToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("user not found."));
+        Signature signature = signatureRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("signature not found."));
+
+        String defaultName = user.getName();
+        if (defaultName == null || defaultName.isBlank()) {
+            defaultName = user.getNickname();
+        }
+        String defaultEnglishName = blankToDefault(signature.getEnglishName(), defaultName);
+        String defaultKoreanName = blankToDefault(signature.getKoreanName(), signature.getKoreanText());
+        defaultKoreanName = blankToDefault(defaultKoreanName, signature.getRecognizedText());
+        String englishName = blankToDefault(request == null ? null : request.englishName(), defaultEnglishName);
+        String koreanName = blankToDefault(request == null ? null : request.koreanName(), defaultKoreanName);
+        byte[] originalSignature = s3UploadService.downloadObjectBytes(signature.getOriginalS3Key());
+        return certificatePdfService.renderKoreanCalligraphyCertificate(englishName, koreanName, originalSignature);
+    }
+
+    public byte[] renderKoreanCalligraphyCertificatePdfSample(CertificateSampleRequest request) {
+        String englishName = blankToDefault(request == null ? null : request.englishName(), "ALEXANDER MICHAEL JOHNSON");
+        String koreanName = blankToDefault(request == null ? null : request.koreanName(), "김도윤");
+        return certificatePdfService.renderKoreanCalligraphyCertificate(englishName, koreanName, null);
     }
 
     private LoginResponse issueIdentifierAndRegisterToken(User user, String language) {
@@ -390,6 +438,11 @@ public class AuthService {
         return value;
     }
 
+    private String blankToDefault(String value, String defaultValue) {
+        String normalized = blankToNull(value);
+        return normalized == null ? defaultValue : normalized;
+    }
+
     private String normalizeLanguage(String languageRaw) {
         String language = blankToNull(languageRaw);
         if (language == null) {
@@ -430,11 +483,11 @@ public class AuthService {
         return SignatureLanguage.EN;
     }
 
-    private String resolveKoreanText(String recognizedText, SignatureLanguage language) {
+    private String resolveKoreanText(String recognizedText, SignatureLanguage language, EnglishKoreanNameService.ConversionResult nameConversion) {
         if (language == SignatureLanguage.KO) {
             return recognizedText;
         }
-        return englishKoreanNameService.toKoreanPronunciation(recognizedText);
+        return nameConversion.koreanName();
     }
 
     private String resolveKoreanMeaningText(String recognizedText, SignatureLanguage language) {
@@ -442,6 +495,61 @@ public class AuthService {
             return recognizedText;
         }
         return googleTranslationService.translateEnglishToKorean(recognizedText);
+    }
+
+    private String resolveEnglishName(String recognizedText, SignatureLanguage language) {
+        if (language == SignatureLanguage.EN) {
+            return recognizedText;
+        }
+        return null;
+    }
+
+    private String resolveKoreanName(String recognizedText, String koreanText, SignatureLanguage language) {
+        if (language == SignatureLanguage.KO) {
+            return recognizedText;
+        }
+        return koreanText;
+    }
+
+    private EnglishKoreanNameService.ConversionResult resolveNameConversion(
+            String recognizedText,
+            SignatureLanguage language,
+            NameLanguage nameLanguage,
+            String koreanNameOverride
+    ) {
+        if (koreanNameOverride != null) {
+            return new EnglishKoreanNameService.ConversionResult(koreanNameOverride, NameConversionSource.MANUAL);
+        }
+        if (language == SignatureLanguage.KO) {
+            return new EnglishKoreanNameService.ConversionResult(recognizedText, NameConversionSource.MANUAL);
+        }
+        return englishKoreanNameService.convertByOfficialLoanwordPolicy(recognizedText, nameLanguage);
+    }
+
+    private NameConversionSource resolveNameConversionSource(
+            SignatureLanguage language,
+            EnglishKoreanNameService.ConversionResult nameConversion,
+            String koreanNameOverride
+    ) {
+        if (koreanNameOverride != null) {
+            return NameConversionSource.MANUAL;
+        }
+        if (language == SignatureLanguage.KO) {
+            return NameConversionSource.MANUAL;
+        }
+        return nameConversion.source();
+    }
+
+    private NameLanguage normalizeNameLanguage(String nameLanguageRaw, SignatureLanguage detectedLanguage) {
+        String value = blankToNull(nameLanguageRaw);
+        if (value == null) {
+            return detectedLanguage == SignatureLanguage.KO ? NameLanguage.OTHER : NameLanguage.EN;
+        }
+        try {
+            return NameLanguage.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return detectedLanguage == SignatureLanguage.KO ? NameLanguage.OTHER : NameLanguage.EN;
+        }
     }
 
     private void saveIdentifierCode(User user, String code) {

@@ -1,5 +1,8 @@
 package com.example.springboot.service;
 
+import com.example.springboot.domain.NameConversionSource;
+import com.example.springboot.domain.NameLanguage;
+import java.util.Map;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
 
@@ -23,14 +26,49 @@ public class EnglishKoreanNameService {
             "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ",
             "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
     };
+    private static final Map<String, String> OFFICIAL_EXAMPLE_DICTIONARY = Map.ofEntries(
+            Map.entry("alexander", "알렉산더"),
+            Map.entry("andrew", "앤드루"),
+            Map.entry("anthony", "앤서니"),
+            Map.entry("charles", "찰스"),
+            Map.entry("christopher", "크리스토퍼"),
+            Map.entry("daniel", "대니얼"),
+            Map.entry("david", "데이비드"),
+            Map.entry("elizabeth", "엘리자베스"),
+            Map.entry("george", "조지"),
+            Map.entry("henry", "헨리"),
+            Map.entry("james", "제임스"),
+            Map.entry("john", "존"),
+            Map.entry("johnson", "존슨"),
+            Map.entry("michael", "마이클"),
+            Map.entry("paul", "폴"),
+            Map.entry("richard", "리처드"),
+            Map.entry("robert", "로버트"),
+            Map.entry("smith", "스미스"),
+            Map.entry("william", "윌리엄")
+    );
 
     public String toKoreanPronunciation(String value) {
+        return convertByOfficialLoanwordPolicy(value, NameLanguage.EN).koreanName();
+    }
+
+    public ConversionResult convertByOfficialLoanwordPolicy(String value) {
+        return convertByOfficialLoanwordPolicy(value, NameLanguage.EN);
+    }
+
+    public ConversionResult convertByOfficialLoanwordPolicy(String value, NameLanguage language) {
+        if (language != NameLanguage.EN) {
+            String normalizedNonEnglish = normalizeNonEnglish(value);
+            return new ConversionResult(normalizedNonEnglish, NameConversionSource.MANUAL_REVIEW);
+        }
+
         String normalized = normalize(value);
         if (normalized == null) {
-            return null;
+            return new ConversionResult(null, null);
         }
 
         StringBuilder result = new StringBuilder();
+        NameConversionSource source = NameConversionSource.NIKL_EXAMPLE;
         for (String word : normalized.split("\\s+")) {
             if (word.isBlank()) {
                 continue;
@@ -38,9 +76,15 @@ public class EnglishKoreanNameService {
             if (!result.isEmpty()) {
                 result.append(' ');
             }
-            result.append(convertWord(word));
+            String officialExample = OFFICIAL_EXAMPLE_DICTIONARY.get(word);
+            if (officialExample == null) {
+                source = NameConversionSource.LOANWORD_RULE;
+                result.append(convertWord(word));
+            } else {
+                result.append(officialExample);
+            }
         }
-        return result.toString();
+        return new ConversionResult(result.toString(), source);
     }
 
     private String normalize(String value) {
@@ -48,6 +92,13 @@ public class EnglishKoreanNameService {
             return null;
         }
         return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z\\s-]", " ").replace('-', ' ').trim();
+    }
+
+    private String normalizeNonEnglish(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.replaceAll("\\s+", " ").trim();
     }
 
     private String convertWord(String word) {
@@ -200,5 +251,8 @@ public class EnglishKoreanNameService {
     }
 
     private record Segment(String initial, String vowel, String fin, int nextIndex) {
+    }
+
+    public record ConversionResult(String koreanName, NameConversionSource source) {
     }
 }

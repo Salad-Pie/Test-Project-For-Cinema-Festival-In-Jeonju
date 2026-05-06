@@ -8,6 +8,7 @@ import java.awt.FontMetrics;
 import java.awt.GraphicsEnvironment;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -110,6 +111,65 @@ public class SignatureImageService {
         }
     }
 
+    public byte[] renderCertificateTextBox(
+            String text,
+            String fontFamily,
+            int width,
+            int height,
+            int baseFontSize,
+            int minFontSize,
+            boolean uppercase
+    ) {
+        String value = defaultText(text);
+        if (uppercase) {
+            value = value.toUpperCase();
+        }
+
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            applyQuality(graphics);
+            graphics.setColor(new Color(24, 45, 79));
+            drawFittedCenteredText(graphics, value, fontFamily, width, height, baseFontSize, minFontSize);
+            return toPng(image);
+        } finally {
+            graphics.dispose();
+        }
+    }
+
+    public byte[] renderSampleOriginalSignature(int width, int height) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            applyQuality(graphics);
+            graphics.setColor(new Color(18, 18, 18));
+            graphics.setStroke(new BasicStroke(Math.max(6, width / 70), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            Path2D.Float signature = new Path2D.Float();
+            signature.moveTo(width * 0.06f, height * 0.50f);
+            signature.curveTo(width * 0.13f, height * 0.46f, width * 0.12f, height * 0.25f, width * 0.07f, height * 0.13f);
+            signature.moveTo(width * 0.05f, height * 0.54f);
+            signature.curveTo(width * 0.18f, height * 0.50f, width * 0.20f, height * 0.61f, width * 0.13f, height * 0.74f);
+            signature.curveTo(width * 0.19f, height * 0.68f, width * 0.24f, height * 0.35f, width * 0.28f, height * 0.48f);
+            signature.curveTo(width * 0.31f, height * 0.61f, width * 0.28f, height * 0.79f, width * 0.37f, height * 0.66f);
+            signature.curveTo(width * 0.44f, height * 0.55f, width * 0.44f, height * 0.33f, width * 0.49f, height * 0.36f);
+            signature.curveTo(width * 0.54f, height * 0.39f, width * 0.48f, height * 0.75f, width * 0.57f, height * 0.68f);
+            signature.curveTo(width * 0.62f, height * 0.64f, width * 0.64f, height * 0.38f, width * 0.70f, height * 0.43f);
+            signature.curveTo(width * 0.78f, height * 0.49f, width * 0.67f, height * 0.76f, width * 0.77f, height * 0.70f);
+            signature.curveTo(width * 0.83f, height * 0.66f, width * 0.76f, height * 0.48f, width * 0.84f, height * 0.50f);
+            graphics.draw(signature);
+
+            graphics.setStroke(new BasicStroke(Math.max(3, width / 130), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            Path2D.Float underline = new Path2D.Float();
+            underline.moveTo(width * 0.70f, height * 0.68f);
+            underline.curveTo(width * 0.80f, height * 0.60f, width * 0.93f, height * 0.56f, width * 0.98f, height * 0.59f);
+            graphics.draw(underline);
+            return toPng(image);
+        } finally {
+            graphics.dispose();
+        }
+    }
+
     private void drawCertificateBackground(Graphics2D graphics, int width, int height) {
         graphics.setColor(new Color(248, 251, 255));
         graphics.fillRect(0, 0, width, height);
@@ -124,6 +184,83 @@ public class SignatureImageService {
     private void drawCentered(Graphics2D graphics, String text, int centerX, int baselineY) {
         FontMetrics metrics = graphics.getFontMetrics();
         graphics.drawString(text, centerX - metrics.stringWidth(text) / 2, baselineY);
+    }
+
+    private void drawFittedCenteredText(
+            Graphics2D graphics,
+            String text,
+            String fontFamily,
+            int width,
+            int height,
+            int baseFontSize,
+            int minFontSize
+    ) {
+        String[] lines = new String[]{text};
+        int size = Math.max(minFontSize, baseFontSize);
+        Font font = createFont(fontFamily, Font.PLAIN, size, text);
+        FontMetrics metrics = graphics.getFontMetrics(font);
+        while (size > minFontSize && !fits(metrics, lines, width, height)) {
+            size--;
+            font = createFont(fontFamily, Font.PLAIN, size, text);
+            metrics = graphics.getFontMetrics(font);
+        }
+
+        if (!fits(metrics, lines, width, height) && text.contains(" ")) {
+            lines = splitIntoTwoLines(text);
+            size = Math.max(minFontSize, baseFontSize);
+            font = createFont(fontFamily, Font.PLAIN, size, text);
+            metrics = graphics.getFontMetrics(font);
+            while (size > minFontSize && !fits(metrics, lines, width, height)) {
+                size--;
+                font = createFont(fontFamily, Font.PLAIN, size, text);
+                metrics = graphics.getFontMetrics(font);
+            }
+        }
+
+        graphics.setFont(font);
+        int lineHeight = metrics.getHeight();
+        int totalHeight = lineHeight * lines.length;
+        int baseline = (height - totalHeight) / 2 + metrics.getAscent();
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            int x = (width - metrics.stringWidth(line)) / 2;
+            graphics.drawString(line, x, baseline + i * lineHeight);
+        }
+    }
+
+    private boolean fits(FontMetrics metrics, String[] lines, int width, int height) {
+        int allowedWidth = (int) (width * 0.92);
+        int allowedHeight = (int) (height * 0.86);
+        for (String line : lines) {
+            if (metrics.stringWidth(line) > allowedWidth) {
+                return false;
+            }
+        }
+        return metrics.getHeight() * lines.length <= allowedHeight;
+    }
+
+    private String[] splitIntoTwoLines(String text) {
+        String[] words = text.trim().split("\\s+");
+        if (words.length <= 1) {
+            return new String[]{text};
+        }
+        int splitIndex = words.length / 2;
+        StringBuilder first = new StringBuilder();
+        StringBuilder second = new StringBuilder();
+        for (int i = 0; i < words.length; i++) {
+            if (i < splitIndex) {
+                if (!first.isEmpty()) {
+                    first.append(' ');
+                }
+                first.append(words[i]);
+            } else {
+                if (!second.isEmpty()) {
+                    second.append(' ');
+                }
+                second.append(words[i]);
+            }
+        }
+        return new String[]{first.toString(), second.toString()};
     }
 
     private void applyQuality(Graphics2D graphics) {

@@ -145,3 +145,58 @@
 | S3 권한 | 버킷, IAM 권한, CORS 정책 확인 필요 |
 | 운영 DB 마이그레이션 | `ddl-auto=update` 사용 중이나 운영에서는 별도 migration 도입 권장 |
 | 관리자 화면 | 신청/설문/예약 데이터 확인용 관리자 기능은 별도 필요 |
+
+## 증명서 PDF 생성 기능 추가
+
+| 항목 | 내용 |
+|---|---|
+| 원본 템플릿 | `Korean Calligraphy Experience Certificate.pdf`를 Spring Boot resource 템플릿으로 사용 |
+| 생성 방식 | Apache PDFBox 기반으로 원본 PDF에 이름/서명 이미지를 오버레이 |
+| 영어 이름 | 고정 박스 안에서 기준 폰트 크기 유지, 긴 경우 최소 크기까지만 제한 축소, 그래도 길면 2줄 처리 |
+| 한글 이름 | 고정 박스 안에서 기준 폰트 크기 유지, 긴 경우 제한 축소 |
+| 원본 서명 | S3에 저장된 원본 PNG를 읽어 지정 박스 안에 원본 비율 유지 방식으로 삽입 |
+| 샘플 API | `POST /api/auth/signature/certificate-pdf/sample` |
+| 실제 API | `POST /api/auth/signature/certificate-pdf` |
+| 검증 | `CertificatePdfServiceTest`에서 실제 PDF 생성 및 파일 생성 확인 |
+| 샘플 파일 | `C:\Users\dldbs\Downloads\Korean Calligraphy Experience Certificate_backend_sample.pdf` |
+
+## 증명서 진본 PDF 템플릿 적용
+
+| 항목 | 내용 |
+|---|---|
+| 진본 파일명 | `(인증서) _AX 한글 체험 인증서 진본.pdf` |
+| 적용 좌표 | 기존 확정 좌표 유지: 영어 이름 `(185,563,235,46)`, 한글 이름 `(205,513,195,46)`, 원본 서명 `(220,405,165,76)` |
+| 변경 범위 | PDF 템플릿 경로만 진본 파일로 교체 |
+| 샘플 파일 | `C:\Users\dldbs\Downloads\(인증서) _AX 한글 체험 인증서 진본_backend_sample.pdf` |
+
+## 증명서 최종 원본 템플릿 적용
+
+| 항목 | 내용 |
+|---|---|
+| 최종 원본 파일명 | `Certification_Sample.pdf` |
+| 적용 좌표 | 기존 확정 좌표 유지: 영어 이름 `(185,563,235,46)`, 한글 이름 `(205,513,195,46)`, 원본 서명 `(220,405,165,76)` |
+| 변경 범위 | PDF 템플릿 경로만 최종 원본 파일로 교체 |
+| 샘플 파일 | `C:\Users\dldbs\Downloads\Certification_Sample_backend_sample.pdf` |
+
+## 서명 이름 표시 필드 분리
+
+| 항목 | 내용 |
+|---|---|
+| Entity | `Signature`에 `englishName`, `koreanName` 저장 필드 추가 |
+| 저장 정책 | OCR 결과가 영어면 `englishName=recognizedText`, `koreanName=발음 기준 한글명` |
+| 저장 정책 | OCR 결과가 한글이면 `koreanName=recognizedText`, `englishName=null` |
+| 응답 | `SignatureResponse`에 `englishName`, `koreanName` 추가 |
+| 사용처 | 증명서 PDF 기본 이름 값은 분리 저장된 이름 필드를 우선 사용 |
+| 검증 | `compileJava`, 전체 `test` 성공 |
+
+## 태블릿 서명 이름 언어 선택 구조 추가
+
+| 항목 | 내용 |
+|---|---|
+| 사용자 입력 | 태블릿 서명 저장 시 이름 언어를 선택하고 한글 이름을 선택적으로 직접 입력 |
+| 지원 언어 | `EN`, `FR`, `DE`, `JA`, `ZH`, `VI`, `ES`, `IT`, `OTHER` |
+| Entity | `Signature.originalName`, `Signature.nameLanguage`, `Signature.englishName`, `Signature.koreanName`, `Signature.nameConversionSource` 저장 |
+| 영어 이름 | 국립국어원 용례 사전 우선, 없으면 외래어 표기법 기반 fallback |
+| 비영어 이름 | 자동 확정하지 않고 `MANUAL_REVIEW` 출처로 저장, 사용자가 입력한 한글명은 `MANUAL` 처리 |
+| 프론트 | `/tablet` 서명 영역에 이름 언어 select box와 한글 이름 직접 수정 입력 추가 |
+| 검증 | Spring Boot `compileJava`, 전체 `test`, Vue `npm run build` 성공 |

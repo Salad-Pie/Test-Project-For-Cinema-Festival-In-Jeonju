@@ -205,6 +205,22 @@ public class S3UploadService {
         return s3Presigner.presignGetObject(presignRequest).url().toString();
     }
 
+    public byte[] downloadObjectBytes(String key) {
+        if (bucket == null || bucket.isBlank()) {
+            throw new BusinessException(ErrorCode.STORAGE_NOT_CONFIGURED);
+        }
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("s3 key is required.");
+        }
+
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+        log.info("S3 object download requested. key={}", key);
+        return s3Client.getObjectAsBytes(request).asByteArray();
+    }
+
     public record UploadedImage(String s3Key, Long fileSize) {
     }
 }
