@@ -55,7 +55,7 @@ public class CertificatePdfService {
                     false
             );
             byte[] signatureImage = originalSignaturePng == null || originalSignaturePng.length == 0
-                    ? signatureImageService.renderSampleOriginalSignature(ORIGINAL_SIGNATURE_BOX.pixelWidth(), ORIGINAL_SIGNATURE_BOX.pixelHeight())
+                    ? signatureImageService.renderStrongCalligraphyText(koreanName, ORIGINAL_SIGNATURE_BOX.pixelWidth(), ORIGINAL_SIGNATURE_BOX.pixelHeight())
                     : originalSignaturePng;
 
             PDImageXObject englishNameXObject = PDImageXObject.createFromByteArray(document, englishNameImage, "english-name");

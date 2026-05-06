@@ -27,6 +27,8 @@ import com.example.springboot.security.TokenType;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Transactional
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private static final int CODE_GENERATION_MAX_ATTEMPTS = 20;
 
     private final UserRepository userRepository;
     private final EmailIdentifierCodeRepository emailIdentifierCodeRepository;
@@ -109,11 +114,8 @@ public class AuthService {
         }
         String language = normalizeLanguage(languageRaw);
 
-        String code = generate6DigitCode();
-        EmailIdentifierCode entity = emailIdentifierCodeRepository.findByEmail(email).orElseGet(EmailIdentifierCode::new);
-        entity.setEmail(email);
-        entity.setCode(code);
-        emailIdentifierCodeRepository.save(entity);
+        String code = issueEmailIdentifierCode(email);
+        log.info("Email login identifier code issued. email={} codeSuffix={}", maskEmail(email), codeSuffix(code));
         notificationService.sendEmailCode(email, code, language);
     }
 
@@ -357,12 +359,21 @@ public class AuthService {
         return certificatePdfService.renderKoreanCalligraphyCertificate(englishName, koreanName, null);
     }
 
+    public byte[] renderStrongCalligraphyTextSample(SignatureRenderRequest request) {
+        String text = blankToDefault(request == null ? null : request.text(), "이창섭");
+        return signatureImageService.renderStrongCalligraphyText(
+                text,
+                request == null ? null : request.width(),
+                request == null ? null : request.height()
+        );
+    }
+
     private LoginResponse issueIdentifierAndRegisterToken(User user, String language) {
         String sentTo = "NONE";
         boolean codeSent = false;
 
         if (user.getEmail() != null) {
-            String code = generate6DigitCode();
+            String code = issueEmailIdentifierCode(user.getEmail());
             saveIdentifierCode(user, code);
             notificationService.sendEmailCode(user.getEmail(), code, language);
             sentTo = "EMAIL:" + user.getEmail();
@@ -429,6 +440,48 @@ public class AuthService {
 
     private String generate6DigitCode() {
         return String.format("%06d", new Random().nextInt(1_000_000));
+    }
+
+    private String issueEmailIdentifierCode(String email) {
+        String normalizedEmail = blankToNull(email);
+        if (normalizedEmail == null) {
+            throw new IllegalArgumentException("email is required.");
+        }
+        String code = generateUniqueEmailIdentifierCode(normalizedEmail);
+        EmailIdentifierCode entity = emailIdentifierCodeRepository.findByEmail(normalizedEmail).orElseGet(EmailIdentifierCode::new);
+        entity.setEmail(normalizedEmail);
+        entity.setCode(code);
+        emailIdentifierCodeRepository.save(entity);
+        return code;
+    }
+
+    private String generateUniqueEmailIdentifierCode(String email) {
+        for (int attempt = 1; attempt <= CODE_GENERATION_MAX_ATTEMPTS; attempt++) {
+            String code = generate6DigitCode();
+            if (!emailIdentifierCodeRepository.existsByCodeAndEmailNot(code, email)) {
+                return code;
+            }
+            log.info("Email identifier code collision detected. attempt={} codeSuffix={}", attempt, codeSuffix(code));
+        }
+        throw new IllegalStateException("failed to generate unique email identifier code.");
+    }
+
+    private String maskEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "";
+        }
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 1) {
+            return "***";
+        }
+        return email.charAt(0) + "***" + email.substring(atIndex);
+    }
+
+    private String codeSuffix(String code) {
+        if (code == null || code.length() < 2) {
+            return "**";
+        }
+        return "**" + code.substring(code.length() - 2);
     }
 
     private String blankToNull(String value) {

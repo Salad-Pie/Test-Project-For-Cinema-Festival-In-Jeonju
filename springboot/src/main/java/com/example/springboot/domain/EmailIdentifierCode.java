@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "email_identifier_codes")
+@Table(
+        name = "email_identifier_codes",
+        indexes = {
+                @Index(name = "ix_email_identifier_codes_code", columnList = "code", unique = true)
+        }
+)
 public class EmailIdentifierCode {
 
     @Id
@@ -14,7 +19,7 @@ public class EmailIdentifierCode {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(nullable = false, length = 6)
+    @Column(nullable = false, unique = true, length = 6)
     private String code;
 
     @Column(nullable = false)

@@ -104,4 +104,13 @@ public class AuthController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(authService.renderKoreanCalligraphyCertificatePdfSample(request));
     }
+
+    @PostMapping(value = "/signature/calligraphy-text/sample", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> renderStrongCalligraphyTextSample(
+            @RequestBody(required = false) SignatureRenderRequest request
+    ) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(authService.renderStrongCalligraphyTextSample(request));
+    }
 }

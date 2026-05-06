@@ -15,7 +15,7 @@ class CertificatePdfServiceTest {
 
         byte[] pdf = certificatePdfService.renderKoreanCalligraphyCertificate(
                 "ALEXANDER MICHAEL JOHNSON",
-                "김도윤",
+                "이창섭",
                 null
         );
 

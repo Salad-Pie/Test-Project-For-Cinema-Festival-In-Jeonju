@@ -33,6 +33,7 @@ const isEmailLoginPage = computed(() => routePath.startsWith('/login/email'))
 const isEmailSignupPage = computed(() => routePath.startsWith('/signup/email'))
 const isOauthCallbackPage = computed(() => routePath.startsWith('/oauth/callback'))
 const isTabletPage = computed(() => routePath.startsWith('/tablet'))
+const isCertificateDownloadPage = computed(() => routePath.startsWith('/certificate-download'))
 const isSuccessPage = computed(() => routePath === '/success')
 const isBootstrapLoginPage = computed(() => !isOriginalRoute && routePath.startsWith('/login-page'))
 const isIdeaContestLoginPage = computed(() => isOriginalRoute && routePath.startsWith('/login-page'))
@@ -172,6 +173,7 @@ const state = reactive({
   successMessage: '',
   verifyCode: '',
   verifiedToken: '',
+  certificateDownloadCode: '',
   signatureNameLanguage: 'EN',
   signatureKoreanName: '',
   adminAccess: null,
@@ -985,6 +987,39 @@ async function downloadSignatureArtifact(path, filename, payload = {}) {
   }
 }
 
+async function downloadCertificateArtifactByCode(path, filename) {
+  state.loading = true
+  state.error = ''
+  try {
+    const code = state.certificateDownloadCode.trim()
+    if (!/^\d{6}$/.test(code)) {
+      throw userError(t('certificateDownload.invalidCode'))
+    }
+
+    const res = await fetch(`${apiRoot}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+    state.message = t('certificateDownload.downloaded')
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
 function downloadSignatureImage() {
   return downloadSignatureArtifact('/auth/signature/render', 'signature-render.png', {
     fontFamily: 'Nanum Brush Script',
@@ -1003,6 +1038,14 @@ function downloadCertificateSample() {
     signatureX: 1050,
     signatureY: 830,
   })
+}
+
+function downloadStoredSignatureImage() {
+  return downloadCertificateArtifactByCode('/certificate-download/signature-image', 'signature-image.png')
+}
+
+function downloadStoredCertificatePdf() {
+  return downloadCertificateArtifactByCode('/certificate-download/certificate-pdf', 'certificate.pdf')
 }
 </script>
 
@@ -1519,6 +1562,25 @@ function downloadCertificateSample() {
     <section v-if="isOauthCallbackPage" class="card">
       <h2>{{ t('auth.callbackTitle') }}</h2>
       <p>{{ t('auth.callbackDesc') }}</p>
+    </section>
+
+    <section v-if="isCertificateDownloadPage" class="card certificate-download-page">
+      <h2>{{ t('certificateDownload.title') }}</h2>
+      <p>{{ t('certificateDownload.description') }}</p>
+      <label class="field">
+        <span>{{ t('certificateDownload.identifierCode') }}</span>
+        <input
+          v-model="state.certificateDownloadCode"
+          type="text"
+          maxlength="6"
+          inputmode="numeric"
+          :placeholder="t('certificateDownload.placeholder')"
+        />
+      </label>
+      <div class="actions">
+        <button :disabled="state.loading" @click="downloadStoredSignatureImage">{{ t('certificateDownload.signatureImage') }}</button>
+        <button :disabled="state.loading" @click="downloadStoredCertificatePdf">{{ t('certificateDownload.certificatePdf') }}</button>
+      </div>
     </section>
 
     <section v-if="isTabletPage" class="card">

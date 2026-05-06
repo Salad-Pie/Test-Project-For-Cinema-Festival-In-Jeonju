@@ -12,6 +12,7 @@ import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Random;
 import javax.imageio.ImageIO;
 import org.springframework.stereotype.Service;
 
@@ -170,6 +171,40 @@ public class SignatureImageService {
         }
     }
 
+    public byte[] renderStrongCalligraphyText(String text, Integer width, Integer height) {
+        String value = defaultText(text);
+        int imageWidth = defaultNumber(width, 1400);
+        int imageHeight = defaultNumber(height, 520);
+        int padding = Math.max(36, imageWidth / 28);
+
+        BufferedImage textMask = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = textMask.createGraphics();
+        try {
+            applyQuality(graphics);
+            graphics.setColor(Color.BLACK);
+            Font font = createFont("HY궁서B", Font.PLAIN, findMaxFontSize(graphics, value, imageWidth - padding * 2, imageHeight - padding * 2), value);
+            graphics.setFont(font);
+            FontMetrics metrics = graphics.getFontMetrics();
+            int x = Math.max(padding, (imageWidth - metrics.stringWidth(value)) / 2);
+            int y = (imageHeight - metrics.getHeight()) / 2 + metrics.getAscent();
+
+            // 여러 번 겹쳐 그려 굵은 붓 압력과 먹 농도를 만든다.
+            for (int offsetX = -1; offsetX <= 1; offsetX++) {
+                for (int offsetY = -1; offsetY <= 1; offsetY++) {
+                    graphics.drawString(value, x + offsetX, y + offsetY);
+                }
+            }
+        } finally {
+            graphics.dispose();
+        }
+
+        BufferedImage ink = dilateAlpha(textMask, 1);
+        ink = roughenInkEdge(ink, 34);
+        ink = addInkBleed(ink, 1);
+        ink = cropToInk(ink, 28);
+        return toPng(ink);
+    }
+
     private void drawCertificateBackground(Graphics2D graphics, int width, int height) {
         graphics.setColor(new Color(248, 251, 255));
         graphics.fillRect(0, 0, width, height);
@@ -179,6 +214,136 @@ public class SignatureImageService {
         graphics.setColor(new Color(88, 174, 226, 70));
         graphics.fillOval(-180, -140, 520, 520);
         graphics.fillOval(width - 320, height - 300, 520, 520);
+    }
+
+    private int findMaxFontSize(Graphics2D graphics, String text, int maxWidth, int maxHeight) {
+        int size = Math.max(32, maxHeight);
+        while (size > 32) {
+            Font font = createFont("HY궁서B", Font.PLAIN, size, text);
+            FontMetrics metrics = graphics.getFontMetrics(font);
+            if (metrics.stringWidth(text) <= maxWidth && metrics.getHeight() <= maxHeight) {
+                return size;
+            }
+            size -= 2;
+        }
+        return 32;
+    }
+
+    private BufferedImage dilateAlpha(BufferedImage source, int radius) {
+        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int maxAlpha = 0;
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= source.getWidth() || ny >= source.getHeight()) {
+                            continue;
+                        }
+                        int alpha = (source.getRGB(nx, ny) >>> 24) & 0xff;
+                        if (alpha > maxAlpha) {
+                            maxAlpha = alpha;
+                        }
+                    }
+                }
+                if (maxAlpha > 0) {
+                    result.setRGB(x, y, (maxAlpha << 24));
+                }
+            }
+        }
+        return result;
+    }
+
+    private BufferedImage roughenInkEdge(BufferedImage source, int strength) {
+        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Random random = new Random(20260506L);
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int alpha = (source.getRGB(x, y) >>> 24) & 0xff;
+                if (alpha == 0) {
+                    continue;
+                }
+                int noise = random.nextInt(strength + 1);
+                int edgePenalty = isEdgePixel(source, x, y) ? random.nextInt(strength * 5 + 1) : noise;
+                int finalAlpha = Math.max(0, Math.min(255, alpha - edgePenalty));
+                if (finalAlpha > 14) {
+                    result.setRGB(x, y, (finalAlpha << 24));
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean isEdgePixel(BufferedImage source, int x, int y) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int nx = x + dx;
+                int ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= source.getWidth() || ny >= source.getHeight()) {
+                    return true;
+                }
+                int alpha = (source.getRGB(nx, ny) >>> 24) & 0xff;
+                if (alpha == 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private BufferedImage addInkBleed(BufferedImage source, int radius) {
+        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int alphaSum = 0;
+                int count = 0;
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= source.getWidth() || ny >= source.getHeight()) {
+                            continue;
+                        }
+                        alphaSum += (source.getRGB(nx, ny) >>> 24) & 0xff;
+                        count++;
+                    }
+                }
+                int originalAlpha = (source.getRGB(x, y) >>> 24) & 0xff;
+                int bleedAlpha = count == 0 ? 0 : alphaSum / count;
+                int alpha = Math.max(originalAlpha, Math.min(255, bleedAlpha / 2 + originalAlpha));
+                if (alpha > 8) {
+                    result.setRGB(x, y, (alpha << 24));
+                }
+            }
+        }
+        return result;
+    }
+
+    private BufferedImage cropToInk(BufferedImage source, int padding) {
+        int minX = source.getWidth();
+        int minY = source.getHeight();
+        int maxX = 0;
+        int maxY = 0;
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int alpha = (source.getRGB(x, y) >>> 24) & 0xff;
+                if (alpha > 12) {
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        if (minX > maxX || minY > maxY) {
+            return source;
+        }
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(source.getWidth() - 1, maxX + padding);
+        maxY = Math.min(source.getHeight() - 1, maxY + padding);
+        return source.getSubimage(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 
     private void drawCentered(Graphics2D graphics, String text, int centerX, int baselineY) {

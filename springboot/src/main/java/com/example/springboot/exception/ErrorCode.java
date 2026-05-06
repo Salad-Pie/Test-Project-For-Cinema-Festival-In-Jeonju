@@ -12,6 +12,8 @@ public enum ErrorCode {
     INVALID_FILE(HttpStatus.BAD_REQUEST, "업로드할 이미지 파일을 확인해 주세요."),
     STORAGE_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "파일 저장 설정이 필요합니다. 관리자에게 문의해 주세요."),
     CERTIFICATE_TEMPLATE_NOT_FOUND(HttpStatus.SERVICE_UNAVAILABLE, "증명서 템플릿 설정이 필요합니다. 관리자에게 문의해 주세요."),
+    CERTIFICATE_DOWNLOAD_CODE_INVALID(HttpStatus.BAD_REQUEST, "6자리 식별자 코드를 확인해 주세요."),
+    CERTIFICATE_SIGNATURE_NOT_FOUND(HttpStatus.NOT_FOUND, "저장된 서명 정보를 찾을 수 없습니다."),
     OCR_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "OCR API 설정이 필요합니다. 관리자에게 문의해 주세요."),
     OCR_SERVICE_ERROR(HttpStatus.BAD_GATEWAY, "OCR 서비스 호출 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."),
     OCR_RECOGNITION_FAILED(HttpStatus.BAD_REQUEST, "서명을 인식하지 못했습니다. 조금 더 또렷하게 다시 작성해 주세요.");

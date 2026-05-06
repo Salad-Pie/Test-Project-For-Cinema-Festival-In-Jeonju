@@ -200,3 +200,49 @@
 | 비영어 이름 | 자동 확정하지 않고 `MANUAL_REVIEW` 출처로 저장, 사용자가 입력한 한글명은 `MANUAL` 처리 |
 | 프론트 | `/tablet` 서명 영역에 이름 언어 select box와 한글 이름 직접 수정 입력 추가 |
 | 검증 | Spring Boot `compileJava`, 전체 `test`, Vue `npm run build` 성공 |
+
+## 텍스트 기반 강한 서예 서명 PNG 생성
+
+| 항목 | 내용 |
+|---|---|
+| 입력 텍스트 | `이창섭` 등 한글 이름 텍스트 |
+| 생성 방식 | 한글 서예 계열 폰트 렌더링 후 먹선 농도 강화, 가장자리 거칠기, 번짐 효과, 자동 crop 적용 |
+| API | `POST /api/auth/signature/calligraphy-text/sample` |
+| 출력 | 증명서 삽입용 투명 PNG, 확인용 흰 배경 preview PNG |
+| 샘플 파일 | `C:\Users\dldbs\Downloads\strong-calligraphy-이창섭.png`, `C:\Users\dldbs\Downloads\strong-calligraphy-이창섭-preview-white.png` |
+| 검증 | `StrongCalligraphyTextTest` 성공 |
+
+## 증명서 PDF 서예 서명 삽입 적용
+
+| 항목 | 내용 |
+|---|---|
+| 적용 기준 | 증명서 서명 영역에 강한 서예 텍스트 PNG 삽입 |
+| 샘플 이름 | `이창섭` |
+| 처리 방식 | `CertificatePdfService`에서 원본 서명 이미지가 없을 경우 `koreanName`을 강한 서예 PNG로 렌더링 후 서명 박스에 삽입 |
+| 결과 파일 | `C:\Users\dldbs\Downloads\이창섭-서명.pdf` |
+| 검증 | `CertificatePdfServiceTest` 성공 |
+
+## 6자리 식별자 기반 서명/증명서 다운로드 페이지
+
+| 항목 | 내용 |
+|---|---|
+| 기준 테이블 | `email_identifier_codes`의 `code` 컬럼을 단독 식별자로 사용 |
+| 조회 정책 | 6자리 코드 기준 최신 1건을 조회하고, 해당 이메일의 User와 Signature를 연결 |
+| 서명 이미지 다운로드 | `POST /api/certificate-download/signature-image`에서 저장된 `koreanName` 기준 서예 PNG를 요청 시점에 생성 |
+| 증명서 다운로드 | `POST /api/certificate-download/certificate-pdf`에서 저장된 `englishName`, `koreanName`과 요청 시점 생성한 서예 서명을 PDF에 삽입 |
+| 저장 정책 | 생성된 서예 이미지와 PDF는 S3에 저장하지 않고 매 요청마다 생성 |
+| 프론트 페이지 | `/certificate-download` 별도 페이지 추가 |
+| 프론트 버튼 | `서명 이미지 다운로드`, `증명서 다운로드`를 별도 버튼과 별도 API로 분리 |
+| 오류 문구 | 코드 오류, 서명 미존재를 일반 사용자 관점의 간단한 메시지로 응답 |
+| 검증 | Spring Boot `compileJava`, 전체 `test`, Vue `npm run build` 성공 |
+
+## 6자리 이메일 식별자 중복 방지 보완
+
+| 항목 | 내용 |
+|---|---|
+| 전역 중복 방지 | `email_identifier_codes.code`에 unique 제약과 인덱스 기준 추가 |
+| 생성 정책 | 새 코드 발급 시 다른 이메일에 이미 배정된 코드와 충돌하면 최대 20회 재생성 |
+| 저장 기준 통일 | 이메일이 있는 회원가입/OAuth 코드 발급 시 `email_identifier_codes`에도 항상 저장 |
+| 기존 호환 | 태블릿 인증용 `identifier_codes` 저장은 유지하여 기존 인증 흐름과 충돌 방지 |
+| 로그 | 코드 발급/충돌 로그는 이메일 마스킹, 코드 뒤 2자리만 출력 |
+| 검증 | Spring Boot `compileJava`, 전체 `test`, Vue `npm run build` 성공 |
