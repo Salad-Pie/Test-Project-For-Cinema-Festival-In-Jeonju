@@ -45,7 +45,7 @@ public class AuthService {
     private static final int CODE_GENERATION_MAX_ATTEMPTS = 20;
     private static final int IDENTIFIER_REISSUE_MAX_ATTEMPTS = 5;
     private static final Duration IDENTIFIER_REISSUE_WINDOW = Duration.ofMinutes(10);
-    private static final String IDENTIFIER_REISSUE_RESPONSE_MESSAGE = "입력하신 정보가 등록되어 있다면 새 식별자 코드를 전송했습니다.";
+    private static final String IDENTIFIER_REISSUE_RESPONSE_MESSAGE = "\uC785\uB825\uD558\uC2E0 \uC815\uBCF4\uAC00 \uB4F1\uB85D\uB418\uC5B4 \uC788\uB2E4\uBA74 \uC0C8 \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC804\uC1A1\uD588\uC2B5\uB2C8\uB2E4.";
 
     private final UserRepository userRepository;
     private final IdentifierCodeRepository identifierCodeRepository;
@@ -304,7 +304,7 @@ public class AuthService {
             deletePreviousSignatureFiles(signature);
         }
 
-        // 기존 서명 정보를 갱신하지 않고, 항상 신규 row를 생성하여 삽입한다.
+        // ?リ옇?????類ㅺ뎄 ?筌먲퐢沅???띠룄????? ??袁ぢ? ??疫???ル맪??row????諛댁뎽??琉우뿰 ????엷??類ｋ펲.
         signature.setUser(user);
         signature.setOriginalS3Key(uploadedImage.s3Key());
         signature.setOriginalFileSize(uploadedImage.fileSize());
@@ -411,12 +411,12 @@ public class AuthService {
 
     public byte[] renderKoreanCalligraphyCertificatePdfSample(CertificateSampleRequest request) {
         String englishName = blankToDefault(request == null ? null : request.englishName(), "ALEXANDER MICHAEL JOHNSON");
-        String koreanName = blankToDefault(request == null ? null : request.koreanName(), "김도윤");
+        String koreanName = blankToDefault(request == null ? null : request.koreanName(), "\uC774\uCC3D\uC12D");
         return certificatePdfService.renderKoreanCalligraphyCertificate(englishName, koreanName, null);
     }
 
     public byte[] renderStrongCalligraphyTextSample(SignatureRenderRequest request) {
-        String text = blankToDefault(request == null ? null : request.text(), "이창섭");
+        String text = blankToDefault(request == null ? null : request.text(), "\uC774\uCC3D\uC12D");
         return signatureImageService.renderStrongCalligraphyText(
                 text,
                 request == null ? null : request.width(),
@@ -714,3 +714,4 @@ public class AuthService {
     ) {
     }
 }
+

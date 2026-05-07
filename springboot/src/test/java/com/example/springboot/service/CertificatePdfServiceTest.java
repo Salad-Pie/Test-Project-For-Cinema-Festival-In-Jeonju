@@ -10,12 +10,13 @@ class CertificatePdfServiceTest {
 
     @Test
     void renderKoreanCalligraphyCertificateKeepsConsistentNameBoxes() throws Exception {
-        SignatureImageService signatureImageService = new SignatureImageService();
+        SignatureImageService signatureImageService =
+                new SignatureImageService(new BrowserCalligraphyRenderService());
         CertificatePdfService certificatePdfService = new CertificatePdfService(signatureImageService);
 
         byte[] pdf = certificatePdfService.renderKoreanCalligraphyCertificate(
                 "ALEXANDER MICHAEL JOHNSON",
-                "이창섭",
+                "\uC774\uCC3D\uC12D",
                 null
         );
 

@@ -8,11 +8,9 @@ COPY src ./src
 
 RUN chmod +x ./gradlew && ./gradlew bootJar --no-daemon
 
-FROM eclipse-temurin:21-jre-alpine
+FROM mcr.microsoft.com/playwright/java:v1.58.0-noble
 
 WORKDIR /app
-
-RUN apk add --no-cache font-noto-cjk font-noto-extra
 
 COPY --from=build /app/build/libs/*.jar app.jar
 

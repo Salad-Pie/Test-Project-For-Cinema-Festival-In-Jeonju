@@ -5,38 +5,56 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.GraphicsEnvironment;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.font.GlyphVector;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Random;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SignatureImageService {
 
+    private static final Logger log = LoggerFactory.getLogger(SignatureImageService.class);
+    private static final String BUNDLED_KOREAN_CALLIGRAPHY_FONT_PATH = "/fonts/GapyeongHanseokbongB.ttf";
+    private static final String BUNDLED_KOREAN_SERIF_FONT_PATH = "/fonts/HANBatangB.ttf";
+    private static final String BUNDLED_LATIN_SCRIPT_FONT_PATH = "/fonts/BRUSHSCI.TTF";
+
     private static final String[] KOREAN_FONT_CANDIDATES = {
             "Nanum Brush Script",
             "Nanum Pen Script",
-            "NanumMyeongjo",
+            "Gapyeong Hansukbong Big Brush B",
+            "GapyeongHanseokbongB",
+            "Nanum Myeongjo",
             "Noto Serif CJK KR",
             "Noto Serif KR",
             "Noto Sans CJK KR",
             "Noto Sans KR",
-            "NanumGothic",
             "Batang",
-            "궁서체",
-            "궁서",
             "Gungsuh",
             "GungsuhChe",
             "Malgun Gothic",
             "Apple SD Gothic Neo",
             "Dialog"
     };
+
+    private final BrowserCalligraphyRenderService browserCalligraphyRenderService;
+
+    public SignatureImageService(BrowserCalligraphyRenderService browserCalligraphyRenderService) {
+        this.browserCalligraphyRenderService = browserCalligraphyRenderService;
+    }
 
     public byte[] renderSignature(String text, String fontFamily, Integer fontSize, Integer width, Integer height) {
         String value = defaultText(text);
@@ -66,7 +84,7 @@ public class SignatureImageService {
     public byte[] renderCertificateSample(CertificateSampleRequest request, String defaultName, String defaultSignature) {
         int width = 1600;
         int height = 1131;
-        String title = blankToDefault(request == null ? null : request.title(), "BackToScreen 참여 증명서");
+        String title = blankToDefault(request == null ? null : request.title(), "BackToScreen \uCC38\uC5EC \uC99D\uBA85\uC11C");
         String name = blankToDefault(request == null ? null : request.name(), defaultName);
         String signature = blankToDefault(request == null ? null : request.signatureText(), defaultSignature);
         String fontFamily = request == null ? null : request.fontFamily();
@@ -86,25 +104,25 @@ public class SignatureImageService {
             graphics.setFont(createFont(null, Font.BOLD, 72, title));
             drawCentered(graphics, title, width / 2, 220);
 
-            String description = "본인은 폐영화관 재생 프로젝트에 참여하였음을 증명합니다.";
+            String description = "\uBCF8\uC778\uC740 \uD3D0\uC601\uD654\uAD00 \uC7AC\uC0DD \uD504\uB85C\uC81D\uD2B8\uC5D0 \uCC38\uC5EC\uD558\uC600\uC74C\uC744 \uC99D\uBA85\uD569\uB2C8\uB2E4.";
             graphics.setFont(createFont(null, Font.PLAIN, 34, description));
             drawCentered(graphics, description, width / 2, 360);
 
-            graphics.setFont(createFont(null, Font.BOLD, 52, "이름"));
-            graphics.drawString("이름", 500, nameY);
+            graphics.setFont(createFont(null, Font.BOLD, 52, "\uC774\uB984"));
+            graphics.drawString("\uC774\uB984", 500, nameY);
             graphics.setFont(createFont(fontFamily, Font.PLAIN, 64, name));
             graphics.drawString(name, nameX, nameY);
 
-            String issuedAt = "발급일: 2026.05.04";
-            String place = "장소: 전주 영화관 재생 프로젝트 공간";
+            String issuedAt = "\uBC1C\uAE09\uC77C: 2026.05.04";
+            String place = "\uC7A5\uC18C: \uC804\uC8FC \uC601\uD654\uAD00 \uC7AC\uC0DD \uD504\uB85C\uC81D\uD2B8 \uACF5\uAC04";
             graphics.setFont(createFont(null, Font.PLAIN, 34, issuedAt + place));
             graphics.drawString(issuedAt, 500, 700);
             graphics.drawString(place, 500, 760);
 
             graphics.setFont(createFont(fontFamily, Font.PLAIN, 64, signature));
             graphics.drawString(signature, signatureX, signatureY);
-            graphics.setFont(createFont(null, Font.PLAIN, 26, "서명"));
-            graphics.drawString("서명", signatureX, signatureY + 54);
+            graphics.setFont(createFont(null, Font.PLAIN, 26, "\uC11C\uBA85"));
+            graphics.drawString("\uC11C\uBA85", signatureX, signatureY + 54);
 
             return toPng(image);
         } finally {
@@ -175,33 +193,76 @@ public class SignatureImageService {
         String value = defaultText(text);
         int imageWidth = defaultNumber(width, 1400);
         int imageHeight = defaultNumber(height, 520);
-        int padding = Math.max(36, imageWidth / 28);
+        int maxAttempts = 3;
 
-        BufferedImage textMask = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+        // Retry the browser render a few times because Chromium startup can fail transiently in Docker.
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                log.info(
+                        "Trying browser calligraphy render. attempt={} textLength={} width={} height={}",
+                        attempt,
+                        value.length(),
+                        imageWidth,
+                        imageHeight
+                );
+                return browserCalligraphyRenderService.render(value, imageWidth, imageHeight);
+            } catch (Exception e) {
+                log.warn(
+                        "Browser calligraphy render failed. attempt={} message={}",
+                        attempt,
+                        e.getMessage()
+                );
+            }
+        }
+
+        log.info(
+                "Falling back to legacy calligraphy render after browser retries. textLength={} width={} height={}",
+                value.length(),
+                imageWidth,
+                imageHeight
+        );
+        return renderStrongCalligraphyTextLegacy(value, imageWidth, imageHeight);
+    }
+
+    private byte[] renderStrongCalligraphyTextLegacy(String value, int imageWidth, int imageHeight) {
+        int supersampleScale = 3;
+        int highWidth = imageWidth * supersampleScale;
+        int highHeight = imageHeight * supersampleScale;
+        int padding = Math.max(42, imageWidth / 24) * supersampleScale;
+
+        log.info(
+                "Rendering strong calligraphy text. textLength={} width={} height={} supersampleScale={}",
+                value.length(),
+                imageWidth,
+                imageHeight,
+                supersampleScale
+        );
+
+        BufferedImage textMask = new BufferedImage(highWidth, highHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = textMask.createGraphics();
         try {
             applyQuality(graphics);
             graphics.setColor(Color.BLACK);
-            Font font = createFont("HY궁서B", Font.PLAIN, findMaxFontSize(graphics, value, imageWidth - padding * 2, imageHeight - padding * 2), value);
-            graphics.setFont(font);
-            FontMetrics metrics = graphics.getFontMetrics();
-            int x = Math.max(padding, (imageWidth - metrics.stringWidth(value)) / 2);
-            int y = (imageHeight - metrics.getHeight()) / 2 + metrics.getAscent();
+            Font font = createFont(
+                    "Gungsuh",
+                    Font.PLAIN,
+                    findMaxFontSize(graphics, value, highWidth - padding * 2, highHeight - padding * 2),
+                    value
+            );
 
-            // 여러 번 겹쳐 그려 굵은 붓 압력과 먹 농도를 만든다.
-            for (int offsetX = -1; offsetX <= 1; offsetX++) {
-                for (int offsetY = -1; offsetY <= 1; offsetY++) {
-                    graphics.drawString(value, x + offsetX, y + offsetY);
-                }
-            }
+            // Render on a larger canvas first so the later brush texture and downsample keep the edge detail.
+            drawCalligraphyGlyphs(graphics, value, font, highWidth, highHeight, padding);
         } finally {
             graphics.dispose();
         }
 
-        BufferedImage ink = dilateAlpha(textMask, 1);
-        ink = roughenInkEdge(ink, 34);
-        ink = addInkBleed(ink, 1);
-        ink = cropToInk(ink, 28);
+        BufferedImage ink = dilateAlpha(textMask, 2);
+        ink = applyInkTexture(ink);
+        ink = addInkBleed(ink, 2);
+        ink = addDryBrushBreaks(ink);
+        ink = roughenInkEdge(ink, 26);
+        ink = cropToInk(ink, 36 * supersampleScale);
+        ink = downsampleInk(ink, imageWidth, imageHeight);
         return toPng(ink);
     }
 
@@ -219,7 +280,7 @@ public class SignatureImageService {
     private int findMaxFontSize(Graphics2D graphics, String text, int maxWidth, int maxHeight) {
         int size = Math.max(32, maxHeight);
         while (size > 32) {
-            Font font = createFont("HY궁서B", Font.PLAIN, size, text);
+            Font font = createFont("Gungsuh", Font.PLAIN, size, text);
             FontMetrics metrics = graphics.getFontMetrics(font);
             if (metrics.stringWidth(text) <= maxWidth && metrics.getHeight() <= maxHeight) {
                 return size;
@@ -227,6 +288,49 @@ public class SignatureImageService {
             size -= 2;
         }
         return 32;
+    }
+
+    private void drawCalligraphyGlyphs(Graphics2D graphics, String text, Font font, int width, int height, int padding) {
+        graphics.setFont(font);
+        FontMetrics metrics = graphics.getFontMetrics(font);
+        GlyphVector glyphVector = font.createGlyphVector(graphics.getFontRenderContext(), text);
+        Rectangle2D visualBounds = glyphVector.getVisualBounds();
+        double baseX = Math.max(padding, (width - visualBounds.getWidth()) / 2d - visualBounds.getX());
+        double baselineY = (height - metrics.getHeight()) / 2d + metrics.getAscent();
+        Random random = new Random(text.hashCode() * 31L + width * 17L + height);
+
+        for (int index = 0; index < glyphVector.getNumGlyphs(); index++) {
+            Shape glyph = glyphVector.getGlyphOutline(index, (float) baseX, (float) baselineY);
+            Rectangle2D bounds = glyph.getBounds2D();
+            if (bounds.isEmpty()) {
+                continue;
+            }
+
+            double centerX = bounds.getCenterX();
+            double centerY = bounds.getCenterY();
+            double rotateRadians = Math.toRadians(randomBetween(random, -5.6, 5.6));
+            double scaleX = randomBetween(random, 0.93, 1.08);
+            double scaleY = randomBetween(random, 0.90, 1.18);
+            double shearX = randomBetween(random, -0.09, 0.09);
+            double shiftX = randomBetween(random, -18, 18);
+            double shiftY = randomBetween(random, -12, 12);
+
+            AffineTransform transform = new AffineTransform();
+            transform.translate(shiftX, shiftY);
+            transform.translate(centerX, centerY);
+            transform.rotate(rotateRadians);
+            transform.shear(shearX, 0);
+            transform.scale(scaleX, scaleY);
+            transform.translate(-centerX, -centerY);
+
+            Shape transformedGlyph = transform.createTransformedShape(glyph);
+            graphics.setColor(new Color(12, 12, 12, 245));
+            graphics.fill(transformedGlyph);
+
+            // Keep the center dense while the edge filters roughen only the outer contour later.
+            graphics.setStroke(new BasicStroke(Math.max(3f, font.getSize2D() / 28f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            graphics.draw(transformedGlyph);
+        }
     }
 
     private BufferedImage dilateAlpha(BufferedImage source, int radius) {
@@ -255,6 +359,28 @@ public class SignatureImageService {
         return result;
     }
 
+    private BufferedImage applyInkTexture(BufferedImage source) {
+        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int alpha = (source.getRGB(x, y) >>> 24) & 0xff;
+                if (alpha == 0) {
+                    continue;
+                }
+
+                double brushWave = 0.82d + 0.12d * Math.sin(x * 0.031d + y * 0.009d);
+                double grain = 0.86d + 0.10d * Math.cos(y * 0.071d - x * 0.015d);
+                double streak = 0.88d + 0.18d * Math.sin((x + y) * 0.019d);
+                int texturedAlpha = (int) Math.round(alpha * brushWave * grain * streak);
+                int finalAlpha = Math.max(0, Math.min(255, texturedAlpha));
+                if (finalAlpha > 8) {
+                    result.setRGB(x, y, ((finalAlpha & 0xff) << 24));
+                }
+            }
+        }
+        return result;
+    }
+
     private BufferedImage roughenInkEdge(BufferedImage source, int strength) {
         BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Random random = new Random(20260506L);
@@ -269,6 +395,29 @@ public class SignatureImageService {
                 int finalAlpha = Math.max(0, Math.min(255, alpha - edgePenalty));
                 if (finalAlpha > 14) {
                     result.setRGB(x, y, (finalAlpha << 24));
+                }
+            }
+        }
+        return result;
+    }
+
+    private BufferedImage addDryBrushBreaks(BufferedImage source) {
+        BufferedImage result = copyImage(source);
+        for (int y = 0; y < source.getHeight(); y++) {
+            for (int x = 0; x < source.getWidth(); x++) {
+                int alpha = (source.getRGB(x, y) >>> 24) & 0xff;
+                if (alpha == 0 || !isEdgePixel(source, x, y)) {
+                    continue;
+                }
+
+                double cut = Math.abs(Math.sin(x * 0.12d + y * 0.025d));
+                if (cut > 0.92d) {
+                    int reducedAlpha = Math.max(0, alpha - 120);
+                    if (reducedAlpha > 10) {
+                        result.setRGB(x, y, ((reducedAlpha & 0xff) << 24));
+                    } else {
+                        result.setRGB(x, y, 0x00000000);
+                    }
                 }
             }
         }
@@ -344,6 +493,33 @@ public class SignatureImageService {
         maxX = Math.min(source.getWidth() - 1, maxX + padding);
         maxY = Math.min(source.getHeight() - 1, maxY + padding);
         return source.getSubimage(minX, minY, maxX - minX + 1, maxY - minY + 1);
+    }
+
+    private BufferedImage downsampleInk(BufferedImage source, int maxWidth, int maxHeight) {
+        double scale = Math.min((double) maxWidth / source.getWidth(), (double) maxHeight / source.getHeight());
+        scale = Math.min(scale, 1d);
+        int targetWidth = Math.max(1, (int) Math.round(source.getWidth() * scale));
+        int targetHeight = Math.max(1, (int) Math.round(source.getHeight() * scale));
+        BufferedImage result = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = result.createGraphics();
+        try {
+            applyQuality(graphics);
+            graphics.drawImage(source, 0, 0, targetWidth, targetHeight, null);
+        } finally {
+            graphics.dispose();
+        }
+        return result;
+    }
+
+    private BufferedImage copyImage(BufferedImage source) {
+        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics graphics = result.getGraphics();
+        try {
+            graphics.drawImage(source, 0, 0, null);
+        } finally {
+            graphics.dispose();
+        }
+        return result;
     }
 
     private void drawCentered(Graphics2D graphics, String text, int centerX, int baselineY) {
@@ -444,7 +620,7 @@ public class SignatureImageService {
     }
 
     private String defaultText(String value) {
-        return blankToDefault(value, "서명");
+        return blankToDefault(value, "\uC11C\uBA85");
     }
 
     private String blankToDefault(String value, String defaultValue) {
@@ -455,7 +631,43 @@ public class SignatureImageService {
     }
 
     private Font createFont(String fontFamily, int style, int size, String sampleText) {
+        Font bundledFont = loadBundledFont(fontFamily, style, size, sampleText);
+        if (bundledFont != null) {
+            return bundledFont;
+        }
         return new Font(resolveDisplayableFont(fontFamily, sampleText), style, size);
+    }
+
+    private Font loadBundledFont(String fontFamily, int style, int size, String sampleText) {
+        String normalizedFontFamily = normalizeFontFamily(fontFamily);
+        String resourcePath = resolveBundledFontResource(normalizedFontFamily, sampleText);
+        if (resourcePath == null) {
+            return null;
+        }
+
+        try (InputStream inputStream = SignatureImageService.class.getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                log.warn("Bundled font resource not found. path={}", resourcePath);
+                return null;
+            }
+            return Font.createFont(Font.TRUETYPE_FONT, inputStream).deriveFont(style, (float) size);
+        } catch (Exception e) {
+            log.warn("Failed to load bundled font. path={} message={}", resourcePath, e.getMessage());
+            return null;
+        }
+    }
+
+    private String resolveBundledFontResource(String normalizedFontFamily, String sampleText) {
+        if (containsHangul(sampleText)) {
+            if ("Gungsuh".equalsIgnoreCase(normalizedFontFamily) || normalizedFontFamily.isBlank()) {
+                return BUNDLED_KOREAN_CALLIGRAPHY_FONT_PATH;
+            }
+            return BUNDLED_KOREAN_SERIF_FONT_PATH;
+        }
+        if ("Brush Script MT".equalsIgnoreCase(normalizedFontFamily) || "BRUSHSCI".equalsIgnoreCase(normalizedFontFamily)) {
+            return BUNDLED_LATIN_SCRIPT_FONT_PATH;
+        }
+        return null;
     }
 
     private String resolveDisplayableFont(String preferredFont, String sampleText) {
@@ -495,20 +707,32 @@ public class SignatureImageService {
         if (fontFamily == null || fontFamily.isBlank()) {
             return "";
         }
-        return switch (fontFamily.trim()) {
-            case "궁서", "궁서체" -> "Gungsuh";
-            default -> fontFamily.trim();
-        };
+        String trimmed = fontFamily.trim();
+        String lower = trimmed.toLowerCase();
+        if (lower.equals("gungsuh") || lower.equals("gungsuhche")) {
+            return "Gungsuh";
+        }
+        return trimmed;
     }
-
     private boolean canDisplay(Font font, String sampleText) {
         if (sampleText == null || sampleText.isBlank()) {
             return true;
         }
         return font.canDisplayUpTo(sampleText) < 0;
     }
+    private boolean containsHangul(String sampleText) {
+        if (sampleText == null || sampleText.isBlank()) {
+            return false;
+        }
+        return sampleText.codePoints().anyMatch(codePoint -> codePoint >= 0xAC00 && codePoint <= 0xD7A3);
+    }
+
+    private double randomBetween(Random random, double min, double max) {
+        return min + (max - min) * random.nextDouble();
+    }
 
     private int defaultNumber(Integer value, int defaultValue) {
         return value == null || value <= 0 ? defaultValue : value;
     }
 }
+

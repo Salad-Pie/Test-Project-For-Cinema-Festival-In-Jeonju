@@ -10,13 +10,14 @@ class StrongCalligraphyTextTest {
 
     @Test
     void renderStrongCalligraphyTextSample() throws Exception {
-        SignatureImageService signatureImageService = new SignatureImageService();
+        SignatureImageService signatureImageService =
+                new SignatureImageService(new BrowserCalligraphyRenderService());
 
-        byte[] png = signatureImageService.renderStrongCalligraphyText("이창섭", 1400, 520);
+        byte[] png = signatureImageService.renderStrongCalligraphyText("\uC774\uCC3D\uC12D", 1400, 520);
 
         Path outputDirectory = Path.of("build", "generated-samples");
         Files.createDirectories(outputDirectory);
-        Path output = outputDirectory.resolve("strong-calligraphy-이창섭.png");
+        Path output = outputDirectory.resolve("strong-calligraphy-sample.png");
         Files.write(output, png);
 
         assertThat(png).startsWith(new byte[]{(byte) 0x89, 'P', 'N', 'G'});

@@ -899,7 +899,7 @@ button:disabled {
 
 .ending-credits-cast-code {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--ending-font-scale, 1));
   letter-spacing: 0.38em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.54);
@@ -907,13 +907,13 @@ button:disabled {
 
 .ending-credits-cast-line {
   margin: 0;
-  font-size: clamp(1.4rem, 2.4vw, 2.2rem);
+  font-size: calc(clamp(1.4rem, 2.4vw, 2.2rem) * var(--ending-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.12em;
 }
 
 .ending-credits-cast-line-korean {
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-size: calc(clamp(1.8rem, 3vw, 2.6rem) * var(--ending-font-scale, 1));
 }
 
 .ending-credits-cast-signature {
@@ -925,7 +925,7 @@ button:disabled {
 
 .ending-credits-group-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: calc(1rem * var(--ending-font-scale, 1));
   letter-spacing: 0.48em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.66);
@@ -933,7 +933,7 @@ button:disabled {
 
 .ending-credits-group-line {
   margin: 0;
-  font-size: clamp(1.2rem, 2.2vw, 2rem);
+  font-size: calc(clamp(1.2rem, 2.2vw, 2rem) * var(--ending-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.4;
@@ -958,7 +958,7 @@ button:disabled {
 
 .ending-credits-settings-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(160px, 1fr));
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(160px, 1fr));
   gap: 12px;
   margin-bottom: 18px;
 }

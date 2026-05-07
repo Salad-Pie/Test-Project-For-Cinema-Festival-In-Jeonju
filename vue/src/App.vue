@@ -198,6 +198,7 @@ const state = reactive({
     leadMessage: '',
     rollDurationSeconds: 18,
     rollGapPx: 72,
+    fontScalePercent: 100,
     highlightedCodes: {},
   },
   identifierReissue: {
@@ -575,6 +576,7 @@ watch(
     state.endingCredits.entries.length,
     state.endingCredits.rollDurationSeconds,
     state.endingCredits.rollGapPx,
+    state.endingCredits.fontScalePercent,
     state.endingCredits.leadMessage,
   ],
   () => {
@@ -1275,6 +1277,11 @@ function onEndingCreditsGapInput(event) {
   state.endingCredits.rollGapPx = Math.min(180, Math.max(24, next))
 }
 
+function onEndingCreditsFontScaleInput(event) {
+  const next = Number(event.target.value || 100)
+  state.endingCredits.fontScalePercent = Math.min(180, Math.max(60, next))
+}
+
 async function addEndingCreditsEntry() {
   state.loading = true
   state.error = ''
@@ -1458,6 +1465,7 @@ function downloadStoredCertificatePdf() {
               :style="{
                 '--ending-roll-duration': `${state.endingCredits.rollDurationSeconds}s`,
                 '--ending-roll-gap': `${state.endingCredits.rollGapPx}px`,
+                '--ending-font-scale': `${state.endingCredits.fontScalePercent / 100}`,
               }"
             >
               <div
@@ -1529,6 +1537,17 @@ function downloadStoredCertificatePdf() {
                 max="180"
                 step="4"
                 @input="onEndingCreditsGapInput"
+              />
+            </label>
+            <label class="ending-credits-field">
+              <span>글자 크기(%)</span>
+              <input
+                :value="state.endingCredits.fontScalePercent"
+                type="number"
+                min="60"
+                max="180"
+                step="5"
+                @input="onEndingCreditsFontScaleInput"
               />
             </label>
           </div>
@@ -2165,10 +2184,6 @@ function downloadStoredCertificatePdf() {
       <div class="actions">
         <button :disabled="state.loading" @click="clearSignature">{{ t('tablet.clear') }}</button>
         <button :disabled="state.loading || !state.verifiedToken" @click="submitSignature">{{ t('tablet.save') }}</button>
-      </div>
-      <div class="actions">
-        <button :disabled="state.loading || !state.verifiedToken" @click="downloadSignatureImage">{{ t('tablet.renderSignature') }}</button>
-        <button :disabled="state.loading || !state.verifiedToken" @click="downloadCertificateSample">{{ t('tablet.renderCertificate') }}</button>
       </div>
     </section>
 

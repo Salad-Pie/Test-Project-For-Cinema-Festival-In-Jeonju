@@ -2,8 +2,9 @@ package com.example.springboot.service;
 
 import com.example.springboot.domain.NameConversionSource;
 import com.example.springboot.domain.NameLanguage;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,29 +27,50 @@ public class EnglishKoreanNameService {
             "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ",
             "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
     };
+
+    private static final Map<String, String> PRIORITY_NAME_MAP = Map.ofEntries(
+            Map.entry("ANITA ANDAYANI", "아니타 안다야니"),
+            Map.entry("LUKFINTIA FILIA", "루크핀티아 필리아"),
+            Map.entry("RAHMAT MUTAZIM EKA PUTRA", "라흐맛 무타짐 에카 푸트라"),
+            Map.entry("SILVANA RESKI MULIAWAN", "실바나 레스키 물리아완"),
+            Map.entry("MARWIYA ARIFUDDIN TIMBANG", "마르위야 아리푸딘 팀방"),
+            Map.entry("MAYRIDA NUDE HAMMA", "마이리다 누데 함마"),
+            Map.entry("SUCI PRATIWI MANGANTAR", "수치 프라티위 망안타르"),
+            Map.entry("EVI SULTRIANA ZACHRI", "에비 술트리아나 자크리"),
+            Map.entry("LENDA LIEM", "렌다 리엠"),
+            Map.entry("AULIA ENJELINA RAUFIKA SUNARYO", "아울리아 엔젤리나 라우피카 수나르요"),
+            Map.entry("YUNITA MANDRASARI", "유니타 만드라사리"),
+            Map.entry("YULIATI", "율리아티"),
+            Map.entry("NANIK HARIANI", "나닉 하리아니"),
+            Map.entry("RIVANA AMELIA FIONITA", "리바나 아멜리아 피오니타"),
+            Map.entry("HADI ANDRIAN", "하디 안드리안"),
+            Map.entry("KANG BONGJU", "강봉주")
+    );
+
     private static final Map<String, String> OFFICIAL_EXAMPLE_DICTIONARY = Map.ofEntries(
             Map.entry("alexander", "알렉산더"),
-            Map.entry("anna", "애나"),
+            Map.entry("amelia", "아멜리아"),
             Map.entry("andrew", "앤드루"),
+            Map.entry("anna", "안나"),
             Map.entry("anthony", "앤서니"),
-            Map.entry("benjamin", "벤저민"),
+            Map.entry("benjamin", "벤자민"),
             Map.entry("charles", "찰스"),
             Map.entry("christopher", "크리스토퍼"),
-            Map.entry("daniel", "대니얼"),
-            Map.entry("danielle", "대니엘"),
+            Map.entry("daniel", "다니엘"),
+            Map.entry("danielle", "다니엘"),
             Map.entry("david", "데이비드"),
             Map.entry("edward", "에드워드"),
+            Map.entry("elizabeth", "엘리자베스"),
             Map.entry("emily", "에밀리"),
             Map.entry("emma", "엠마"),
-            Map.entry("elizabeth", "엘리자베스"),
             Map.entry("ethan", "이선"),
             Map.entry("george", "조지"),
             Map.entry("grace", "그레이스"),
             Map.entry("henry", "헨리"),
             Map.entry("isabella", "이사벨라"),
             Map.entry("jacob", "제이컵"),
-            Map.entry("jennifer", "제니퍼"),
             Map.entry("james", "제임스"),
+            Map.entry("jennifer", "제니퍼"),
             Map.entry("john", "존"),
             Map.entry("johnson", "존슨"),
             Map.entry("joseph", "조지프"),
@@ -69,7 +91,7 @@ public class EnglishKoreanNameService {
             Map.entry("smith", "스미스"),
             Map.entry("sofia", "소피아"),
             Map.entry("sophia", "소피아"),
-            Map.entry("thomas", "토머스"),
+            Map.entry("thomas", "토마스"),
             Map.entry("william", "윌리엄")
     );
 
@@ -85,6 +107,16 @@ public class EnglishKoreanNameService {
         if (language != NameLanguage.EN) {
             String normalizedNonEnglish = normalizeNonEnglish(value);
             return new ConversionResult(normalizedNonEnglish, NameConversionSource.MANUAL_REVIEW);
+        }
+
+        String priorityKey = normalizePriorityKey(value);
+        if (priorityKey == null) {
+            return new ConversionResult(null, null);
+        }
+
+        String mappedName = PRIORITY_NAME_MAP.get(priorityKey);
+        if (mappedName != null) {
+            return new ConversionResult(mappedName, NameConversionSource.MANUAL);
         }
 
         String normalized = normalize(value);
@@ -110,6 +142,24 @@ public class EnglishKoreanNameService {
             }
         }
         return new ConversionResult(result.toString(), source);
+    }
+
+    public Map<String, String> getPriorityNameMap() {
+        return new LinkedHashMap<>(PRIORITY_NAME_MAP);
+    }
+
+    private String normalizePriorityKey(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.toUpperCase(Locale.ROOT)
+                .replace('’', '\'')
+                .replace('`', '\'')
+                .replaceAll("'", "")
+                .replaceAll("[^A-Z\\s-]", " ")
+                .replace('-', ' ')
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private String normalize(String value) {
@@ -186,7 +236,7 @@ public class EnglishKoreanNameService {
             return new Initial("ㅍ", index + 2);
         }
         if (remaining.startsWith("th")) {
-            return new Initial("ㅅ", index + 2);
+            return new Initial("ㅌ", index + 2);
         }
         if (remaining.startsWith("wh")) {
             return new Initial("ㅇ", index + 2);
@@ -195,7 +245,7 @@ public class EnglishKoreanNameService {
             return new Initial("ㅋ", index + 2);
         }
         if (remaining.startsWith("ng")) {
-            return new Initial("ㄴ", index + 2);
+            return new Initial("ㅇ", index + 2);
         }
 
         return switch (word.charAt(index)) {
@@ -224,7 +274,7 @@ public class EnglishKoreanNameService {
         }
         String remaining = word.substring(index);
         if (remaining.startsWith("ae")) {
-            return new Vowel("ㅐ", index + 2);
+            return new Vowel("ㅔ", index + 2);
         }
         if (remaining.startsWith("ai") || remaining.startsWith("ay")) {
             return new Vowel("ㅔ", index + 2);
@@ -236,10 +286,10 @@ public class EnglishKoreanNameService {
             return new Vowel("ㅜ", index + 2);
         }
         if (remaining.startsWith("ou") || remaining.startsWith("ow")) {
-            return new Vowel("ㅏ", index + 2);
+            return new Vowel("ㅗ", index + 2);
         }
         if (remaining.startsWith("oi") || remaining.startsWith("oy")) {
-            return new Vowel("ㅗ", index + 2);
+            return new Vowel("ㅚ", index + 2);
         }
         if (remaining.startsWith("au")) {
             return new Vowel("ㅗ", index + 2);
@@ -272,7 +322,7 @@ public class EnglishKoreanNameService {
         return switch (initial) {
             case "ㄱ", "ㅋ" -> "ㄱ";
             case "ㄴ" -> "ㄴ";
-            case "ㄷ", "ㅌ", "ㅅ", "ㅈ", "ㅊ" -> "ㅅ";
+            case "ㄷ", "ㅌ", "ㅅ", "ㅈ", "ㅊ", "ㅎ" -> "ㅅ";
             case "ㄹ" -> "ㄹ";
             case "ㅁ" -> "ㅁ";
             case "ㅂ", "ㅍ" -> "ㅂ";
