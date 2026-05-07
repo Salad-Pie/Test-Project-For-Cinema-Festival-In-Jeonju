@@ -90,8 +90,6 @@ const artistMeetingHourMap = {
 }
 const axSpaceDate = '2026-05-08'
 const axSpaceHour = '20'
-const axSpaceDate = '2026-05-08'
-const axSpaceHour = '20'
 const kArtAxDate = '2026-05-09'
 const kArtAxHour = '16'
 const axShopShopDate = '2026-05-09'
