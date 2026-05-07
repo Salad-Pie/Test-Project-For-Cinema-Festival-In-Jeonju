@@ -1458,10 +1458,7 @@ async function addEndingCreditsEntry() {
 
 async function showEndingCreditsFullscreen() {
   state.error = ''
-  if (endingCreditsRollEntries.value.length === 0) {
-    setSafeError(userError('\uBA3C\uC800 \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uCD94\uAC00\uD574 \uC5D4\uB529 \uD06C\uB808\uB51F \uD56D\uBAA9\uC744 \uB9CC\uB4E4\uC5B4 \uC8FC\uC138\uC694.'))
-    return
-  }
+
 
   const target = endingCreditsShellRef.value
   if (!target || !target.requestFullscreen) {
@@ -1739,7 +1736,7 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <button :disabled="state.loading" @click="addEndingCreditsEntry">{{ endingCreditsText.button }}</button>
-            <button :disabled="state.loading || endingCreditsRollEntries.length === 0" @click="showEndingCreditsFullscreen">{{ endingCreditsViewButtonLabelKo }}</button>
+            <button :disabled="state.loading" @click="showEndingCreditsFullscreen">{{ endingCreditsViewButtonLabelKo }}</button>
           </div>
         </article>
         <article class="ending-credits-result-card">
@@ -2378,6 +2375,7 @@ function downloadStoredCertificatePdf() {
     <p v-if="state.error" class="error">{{ state.error }}</p>
   </main>
 </template>
+
 
 
 
