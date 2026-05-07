@@ -101,8 +101,8 @@ const kakaoDirectionsUrl = `https://map.kakao.com/link/search/${encodeURICompone
 const naverDirectionsUrl = `https://map.naver.com/p/search/${encodeURIComponent(locationAddress)}`
 const ideaPosterUrl = 'https://zdo.co.kr/theme/home/html/image/top_logo_m.png'
 const customPaymentProviderValue = '__CUSTOM__'
-const endingCreditsLoadButtonLabelKo = '\uC5D4\uB529 \uD06C\uB808\uB51F \uBD88\uB7EC\uC624\uAE30'
-const endingCreditsViewButtonLabelKo = '\uC5D4\uB529 \uD06C\uB808\uB51F \uBCF4\uAE30'
+const endingCreditsLoadButtonLabelKo = '\uC5D4\uB529 \uD06C\uB808\uB527 \uBD88\uB7EC\uC624\uAE30'
+const endingCreditsViewButtonLabelKo = '\uC5D4\uB529 \uD06C\uB808\uB527 \uBCF4\uAE30'
 const endingCreditsLeadPreset1 = `\uC81C\uBAA9
 AX \uC735\uBCF5\uD569 \uD55C \uCF54\uB4DC \uD504\uB85C\uC81D\uD2B8
 \uC81C\uC791 
@@ -281,7 +281,7 @@ const endingCreditsText = computed(() => {
   if (locale.value === 'ko') {
     return {
       title: 'Indonesia Familiarization Tour Ending Credit',
-      description: '\uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC785\uB825\uD558\uBA74 \uCC38\uC5EC\uC790\uC758 \uC601\uC5B4 \uC774\uB984, \uD55C\uAE00 \uC774\uB984, \uC11C\uC608 \uC11C\uBA85 \uC774\uBBF8\uC9C0\uB97C \uC5D4\uB529 \uD06C\uB808\uB51F\uC5D0 \uD45C\uC2DC\uD569\uB2C8\uB2E4.',
+      description: '\uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC785\uB825\uD558\uBA74 \uCC38\uC5EC\uC790\uC758 \uC601\uC5B4 \uC774\uB984, \uD55C\uAE00 \uC774\uB984, \uC11C\uC608 \uC11C\uBA85 \uC774\uBBF8\uC9C0\uB97C \uC5D4\uB529 \uD06C\uB808\uB527\uC5D0 \uD45C\uC2DC\uD569\uB2C8\uB2E4.',
       inputLabel: '\u0036\uC790\uB9AC \uC2DD\uBCC4\uC790 \uCF54\uB4DC',
       inputPlaceholder: '\uC22B\uC790 \u0036\uC790\uB9AC\uB97C \uC785\uB825\uD558\uC138\uC694.',
       button: endingCreditsLoadButtonLabelKo,
@@ -1583,6 +1583,7 @@ function downloadStoredCertificatePdf() {
 
           <article class="ending-credits-message-card">
             <div
+              :key="String(state.endingCredits.isFullscreen)"
               class="ending-credits-roll"
               :style="{
                 '--ending-roll-duration': `${state.endingCredits.rollDurationSeconds}s`,
