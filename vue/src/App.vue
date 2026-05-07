@@ -1489,7 +1489,6 @@ function downloadStoredCertificatePdf() {
                 :class="['ending-credits-cast-group', { 'is-highlighted': state.endingCredits.highlightedCodes[entry.code] }]"
                 :data-code="entry.code"
               >
-                <p class="ending-credits-cast-code">CODE {{ entry.code }}</p>
                 <p v-if="entry.englishName" class="ending-credits-cast-line">{{ entry.englishName }}</p>
                 <p v-if="entry.koreanName" class="ending-credits-cast-line ending-credits-cast-line-korean">{{ entry.koreanName }}</p>
                 <img
