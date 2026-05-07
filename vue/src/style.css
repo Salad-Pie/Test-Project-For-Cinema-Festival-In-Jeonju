@@ -1015,6 +1015,19 @@ button:disabled {
   resize: vertical;
 }
 
+.ending-credits-toggle-field {
+  align-content: start;
+}
+
+.ending-credits-toggle-field input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin-top: 10px;
+  accent-color: #79d0ff;
+  justify-self: start;
+}
+
 .ending-credits-control-row button {
   min-width: 220px;
   min-height: 52px;
@@ -1095,6 +1108,30 @@ button:disabled {
 .ending-credits-delete-button:hover:enabled {
   background: rgba(220, 53, 69, 0.3);
   border-color: rgba(220, 53, 69, 0.45);
+}
+
+.ending-credits-preset-actions {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 10px;
+  flex-wrap: wrap;
+}
+
+.ending-credits-preset-button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(121, 208, 255, 0.35);
+  background: rgba(121, 208, 255, 0.12);
+  color: #e8f8ff;
+  font-weight: 600;
+}
+
+.ending-credits-preset-button:hover,
+.ending-credits-preset-button:focus-visible {
+  background: rgba(121, 208, 255, 0.2);
+  border-color: rgba(121, 208, 255, 0.5);
+  outline: none;
 }
 
 @keyframes ending-credits-roll {

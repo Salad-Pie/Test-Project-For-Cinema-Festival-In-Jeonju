@@ -66,7 +66,7 @@ const publicRoutePages = [
   { key: 'identifierReissue.title', href: '/identifier-code-reissue' },
   { key: 'tablet.verifyTitle', href: '/tablet' },
   { key: 'certificateDownload.title', href: '/certificate-download' },
-  { href: '/ending-credits', label: 'Indonesia Fam Tour Ending Credits' },
+  { href: '/ending-credits', label: 'Indonesia Familiarization Tour Ending Credit' },
   { key: 'nav.ideaContest', href: '/idea-contest' },
   { key: 'nav.sponsorshipApplication', href: '/sponsorship-application' },
   { key: 'nav.streetCollaboration', href: '/street-collaboration' },
@@ -101,6 +101,8 @@ const kakaoDirectionsUrl = `https://map.kakao.com/link/search/${encodeURICompone
 const naverDirectionsUrl = `https://map.naver.com/p/search/${encodeURIComponent(locationAddress)}`
 const ideaPosterUrl = 'https://zdo.co.kr/theme/home/html/image/top_logo_m.png'
 const customPaymentProviderValue = '__CUSTOM__'
+const endingCreditsLoadButtonLabelKo = '\uC5D4\uB529 \uD06C\uB808\uB51F \uBD88\uB7EC\uC624\uAE30'
+const endingCreditsViewButtonLabelKo = '\uC5D4\uB529 \uD06C\uB808\uB51F \uBCF4\uAE30'
 const endingCreditsLeadPreset1 = `\uC81C\uBAA9
 AX \uC735\uBCF5\uD569 \uD55C \uCF54\uB4DC \uD504\uB85C\uC81D\uD2B8
 \uC81C\uC791 
@@ -243,9 +245,9 @@ const state = reactive({
     rollDurationSeconds: 18,
     rollGapPx: 72,
     fontScalePercent: 100,
+    stopAfterOneCycle: false,
+    includeIdentifierEntries: true,
     highlightedCodes: {},
-    presetPreviewTitle: '',
-    presetPreviewContent: '',
   },
   identifierReissue: {
     message: '',
@@ -273,25 +275,26 @@ const sponsorshipPaymentProviderOptions = computed(
   () => sponsorshipPaymentProviderOptionsByType[state.sponsorship.paymentMethodType] || []
 )
 const endingCreditsRouteLabel = computed(() => {
-  if (locale.value === 'ko') return '\uC778\uB3C4\uB124\uC2DC\uC544 \uD33D\uD22C\uC5B4 \uC5D4\uB529 \uD06C\uB808\uB51F'
-  return 'Indonesia Fam Tour Ending Credits'
+  return 'Indonesia Familiarization Tour Ending Credit'
 })
 const endingCreditsText = computed(() => {
   if (locale.value === 'ko') {
     return {
-      title: '\uC778\uB3C4\uB124\uC2DC\uC544 \uD33D\uD22C\uC5B4 \uC5D4\uB529 \uD06C\uB808\uB51F',
+      title: 'Indonesia Familiarization Tour Ending Credit',
       description: '\uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC785\uB825\uD558\uBA74 \uCC38\uC5EC\uC790\uC758 \uC601\uC5B4 \uC774\uB984, \uD55C\uAE00 \uC774\uB984, \uC11C\uC608 \uC11C\uBA85 \uC774\uBBF8\uC9C0\uB97C \uC5D4\uB529 \uD06C\uB808\uB51F\uC5D0 \uD45C\uC2DC\uD569\uB2C8\uB2E4.',
       inputLabel: '\u0036\uC790\uB9AC \uC2DD\uBCC4\uC790 \uCF54\uB4DC',
       inputPlaceholder: '\uC22B\uC790 \u0036\uC790\uB9AC\uB97C \uC785\uB825\uD558\uC138\uC694.',
-      button: '\uC5D4\uB529 \uD06C\uB808\uB51F \uBD88\uB7EC\uC624\uAE30',
+      button: endingCreditsLoadButtonLabelKo,
       englishName: '\uC601\uC5B4 \uC774\uB984',
       koreanName: '\uD55C\uAE00 \uC774\uB984',
       signature: '\uC11C\uC608 \uC11C\uBA85',
       resultTitle: 'Ending Credit Cast',
+      stopAfterOneCycle: '\u0031\uD68C \uC7AC\uC0DD \uD6C4 \uBA48\uCD94\uAE30',
+      includeIdentifierEntries: '\uC2DD\uBCC4\uC790 \uB9AC\uC2A4\uD2B8 \uBC18\uC601',
     }
   }
   return {
-    title: 'Indonesia Fam Tour Ending Credits',
+    title: 'Indonesia Familiarization Tour Ending Credit',
     description: 'Enter the identifier code to display the participant English name, Korean name, and calligraphy signature image in the ending credits.',
     inputLabel: '6-digit identifier code',
     inputPlaceholder: 'Enter 6 digits',
@@ -300,6 +303,8 @@ const endingCreditsText = computed(() => {
     koreanName: 'Korean Name',
     signature: 'Calligraphy Signature',
     resultTitle: 'Ending Credit Cast',
+    stopAfterOneCycle: 'Stop after one cycle',
+    includeIdentifierEntries: 'Include identifier entries',
   }
 })
 const endingCreditsMessageGroups = computed(() => [
@@ -327,7 +332,9 @@ const endingCreditsClosingGroups = computed(() => [
     : []),
 ])
 const endingCreditsRollEntries = computed(() =>
-  state.endingCredits.entries.filter((entry) => entry.hasKoreanName || entry.hasSignature || entry.hasEnglishName)
+  state.endingCredits.includeIdentifierEntries
+    ? state.endingCredits.entries.filter((entry) => entry.hasKoreanName || entry.hasSignature || entry.hasEnglishName)
+    : []
 )
 const isCustomSponsorshipPaymentProvider = computed(
   () => state.sponsorship.paymentProviderPreset === customPaymentProviderValue
@@ -1200,16 +1207,6 @@ function resetSignaturePreview() {
   state.signaturePreview.ocrConfidence = null
 }
 
-function showEndingCreditsPresetPreview(title, content) {
-  state.endingCredits.presetPreviewTitle = title
-  state.endingCredits.presetPreviewContent = content
-}
-
-function hideEndingCreditsPresetPreview() {
-  state.endingCredits.presetPreviewTitle = ''
-  state.endingCredits.presetPreviewContent = ''
-}
-
 function applyEndingCreditsLeadPreset(content) {
   state.endingCredits.leadMessage = content
 }
@@ -1594,6 +1591,8 @@ function downloadStoredCertificatePdf() {
                 '--ending-roll-duration': `${state.endingCredits.rollDurationSeconds}s`,
                 '--ending-roll-gap': `${state.endingCredits.rollGapPx}px`,
                 '--ending-font-scale': `${state.endingCredits.fontScalePercent / 100}`,
+                '--ending-roll-iteration-count': state.endingCredits.stopAfterOneCycle ? '1' : 'infinite',
+                '--ending-roll-fill-mode': state.endingCredits.stopAfterOneCycle ? 'forwards' : 'none',
               }"
             >
               <div
@@ -1657,10 +1656,6 @@ function downloadStoredCertificatePdf() {
                 <button
                   type="button"
                   class="ending-credits-preset-button"
-                  @mouseenter="showEndingCreditsPresetPreview('\uC0C1\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsLeadPreset1)"
-                  @mouseleave="hideEndingCreditsPresetPreview"
-                  @focus="showEndingCreditsPresetPreview('\uC0C1\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsLeadPreset1)"
-                  @blur="hideEndingCreditsPresetPreview"
                   @click="applyEndingCreditsLeadPreset(endingCreditsLeadPreset1)"
                 >
                   {{ '\uC0C1\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88' }}
@@ -1678,10 +1673,6 @@ function downloadStoredCertificatePdf() {
                 <button
                   type="button"
                   class="ending-credits-preset-button"
-                  @mouseenter="showEndingCreditsPresetPreview('\uD558\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsTailPreset1)"
-                  @mouseleave="hideEndingCreditsPresetPreview"
-                  @focus="showEndingCreditsPresetPreview('\uD558\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsTailPreset1)"
-                  @blur="hideEndingCreditsPresetPreview"
                   @click="applyEndingCreditsTailPreset(endingCreditsTailPreset1)"
                 >
                   {{ '\uD558\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88' }}
@@ -1693,13 +1684,6 @@ function downloadStoredCertificatePdf() {
                 :placeholder="'\uAC00\uC7A5 \uB9C8\uC9C0\uB9C9\uC5D0 \uC62C\uB77C\uAC08 \uBB38\uAD6C\uB97C \uC904\uBC14\uAFC8\uC73C\uB85C \uC785\uB825\uD558\uC138\uC694.'"
               />
             </label>
-            <div
-              v-if="state.endingCredits.presetPreviewContent"
-              class="ending-credits-preset-preview ending-credits-field-wide"
-            >
-              <strong>{{ state.endingCredits.presetPreviewTitle }}</strong>
-              <pre>{{ state.endingCredits.presetPreviewContent }}</pre>
-            </div>
             <label class="ending-credits-field">
               <span>{{ '\uB864\uB9C1 \uC18D\uB3C4(\uCD08)' }}</span>
               <input
@@ -1733,6 +1717,14 @@ function downloadStoredCertificatePdf() {
                 @input="onEndingCreditsFontScaleInput"
               />
             </label>
+            <label class="ending-credits-field ending-credits-toggle-field">
+              <span>{{ endingCreditsText.stopAfterOneCycle }}</span>
+              <input v-model="state.endingCredits.stopAfterOneCycle" type="checkbox" />
+            </label>
+            <label class="ending-credits-field ending-credits-toggle-field">
+              <span>{{ endingCreditsText.includeIdentifierEntries }}</span>
+              <input v-model="state.endingCredits.includeIdentifierEntries" type="checkbox" />
+            </label>
           </div>
           <div class="ending-credits-control-row">
             <label class="ending-credits-field">
@@ -1747,7 +1739,7 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <button :disabled="state.loading" @click="addEndingCreditsEntry">{{ endingCreditsText.button }}</button>
-            <button :disabled="state.loading || endingCreditsRollEntries.length === 0" @click="showEndingCreditsFullscreen">{{ '\uC5D4\uB529 \uD06C\uB808\uB51F \uBCF4\uAE30' }}</button>
+            <button :disabled="state.loading || endingCreditsRollEntries.length === 0" @click="showEndingCreditsFullscreen">{{ endingCreditsViewButtonLabelKo }}</button>
           </div>
         </article>
         <article class="ending-credits-result-card">
