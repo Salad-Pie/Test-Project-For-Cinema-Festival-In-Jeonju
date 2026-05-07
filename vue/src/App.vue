@@ -90,13 +90,15 @@ const artistMeetingHourMap = {
 }
 const axSpaceDate = '2026-05-08'
 const axSpaceHour = '20'
+const axSpaceDate = '2026-05-08'
+const axSpaceHour = '20'
 const kArtAxDate = '2026-05-09'
 const kArtAxHour = '16'
 const axShopShopDate = '2026-05-09'
 const axShopShopHour = '14'
 const pdRecruitDate = '2026-05-09'
 const pdRecruitHour = '19'
-const locationAddress = '??????????諛몃마嶺뚮?????????????硫λ젒?????????곕츥???????????ш끽維뽳쭩?뱀땡???얩맪??????????????????????????????諛몃마嶺뚮?????????????硫λ젒?????????????諛몃마嶺뚮?????????????硫λ젒?????????????諛몃마嶺뚮?????????????硫λ젒????????⑥レ뿥??????????????????????????67'
+const locationAddress = '전북특별자치도 전주시 완산구 전주객사3길 67'
 const kakaoDirectionsUrl = `https://map.kakao.com/link/search/${encodeURIComponent(locationAddress)}`
 const naverDirectionsUrl = `https://map.naver.com/p/search/${encodeURIComponent(locationAddress)}`
 const ideaPosterUrl = 'https://zdo.co.kr/theme/home/html/image/top_logo_m.png'
@@ -1277,7 +1279,7 @@ async function previewSignatureOnTablet() {
     state.signaturePreview.koreanMeaningText = result.koreanMeaningText || ''
     state.signaturePreview.detectedLanguage = result.detectedLanguage || ''
     state.signaturePreview.ocrConfidence = result.ocrConfidence
-    state.message = 'OCR 寃곌낵瑜??뺤씤??????ν빐 二쇱꽭??'
+    state.message = 'OCR 결과를 확인한 후 저장해 주세요.'
   } catch (e) {
     resetSignaturePreview()
     setSafeError(e)
@@ -1288,7 +1290,7 @@ async function previewSignatureOnTablet() {
 
 async function confirmPreviewSignatureOnTablet() {
   if (!state.signaturePreview.token) {
-    setSafeError(userError('癒쇱? OCR 寃곌낵瑜??뺤씤??二쇱꽭??'))
+    setSafeError(userError('먼저 OCR 결과를 확인해 주세요.'))
     return
   }
 
@@ -1307,7 +1309,7 @@ async function confirmPreviewSignatureOnTablet() {
     })
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     resetSignaturePreview()
-    state.message = '?쒕챸????λ릺?덉뒿?덈떎.'
+    state.message = '서명이 저장되었습니다.'
   } catch (e) {
     setSafeError(e)
   } finally {
