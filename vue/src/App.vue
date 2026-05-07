@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { apiFetchWithBase, createApiFetch, parseErrorResponse } from './api/client'
@@ -1590,6 +1590,7 @@ function downloadStoredCertificatePdf() {
                 '--ending-font-scale': `${state.endingCredits.fontScalePercent / 100}`,
                 '--ending-roll-iteration-count': state.endingCredits.stopAfterOneCycle ? '1' : 'infinite',
                 '--ending-roll-fill-mode': state.endingCredits.stopAfterOneCycle ? 'forwards' : 'none',
+                '--ending-roll-end-transform': state.endingCredits.stopAfterOneCycle ? 'translateY(-100%)' : 'translateY(calc(-100% - 100vh))'
               }"
             >
               <div
