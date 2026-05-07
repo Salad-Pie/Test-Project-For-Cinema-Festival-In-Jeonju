@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { apiFetchWithBase, createApiFetch, parseErrorResponse } from './api/client'
@@ -26,6 +26,7 @@ const routePath = isOriginalRoute
     ? path.replace('/boot-strap', '') || '/'
     : path
 const isBootstrapRoute = !isOriginalRoute
+const localeDisplayNames = { ko: '\uD55C\uAD6D\uC5B4', en: 'English', zh: '\u4E2D\u6587', ja: '\u65E5\u672C\u8A9E' }
 
 const isHome = computed(() => isOriginalRoute && (routePath === '/' || routePath === '/index.html'))
 const isBootstrapHome = computed(() => !isOriginalRoute && (routePath === '/' || routePath === '/index.html'))
@@ -95,11 +96,53 @@ const axShopShopDate = '2026-05-09'
 const axShopShopHour = '14'
 const pdRecruitDate = '2026-05-09'
 const pdRecruitHour = '19'
-const locationAddress = '??????????밸븶筌믩끃??獄???????멥렑????????쇰뮛??????????熬곣뫖利당춯??쎾퐲??????????????????????????????밸븶筌믩끃??獄???????멥렑?????????????밸븶筌믩끃??獄???????멥렑?????????????밸븶筌믩끃??獄???????멥렑???????怨쀫엥??????????????嚥???癲??????67'
+const locationAddress = '??????????諛몃마嶺뚮?????????????硫λ젒?????????곕츥???????????ш끽維뽳쭩?뱀땡???얩맪??????????????????????????????諛몃마嶺뚮?????????????硫λ젒?????????????諛몃마嶺뚮?????????????硫λ젒?????????????諛몃마嶺뚮?????????????硫λ젒????????⑥レ뿥??????????????????????????67'
 const kakaoDirectionsUrl = `https://map.kakao.com/link/search/${encodeURIComponent(locationAddress)}`
 const naverDirectionsUrl = `https://map.naver.com/p/search/${encodeURIComponent(locationAddress)}`
 const ideaPosterUrl = 'https://zdo.co.kr/theme/home/html/image/top_logo_m.png'
 const customPaymentProviderValue = '__CUSTOM__'
+const endingCreditsLeadPreset1 = `\uC81C\uBAA9
+AX \uC735\uBCF5\uD569 \uD55C \uCF54\uB4DC \uD504\uB85C\uC81D\uD2B8
+\uC81C\uC791 
+\uC778\uC0AC\uC774\uD2B8\uD22C\uC5B4 
+\uD6C4\uC6D0
+\uC804\uC8FC\uBB38\uD654\uACF5\uD310\uC7A5\uC7AC\uB2E8
+\uAE30\uD68D  \uC6B4\uC601
+\uC0D0\uB7EC\uB4DC\uD30C\uC774 \uC8FC\uC2DD\uD68C\uC0AC 
+\uC2A4\uD0ED
+\uBC15\uB3C4\uACB8
+\uD1B5\uC5ED
+\uAC15\uBD09\uC8FC
+\uCD9C\uC5F0`
+const endingCreditsTailPreset1 = `\u201C\uC774\uC81C \uC6B0\uB9AC\uB294 \uC190\uB2D8\uACFC \uC8FC\uCD5C\uC790\uAC00 \uC544\uB2C8\uB77C\u2026 \uCE5C\uAD6C\uAC00 \uB418\uC5C8\uC2B5\uB2C8\uB2E4!\u201D
+\u201CSekarang kita bukan hanya tamu dan tuan rumah\u2026
+kita sudah menjadi teman!\u201D
+
+\uC624\uB298 \uC804\uC8FC\uC5D0\uC11C \uD568\uAED8\uD55C \uC2DC\uAC04\uC774
+\uC5EC\uB7EC\uBD84\uC5D0\uAC8C \uB530\uB73B\uD55C \uAE30\uC5B5\uC73C\uB85C
+\uB0A8\uAE30\uB97C \uBC14\uB78D\uB2C8\uB2E4.
+Kami berharap waktu yang kita
+habiskan bersama di Jeonju hari
+ini
+menjadi kenangan hangat bagi
+Anda semua.
+
+\uC5EC\uB7EC\uBD84\uACFC \uD568\uAED8 \uD55C\uAD6D\uC758 \uBB38\uD654\uC640
+\uB9C8\uC74C\uC744 \uB098\uB20C \uC218 \uC788\uC5B4 \uC815\uB9D0 \uD589
+\uBCF5\uD588\uC2B5\uB2C8\uB2E4.
+Kami sangat bahagia dapat
+berbagi budaya dan hati Korea
+bersama Anda.
+
+\uB2E4\uC74C\uC5D0\uB294 \uC5EC\uD589\uC790\uAC00 \uC544\uB2C8\uB77C
+\uCE5C\uAD6C\uB85C\uB9CC\uB098\uAE30\uB97C\uAE30\uB300\uD558\uACA0\uC2B5\uB2C8\uB2E4
+Semoga di lain waktu kita bisa
+bertemu kembali,
+bukan hanya sebagai tamu, tetapi
+sebagai teman.
+
+\uAC10\uC0AC\uD569\uB2C8\uB2E4.
+Terima kasih banyak.`
 const sponsorshipPaymentProviderOptionsByType = {
   BANK: ['KB', 'SHINHAN', 'WOORI', 'HANA', 'NH', 'IBK', 'KAKAO BANK', 'TOSS BANK', 'K BANK'],
   PAYMENT: ['KAKAO PAY', 'NAVER PAY', 'TOSS PAY', 'PAYCO', 'PayPal'],
@@ -201,6 +244,8 @@ const state = reactive({
     rollGapPx: 72,
     fontScalePercent: 100,
     highlightedCodes: {},
+    presetPreviewTitle: '',
+    presetPreviewContent: '',
   },
   identifierReissue: {
     message: '',
@@ -1155,6 +1200,24 @@ function resetSignaturePreview() {
   state.signaturePreview.ocrConfidence = null
 }
 
+function showEndingCreditsPresetPreview(title, content) {
+  state.endingCredits.presetPreviewTitle = title
+  state.endingCredits.presetPreviewContent = content
+}
+
+function hideEndingCreditsPresetPreview() {
+  state.endingCredits.presetPreviewTitle = ''
+  state.endingCredits.presetPreviewContent = ''
+}
+
+function applyEndingCreditsLeadPreset(content) {
+  state.endingCredits.leadMessage = content
+}
+
+function applyEndingCreditsTailPreset(content) {
+  state.endingCredits.tailMessage = content
+}
+
 async function createTabletSignatureFormData() {
   const canvas = canvasRef.value
   if (!canvas) return null
@@ -1217,7 +1280,7 @@ async function previewSignatureOnTablet() {
     state.signaturePreview.koreanMeaningText = result.koreanMeaningText || ''
     state.signaturePreview.detectedLanguage = result.detectedLanguage || ''
     state.signaturePreview.ocrConfidence = result.ocrConfidence
-    state.message = 'OCR 결과를 확인한 뒤 저장해 주세요.'
+    state.message = 'OCR 寃곌낵瑜??뺤씤??????ν빐 二쇱꽭??'
   } catch (e) {
     resetSignaturePreview()
     setSafeError(e)
@@ -1228,7 +1291,7 @@ async function previewSignatureOnTablet() {
 
 async function confirmPreviewSignatureOnTablet() {
   if (!state.signaturePreview.token) {
-    setSafeError(userError('먼저 OCR 결과를 확인해 주세요.'))
+    setSafeError(userError('癒쇱? OCR 寃곌낵瑜??뺤씤??二쇱꽭??'))
     return
   }
 
@@ -1247,7 +1310,7 @@ async function confirmPreviewSignatureOnTablet() {
     })
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     resetSignaturePreview()
-    state.message = '서명이 저장되었습니다.'
+    state.message = '?쒕챸????λ릺?덉뒿?덈떎.'
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -1359,7 +1422,7 @@ async function addEndingCreditsEntry() {
     }
 
     if (state.endingCredits.entries.some((entry) => entry.code === code)) {
-      throw userError('???? ???????????덉떻????????????됰Ŧ???????耀붾굝????嶺뚯쉳???????????????썹땟戮녹??諭?????⑸㎦??????????????')
+      throw userError('\uC774\uBBF8 \uCD94\uAC00\uB41C \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uC785\uB2C8\uB2E4.')
     }
 
     const entryRes = await fetch(`${apiRoot}/ending-credits/lookup`, {
@@ -1399,13 +1462,13 @@ async function addEndingCreditsEntry() {
 async function showEndingCreditsFullscreen() {
   state.error = ''
   if (endingCreditsRollEntries.value.length === 0) {
-    setSafeError(userError('????????⑥レ뿥?????轅붽틓????? ???????됰Ŧ???????耀붾굝????嶺뚯쉳???????????????썹땟戮녹??諭?????⑸㎦???????????????ㅼ뒧???怨???????????????덉떻?????????????ш끽維뽳쭩?뱀땡??????????'))
+    setSafeError(userError('\uBA3C\uC800 \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uCD94\uAC00\uD574 \uC5D4\uB529 \uD06C\uB808\uB51F \uD56D\uBAA9\uC744 \uB9CC\uB4E4\uC5B4 \uC8FC\uC138\uC694.'))
     return
   }
 
   const target = endingCreditsShellRef.value
   if (!target || !target.requestFullscreen) {
-    setSafeError(userError('??????????밸븶筌믩끃??獄???????멥렑?????????????????嫄???????????????怨쀫엥??????????????????濡?씀?濾??? ?????????癲ル슢??蹂?㎟????????????????????'))
+    setSafeError(userError('\uD604\uC7AC \uD658\uACBD\uC5D0\uC11C\uB294 \uC804\uCCB4\uD654\uBA74 \uAE30\uB2A5\uC744 \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.'))
     return
   }
 
@@ -1413,7 +1476,7 @@ async function showEndingCreditsFullscreen() {
     await target.requestFullscreen()
     state.endingCredits.isFullscreen = true
   } catch (_) {
-    setSafeError(userError('??????????밸븶筌믩끃??獄???????멥렑??????????????????????????????????????산뭐????????????????????ㅻ쑋雍?'))
+    setSafeError(userError('\uC804\uCCB4\uD654\uBA74 \uC804\uD658\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.'))
   }
 }
 
@@ -1459,10 +1522,10 @@ function downloadStoredCertificatePdf() {
     <div class="actions" style="justify-content: flex-end; margin-bottom: 8px">
       <label class="locale-select-label">
         <select :value="locale" aria-label="Language Select" @change="setLocale($event.target.value)">
-          <option value="ko">{{ t('lang.ko') }}</option>
-          <option value="en">{{ t('lang.en') }}</option>
-          <option value="zh">{{ t('lang.zh') }}</option>
-          <option value="ja">{{ t('lang.ja') }}</option>
+          <option value="ko">{{ isEndingCreditsPage ? localeDisplayNames.ko : t('lang.ko') }}</option>
+          <option value="en">{{ isEndingCreditsPage ? localeDisplayNames.en : t('lang.en') }}</option>
+          <option value="zh">{{ isEndingCreditsPage ? localeDisplayNames.zh : t('lang.zh') }}</option>
+          <option value="ja">{{ isEndingCreditsPage ? localeDisplayNames.ja : t('lang.ja') }}</option>
         </select>
       </label>
     </div>
@@ -1590,6 +1653,19 @@ function downloadStoredCertificatePdf() {
           <div class="ending-credits-settings-grid">
             <label class="ending-credits-field ending-credits-field-wide">
               <span>{{ '\uCD5C\uC0C1\uB2E8 \uCCAB \uBB38\uAD6C' }}</span>
+              <div class="ending-credits-preset-actions">
+                <button
+                  type="button"
+                  class="ending-credits-preset-button"
+                  @mouseenter="showEndingCreditsPresetPreview('\uC0C1\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsLeadPreset1)"
+                  @mouseleave="hideEndingCreditsPresetPreview"
+                  @focus="showEndingCreditsPresetPreview('\uC0C1\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsLeadPreset1)"
+                  @blur="hideEndingCreditsPresetPreview"
+                  @click="applyEndingCreditsLeadPreset(endingCreditsLeadPreset1)"
+                >
+                  {{ '\uC0C1\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88' }}
+                </button>
+              </div>
               <textarea
                 v-model="state.endingCredits.leadMessage"
                 rows="3"
@@ -1598,14 +1674,34 @@ function downloadStoredCertificatePdf() {
             </label>
             <label class="ending-credits-field ending-credits-field-wide">
               <span>{{ '\uCD5C\uD558\uB2E8 \uB9C8\uC9C0\uB9C9 \uBB38\uAD6C' }}</span>
+              <div class="ending-credits-preset-actions">
+                <button
+                  type="button"
+                  class="ending-credits-preset-button"
+                  @mouseenter="showEndingCreditsPresetPreview('\uD558\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsTailPreset1)"
+                  @mouseleave="hideEndingCreditsPresetPreview"
+                  @focus="showEndingCreditsPresetPreview('\uD558\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88', endingCreditsTailPreset1)"
+                  @blur="hideEndingCreditsPresetPreview"
+                  @click="applyEndingCreditsTailPreset(endingCreditsTailPreset1)"
+                >
+                  {{ '\uD558\uB2E8 \uCD94\uAC00 \uBB38\uAD6C 1\uBC88' }}
+                </button>
+              </div>
               <textarea
                 v-model="state.endingCredits.tailMessage"
                 rows="3"
                 :placeholder="'\uAC00\uC7A5 \uB9C8\uC9C0\uB9C9\uC5D0 \uC62C\uB77C\uAC08 \uBB38\uAD6C\uB97C \uC904\uBC14\uAFC8\uC73C\uB85C \uC785\uB825\uD558\uC138\uC694.'"
               />
             </label>
+            <div
+              v-if="state.endingCredits.presetPreviewContent"
+              class="ending-credits-preset-preview ending-credits-field-wide"
+            >
+              <strong>{{ state.endingCredits.presetPreviewTitle }}</strong>
+              <pre>{{ state.endingCredits.presetPreviewContent }}</pre>
+            </div>
             <label class="ending-credits-field">
-              <span>?????轅붽틓????몃마??????????釉랁닑????????????????</span>
+              <span>{{ '\uB864\uB9C1 \uC18D\uB3C4(\uCD08)' }}</span>
               <input
                 :value="state.endingCredits.rollDurationSeconds"
                 type="number"
@@ -1616,7 +1712,7 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <label class="ending-credits-field">
-              <span>?????????????????????????px)</span>
+              <span>{{ '\uD56D\uBAA9 \uAC04\uACA9(px)' }}</span>
               <input
                 :value="state.endingCredits.rollGapPx"
                 type="number"
@@ -1627,7 +1723,7 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <label class="ending-credits-field">
-              <span>?????????????%)</span>
+              <span>{{ '\uAE00\uC790 \uD06C\uAE30(%)' }}</span>
               <input
                 :value="state.endingCredits.fontScalePercent"
                 type="number"
