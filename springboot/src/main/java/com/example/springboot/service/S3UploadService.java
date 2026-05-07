@@ -121,6 +121,31 @@ public class S3UploadService {
         }
     }
 
+    public UploadedImage uploadSignatureOriginal(Long userId, byte[] bytes, String contentType) {
+        if (bucket == null || bucket.isBlank()) {
+            throw new BusinessException(ErrorCode.STORAGE_NOT_CONFIGURED);
+        }
+        if (bytes == null || bytes.length == 0) {
+            throw new BusinessException(ErrorCode.INVALID_FILE);
+        }
+
+        String normalizedContentType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
+        if (!normalizedContentType.equals("image/png")) {
+            throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
+        }
+
+        String datePath = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String key = "signatures/original/" + userId + "/" + datePath + "/" + UUID.randomUUID() + ".png";
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType("image/png")
+                .build();
+        s3Client.putObject(request, RequestBody.fromBytes(bytes));
+        log.info("Signature original image uploaded from preview bytes. userId={} fileSize={} s3Key={}", userId, bytes.length, key);
+        return new UploadedImage(key, (long) bytes.length);
+    }
+
     private void validateSupportedImage(MultipartFile file, String originalFilename) {
         String extension = getExtension(originalFilename);
         if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {

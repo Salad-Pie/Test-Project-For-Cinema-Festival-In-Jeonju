@@ -14,6 +14,7 @@ import com.example.springboot.dto.CertificateSampleRequest;
 import com.example.springboot.dto.IdentifierCodeReissueRequest;
 import com.example.springboot.dto.IdentifierCodeReissueResponse;
 import com.example.springboot.dto.LoginResponse;
+import com.example.springboot.dto.SignaturePreviewResponse;
 import com.example.springboot.dto.SignatureRenderRequest;
 import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyResponse;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,7 @@ public class AuthService {
     private static final int CODE_GENERATION_MAX_ATTEMPTS = 20;
     private static final int IDENTIFIER_REISSUE_MAX_ATTEMPTS = 5;
     private static final Duration IDENTIFIER_REISSUE_WINDOW = Duration.ofMinutes(10);
+    private static final Duration SIGNATURE_PREVIEW_EXPIRATION = Duration.ofMinutes(10);
     private static final String IDENTIFIER_REISSUE_RESPONSE_MESSAGE = "\uC785\uB825\uD558\uC2E0 \uC815\uBCF4\uAC00 \uB4F1\uB85D\uB418\uC5B4 \uC788\uB2E4\uBA74 \uC0C8 \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC804\uC1A1\uD588\uC2B5\uB2C8\uB2E4.";
 
     private final UserRepository userRepository;
@@ -60,6 +63,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final String tabletBaseUrl;
     private final Map<String, ReissueRateLimit> identifierReissueRateLimits = new ConcurrentHashMap<>();
+    private final Map<String, SignaturePreviewSession> signaturePreviewSessions = new ConcurrentHashMap<>();
 
     public AuthService(
             UserRepository userRepository,
@@ -274,56 +278,161 @@ public class AuthService {
     public SignatureResponse saveSignature(String verifiedToken, MultipartFile signatureImage, String nameLanguageRaw, String koreanNameOverrideRaw) {
         validateTokenType(verifiedToken, TokenType.VERIFIED);
         Long userId = jwtTokenProvider.extractUserId(verifiedToken);
+        User user = getVerifiedUser(userId);
+        SignaturePreviewSession session = buildSignaturePreviewSession(userId, signatureImage, nameLanguageRaw, koreanNameOverrideRaw);
+        return persistSignaturePreviewSession(user, session);
+    }
 
+    public SignaturePreviewResponse previewSignature(String verifiedToken, MultipartFile signatureImage, String nameLanguageRaw, String koreanNameOverrideRaw) {
+        validateTokenType(verifiedToken, TokenType.VERIFIED);
+        Long userId = jwtTokenProvider.extractUserId(verifiedToken);
+        getVerifiedUser(userId);
+
+        cleanupExpiredSignaturePreviewSessions();
+        SignaturePreviewSession session = buildSignaturePreviewSession(userId, signatureImage, nameLanguageRaw, koreanNameOverrideRaw);
+        String previewToken = UUID.randomUUID().toString();
+        signaturePreviewSessions.put(previewToken, session);
+        log.info("Signature preview created. userId={} previewToken={}", userId, previewToken);
+        return toSignaturePreviewResponse(previewToken, session);
+    }
+
+    public SignatureResponse confirmSignaturePreview(String verifiedToken, String previewTokenRaw) {
+        validateTokenType(verifiedToken, TokenType.VERIFIED);
+        Long userId = jwtTokenProvider.extractUserId(verifiedToken);
+        User user = getVerifiedUser(userId);
+        cleanupExpiredSignaturePreviewSessions();
+
+        String previewToken = blankToNull(previewTokenRaw);
+        if (previewToken == null) {
+            throw new IllegalArgumentException("preview token is required.");
+        }
+
+        SignaturePreviewSession session = signaturePreviewSessions.get(previewToken);
+        if (session == null || session.expiresAt().isBefore(LocalDateTime.now())) {
+            signaturePreviewSessions.remove(previewToken);
+            throw new IllegalArgumentException("signature preview not found.");
+        }
+        if (!session.userId().equals(userId)) {
+            throw new SecurityException("signature preview user does not match.");
+        }
+
+        signaturePreviewSessions.remove(previewToken);
+        log.info("Signature preview confirmed. userId={} previewToken={}", userId, previewToken);
+        return persistSignaturePreviewSession(user, session);
+    }
+
+
+    private void deletePreviousSignatureFiles(Signature signature) {
+        if (signature.getOriginalS3Key() != null && !signature.getOriginalS3Key().isBlank()) {
+            s3UploadService.deleteObject(signature.getOriginalS3Key());
+        }
+        if (signature.getPreprocessedS3Key() != null && !signature.getPreprocessedS3Key().isBlank()) {
+            s3UploadService.deleteObject(signature.getPreprocessedS3Key());
+            signature.setPreprocessedS3Key(null);
+        }
+        if (signature.getOcrRawResponseS3Key() != null && !signature.getOcrRawResponseS3Key().isBlank()) {
+            s3UploadService.deleteObject(signature.getOcrRawResponseS3Key());
+            signature.setOcrRawResponseS3Key(null);
+        }
+    }
+
+    private User getVerifiedUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("user not found."));
-
         if (!user.isVerified()) {
             throw new IllegalArgumentException("only verified users can save signature.");
         }
+        return user;
+    }
 
-        S3UploadService.UploadedImage uploadedImage = s3UploadService.uploadSignatureOriginal(userId, signatureImage);
-        GoogleVisionOcrService.OcrResult ocrResult = googleVisionOcrService.extractSignatureText(signatureImage);
-        String recognizedText = normalizeOcrText(ocrResult.text());
-        SignatureLanguage language = detectKoOrEn(recognizedText);
-        if (recognizedText == null || language == null) {
-            throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
+    private SignaturePreviewSession buildSignaturePreviewSession(Long userId, MultipartFile signatureImage, String nameLanguageRaw, String koreanNameOverrideRaw) {
+        try {
+            byte[] signatureImageBytes = signatureImage.getBytes();
+            GoogleVisionOcrService.OcrResult ocrResult = googleVisionOcrService.extractSignatureText(signatureImage);
+            String recognizedText = normalizeOcrText(ocrResult.text());
+            SignatureLanguage language = detectKoOrEn(recognizedText);
+            if (recognizedText == null || language == null) {
+                throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
+            }
+            NameLanguage nameLanguage = normalizeNameLanguage(nameLanguageRaw, language);
+            String koreanNameOverride = blankToNull(koreanNameOverrideRaw);
+            EnglishKoreanNameService.ConversionResult nameConversion = resolveNameConversion(recognizedText, language, nameLanguage, koreanNameOverride);
+            String koreanText = resolveKoreanText(recognizedText, language, nameConversion);
+            String koreanMeaningText = resolveKoreanMeaningText(recognizedText, language);
+            String englishName = resolveEnglishName(recognizedText, language);
+            String koreanName = resolveKoreanName(recognizedText, koreanText, language);
+            NameConversionSource nameConversionSource = resolveNameConversionSource(language, nameConversion, koreanNameOverride);
+            log.info("Signature preview OCR completed. userId={} detectedLanguage={} confidence={}", userId, language, ocrResult.confidence());
+            return new SignaturePreviewSession(
+                    userId,
+                    signatureImageBytes,
+                    "image/png",
+                    (long) signatureImageBytes.length,
+                    recognizedText,
+                    nameLanguage,
+                    koreanText,
+                    koreanMeaningText,
+                    englishName,
+                    koreanName,
+                    nameConversionSource,
+                    language,
+                    ocrResult.confidence(),
+                    LocalDateTime.now().plus(SIGNATURE_PREVIEW_EXPIRATION)
+            );
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException("failed to build signature preview session.", ex);
         }
-        NameLanguage nameLanguage = normalizeNameLanguage(nameLanguageRaw, language);
-        String koreanNameOverride = blankToNull(koreanNameOverrideRaw);
-        EnglishKoreanNameService.ConversionResult nameConversion = resolveNameConversion(recognizedText, language, nameLanguage, koreanNameOverride);
-        String koreanText = resolveKoreanText(recognizedText, language, nameConversion);
-        String koreanMeaningText = resolveKoreanMeaningText(recognizedText, language);
-        String englishName = resolveEnglishName(recognizedText, language);
-        String koreanName = resolveKoreanName(recognizedText, koreanText, language);
-        NameConversionSource nameConversionSource = resolveNameConversionSource(language, nameConversion, koreanNameOverride);
+    }
 
-        Signature signature = signatureRepository.findByUserId(userId).orElseGet(Signature::new);
+    private SignaturePreviewResponse toSignaturePreviewResponse(String previewToken, SignaturePreviewSession session) {
+        return new SignaturePreviewResponse(
+                previewToken,
+                session.recognizedText(),
+                session.recognizedText(),
+                session.nameLanguage(),
+                session.koreanText(),
+                session.koreanMeaningText(),
+                session.englishName(),
+                session.koreanName(),
+                session.nameConversionSource(),
+                session.detectedLanguage(),
+                OcrStatus.SUCCESS,
+                session.ocrConfidence()
+        );
+    }
+
+    private SignatureResponse persistSignaturePreviewSession(User user, SignaturePreviewSession session) {
+        S3UploadService.UploadedImage uploadedImage =
+                s3UploadService.uploadSignatureOriginal(user.getId(), session.signatureImageBytes(), session.contentType());
+
+        Signature signature = signatureRepository.findByUserId(user.getId()).orElseGet(Signature::new);
         if (signature.getId() != null) {
-            log.info("Existing signature row will be updated. userId={} signatureId={}", userId, signature.getId());
+            log.info("Existing signature row will be updated. userId={} signatureId={}", user.getId(), signature.getId());
             deletePreviousSignatureFiles(signature);
         }
 
-        // ?リ옇?????類ㅺ뎄 ?筌먲퐢沅???띠룄????? ??袁ぢ? ??疫???ル맪??row????諛댁뎽??琉우뿰 ????엷??類ｋ펲.
         signature.setUser(user);
         signature.setOriginalS3Key(uploadedImage.s3Key());
         signature.setOriginalFileSize(uploadedImage.fileSize());
-        signature.setOriginalContentType("image/png");
-        signature.setRecognizedText(recognizedText);
-        signature.setOriginalName(recognizedText);
-        signature.setNameLanguage(nameLanguage);
-        signature.setKoreanText(koreanText);
-        signature.setKoreanMeaningText(koreanMeaningText);
-        signature.setEnglishName(englishName);
-        signature.setKoreanName(koreanName);
-        signature.setNameConversionSource(nameConversionSource);
-        signature.setDetectedLanguage(language);
-        signature.setOcrConfidence(ocrResult.confidence());
+        signature.setOriginalContentType(session.contentType());
+        signature.setRecognizedText(session.recognizedText());
+        signature.setOriginalName(session.recognizedText());
+        signature.setNameLanguage(session.nameLanguage());
+        signature.setKoreanText(session.koreanText());
+        signature.setKoreanMeaningText(session.koreanMeaningText());
+        signature.setEnglishName(session.englishName());
+        signature.setKoreanName(session.koreanName());
+        signature.setNameConversionSource(session.nameConversionSource());
+        signature.setDetectedLanguage(session.detectedLanguage());
+        signature.setOcrConfidence(session.ocrConfidence());
         signature.setOcrProvider(OcrProvider.GOOGLE_VISION);
         signature.setOcrStatus(OcrStatus.SUCCESS);
         signature.setOcrErrorMessage(null);
         signature.setOcrProcessedAt(LocalDateTime.now());
         Signature saved = signatureRepository.save(signature);
+        log.info("Signature saved from session. userId={} signatureId={}", user.getId(), saved.getId());
         return new SignatureResponse(
                 saved.getId(),
                 saved.getRecognizedText(),
@@ -340,18 +449,9 @@ public class AuthService {
         );
     }
 
-    private void deletePreviousSignatureFiles(Signature signature) {
-        if (signature.getOriginalS3Key() != null && !signature.getOriginalS3Key().isBlank()) {
-            s3UploadService.deleteObject(signature.getOriginalS3Key());
-        }
-        if (signature.getPreprocessedS3Key() != null && !signature.getPreprocessedS3Key().isBlank()) {
-            s3UploadService.deleteObject(signature.getPreprocessedS3Key());
-            signature.setPreprocessedS3Key(null);
-        }
-        if (signature.getOcrRawResponseS3Key() != null && !signature.getOcrRawResponseS3Key().isBlank()) {
-            s3UploadService.deleteObject(signature.getOcrRawResponseS3Key());
-            signature.setOcrRawResponseS3Key(null);
-        }
+    private void cleanupExpiredSignaturePreviewSessions() {
+        LocalDateTime now = LocalDateTime.now();
+        signaturePreviewSessions.entrySet().removeIf(entry -> entry.getValue().expiresAt().isBefore(now));
     }
 
     public byte[] renderSignatureImage(String verifiedToken, SignatureRenderRequest request) {
@@ -711,6 +811,24 @@ public class AuthService {
     private record ReissueRateLimit(
             LocalDateTime windowStartedAt,
             int attempts
+    ) {
+    }
+
+    private record SignaturePreviewSession(
+            Long userId,
+            byte[] signatureImageBytes,
+            String contentType,
+            Long fileSize,
+            String recognizedText,
+            NameLanguage nameLanguage,
+            String koreanText,
+            String koreanMeaningText,
+            String englishName,
+            String koreanName,
+            NameConversionSource nameConversionSource,
+            SignatureLanguage detectedLanguage,
+            Double ocrConfidence,
+            LocalDateTime expiresAt
     ) {
     }
 }

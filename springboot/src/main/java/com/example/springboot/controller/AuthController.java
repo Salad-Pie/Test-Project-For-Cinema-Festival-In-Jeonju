@@ -7,6 +7,8 @@ import com.example.springboot.dto.EmailCodeVerifyRequest;
 import com.example.springboot.dto.IdentifierCodeReissueRequest;
 import com.example.springboot.dto.IdentifierCodeReissueResponse;
 import com.example.springboot.dto.LoginResponse;
+import com.example.springboot.dto.SignaturePreviewConfirmRequest;
+import com.example.springboot.dto.SignaturePreviewResponse;
 import com.example.springboot.dto.SignatureRenderRequest;
 import com.example.springboot.dto.SignatureResponse;
 import com.example.springboot.dto.VerifyCodeRequest;
@@ -74,6 +76,26 @@ public class AuthController {
     ) {
         String token = authorization.replace("Bearer ", "");
         return ResponseEntity.ok(authService.saveSignature(token, signatureImage, nameLanguage, koreanName));
+    }
+
+    @PostMapping(value = "/signature/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SignaturePreviewResponse> previewSignature(
+            @RequestHeader("Authorization") String authorization,
+            @RequestPart("signatureImage") MultipartFile signatureImage,
+            @RequestPart(value = "nameLanguage", required = false) String nameLanguage,
+            @RequestPart(value = "koreanName", required = false) String koreanName
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(authService.previewSignature(token, signatureImage, nameLanguage, koreanName));
+    }
+
+    @PostMapping("/signature/confirm")
+    public ResponseEntity<SignatureResponse> confirmSignaturePreview(
+            @RequestHeader("Authorization") String authorization,
+            @Valid @RequestBody SignaturePreviewConfirmRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(authService.confirmSignaturePreview(token, request.previewToken()));
     }
 
     @PostMapping(value = "/signature/render", produces = MediaType.IMAGE_PNG_VALUE)

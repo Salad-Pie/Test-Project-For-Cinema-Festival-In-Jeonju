@@ -14,70 +14,95 @@ public class EnglishKoreanNameService {
     private static final Transliterator TRANSLITERATOR = Transliterator.getInstance("Latin-Hangul");
 
     private static final Map<String, String> PRIORITY_NAME_MAP = Map.ofEntries(
-            Map.entry("ANITA ANDAYANI", "아니타 안다야니"),
-            Map.entry("LUKFINTIA FILIA", "루크핀티아 필리아"),
-            Map.entry("RAHMAT MUTAZIM EKA PUTRA", "라흐맛 무타짐 에카 푸트라"),
-            Map.entry("SILVANA RESKI MULIAWAN", "실바나 레스키 물리아완"),
-            Map.entry("MARWIYA ARIFUDDIN TIMBANG", "마르위야 아리푸딘 팀방"),
-            Map.entry("MAYRIDA NUDE HAMMA", "마이리다 누데 함마"),
-            Map.entry("SUCI PRATIWI MANGANTAR", "수치 프라티위 망안타르"),
-            Map.entry("EVI SULTRIANA ZACHRI", "에비 술트리아나 자크리"),
-            Map.entry("LENDA LIEM", "렌다 리엠"),
-            Map.entry("AULIA ENJELINA RAUFIKA SUNARYO", "아울리아 엔젤리나 라우피카 수나르요"),
-            Map.entry("YUNITA MANDRASARI", "유니타 만드라사리"),
-            Map.entry("YULIATI", "율리아티"),
-            Map.entry("NANIK HARIANI", "나닉 하리아니"),
-            Map.entry("RIVANA AMELIA FIONITA", "리바나 아멜리아 피오니타"),
-            Map.entry("HADI ANDRIAN", "하디 안드리안"),
-            Map.entry("KANG BONGJU", "강봉주")
+            Map.entry("ANITA", "\uC544\uB2C8\uD0C0"),
+            Map.entry("ANDAYANI", "\uC548\uB2E4\uC57C\uB2C8"),
+            Map.entry("LUKFINTIA", "\uB8E8\uD06C\uD540\uD2F0\uC544"),
+            Map.entry("FILIA", "\uD544\uB9AC\uC544"),
+            Map.entry("RAHMAT", "\uB77C\uD750\uB9DB"),
+            Map.entry("MUTAZIM", "\uBB34\uD0C0\uC9D0"),
+            Map.entry("EKA", "\uC5D0\uCE74"),
+            Map.entry("PUTRA", "\uD478\uD2B8\uB77C"),
+            Map.entry("SILVANA", "\uC2E4\uBC14\uB098"),
+            Map.entry("RESKI", "\uB808\uC2A4\uD0A4"),
+            Map.entry("MULIAWAN", "\uBB3C\uB9AC\uC544\uC644"),
+            Map.entry("MARWIYA", "\uB9C8\uB974\uC704\uC57C"),
+            Map.entry("ARIFUDDIN", "\uC544\uB9AC\uD478\uB518"),
+            Map.entry("TIMBANG", "\uD300\uBC29"),
+            Map.entry("MAYRIDA", "\uB9C8\uC774\uB9AC\uB2E4"),
+            Map.entry("NUDE", "\uB204\uB370"),
+            Map.entry("HAMMA", "\uD568\uB9C8"),
+            Map.entry("SUCI", "\uC218\uCE58"),
+            Map.entry("PRATIWI", "\uD504\uB77C\uD2F0\uC704"),
+            Map.entry("MANGANTAR", "\uB9DD\uC548\uD0C0\uB974"),
+            Map.entry("EVI", "\uC5D0\uBE44"),
+            Map.entry("SULTRIANA", "\uC220\uD2B8\uB9AC\uC544\uB098"),
+            Map.entry("ZACHRI", "\uC790\uD06C\uB9AC"),
+            Map.entry("LENDA", "\uB80C\uB2E4"),
+            Map.entry("LIEM", "\uB9AC\uC5E0"),
+            Map.entry("AULIA", "\uC544\uC6B8\uB9AC\uC544"),
+            Map.entry("ENJELINA", "\uC5D4\uC824\uB9AC\uB098"),
+            Map.entry("RAUFIKA", "\uB77C\uC6B0\uD53C\uCE74"),
+            Map.entry("SUNARYO", "\uC218\uB098\uB974\uC694"),
+            Map.entry("YUNITA", "\uC720\uB2C8\uD0C0"),
+            Map.entry("MANDRASARI", "\uB9CC\uB4DC\uB77C\uC0AC\uB9AC"),
+            Map.entry("YULIATI", "\uC728\uB9AC\uC544\uD2F0"),
+            Map.entry("NANIK", "\uB098\uB2C9"),
+            Map.entry("HARIANI", "\uD558\uB9AC\uC544\uB2C8"),
+            Map.entry("RIVANA", "\uB9AC\uBC14\uB098"),
+            Map.entry("AMELIA", "\uC544\uBA5C\uB9AC\uC544"),
+            Map.entry("FIONITA", "\uD53C\uC624\uB2C8\uD0C0"),
+            Map.entry("HADI", "\uD558\uB514"),
+            Map.entry("HANDRIAN", "\uD55C\uB4DC\uB9AC\uC548"),
+            Map.entry("KANG", "\uAC15"),
+            Map.entry("BONGJU", "\uBD09\uC8FC")
     );
 
     private static final Map<String, String> OFFICIAL_EXAMPLE_DICTIONARY = Map.ofEntries(
-            Map.entry("alexander", "알렉산더"),
-            Map.entry("amelia", "아멜리아"),
-            Map.entry("andrew", "앤드루"),
-            Map.entry("anna", "안나"),
-            Map.entry("anthony", "앤서니"),
-            Map.entry("benjamin", "벤자민"),
-            Map.entry("charles", "찰스"),
-            Map.entry("christopher", "크리스토퍼"),
-            Map.entry("daniel", "다니엘"),
-            Map.entry("danielle", "다니엘"),
-            Map.entry("david", "데이비드"),
-            Map.entry("edward", "에드워드"),
-            Map.entry("elizabeth", "엘리자베스"),
-            Map.entry("emily", "에밀리"),
-            Map.entry("emma", "엠마"),
-            Map.entry("ethan", "이선"),
-            Map.entry("george", "조지"),
-            Map.entry("grace", "그레이스"),
-            Map.entry("henry", "헨리"),
-            Map.entry("isabella", "이사벨라"),
-            Map.entry("jacob", "제이컵"),
-            Map.entry("james", "제임스"),
-            Map.entry("jennifer", "제니퍼"),
-            Map.entry("john", "존"),
-            Map.entry("johnson", "존슨"),
-            Map.entry("joseph", "조지프"),
-            Map.entry("joshua", "조슈아"),
-            Map.entry("kevin", "케빈"),
-            Map.entry("laura", "로라"),
-            Map.entry("liam", "리엄"),
-            Map.entry("lucas", "루카스"),
-            Map.entry("martin", "마틴"),
-            Map.entry("mary", "메리"),
-            Map.entry("michael", "마이클"),
-            Map.entry("olivia", "올리비아"),
-            Map.entry("paul", "폴"),
-            Map.entry("peter", "피터"),
-            Map.entry("richard", "리처드"),
-            Map.entry("robert", "로버트"),
-            Map.entry("sarah", "사라"),
-            Map.entry("smith", "스미스"),
-            Map.entry("sofia", "소피아"),
-            Map.entry("sophia", "소피아"),
-            Map.entry("thomas", "토마스"),
-            Map.entry("william", "윌리엄")
+            Map.entry("alexander", "\uC54C\uB809\uC0B0\uB354"),
+            Map.entry("amelia", "\uC544\uBA5C\uB9AC\uC544"),
+            Map.entry("andrew", "\uC564\uB4DC\uB8E8"),
+            Map.entry("anna", "\uC548\uB098"),
+            Map.entry("anthony", "\uC564\uD1A0\uB2C8"),
+            Map.entry("benjamin", "\uBC24\uC790\uBBFC"),
+            Map.entry("charles", "\uCC30\uC2A4"),
+            Map.entry("christopher", "\uD06C\uB9AC\uC2A4\uD1A0\uD37C"),
+            Map.entry("daniel", "\uB2E4\uB2C8\uC5D8"),
+            Map.entry("danielle", "\uB2E4\uB2C8\uC5D8"),
+            Map.entry("david", "\uB370\uC774\uBE44\uB4DC"),
+            Map.entry("edward", "\uC5D0\uB4DC\uC6CC\uB4DC"),
+            Map.entry("elizabeth", "\uC5D8\uB9AC\uC790\uBCA0\uC2A4"),
+            Map.entry("emily", "\uC5D0\uBC00\uB9AC"),
+            Map.entry("emma", "\uC5E0\uB9C8"),
+            Map.entry("ethan", "\uC774\uB4E0"),
+            Map.entry("george", "\uC870\uC9C0"),
+            Map.entry("grace", "\uADF8\uB808\uC774\uC2A4"),
+            Map.entry("henry", "\uD5E8\uB9AC"),
+            Map.entry("isabella", "\uC774\uC0AC\uBCA8\uB77C"),
+            Map.entry("jacob", "\uC81C\uC774\uCF65"),
+            Map.entry("james", "\uC81C\uC784\uC2A4"),
+            Map.entry("jennifer", "\uC81C\uB2C8\uD37C"),
+            Map.entry("john", "\uC874"),
+            Map.entry("johnson", "\uC874\uC2A8"),
+            Map.entry("joseph", "\uC870\uC138\uD504"),
+            Map.entry("joshua", "\uC870\uC218\uC544"),
+            Map.entry("kevin", "\uCF00\uBE48"),
+            Map.entry("laura", "\uB85C\uB77C"),
+            Map.entry("liam", "\uB9AC\uC5C4"),
+            Map.entry("lucas", "\uB8E8\uCE74\uC2A4"),
+            Map.entry("martin", "\uB9C8\uD2F4"),
+            Map.entry("mary", "\uBA54\uB9AC"),
+            Map.entry("michael", "\uB9C8\uC774\uD074"),
+            Map.entry("olivia", "\uC62C\uB9AC\uBE44\uC544"),
+            Map.entry("paul", "\uD3F4"),
+            Map.entry("peter", "\uD53C\uD130"),
+            Map.entry("richard", "\uB9AC\uCC98\uB4DC"),
+            Map.entry("robert", "\uB85C\uBC84\uD2B8"),
+            Map.entry("sarah", "\uC138\uB77C"),
+            Map.entry("smith", "\uC2A4\uBBF8\uC2A4"),
+            Map.entry("sofia", "\uC18C\uD53C\uC544"),
+            Map.entry("sophia", "\uC18C\uD53C\uC544"),
+            Map.entry("thomas", "\uD1A0\uB9C8\uC2A4"),
+            Map.entry("william", "\uC708\uB9AC\uC5C4")
     );
 
     public String toKoreanPronunciation(String value) {
@@ -99,11 +124,6 @@ public class EnglishKoreanNameService {
             return new ConversionResult(null, null);
         }
 
-        String mappedName = PRIORITY_NAME_MAP.get(priorityKey);
-        if (mappedName != null) {
-            return new ConversionResult(mappedName, NameConversionSource.MANUAL);
-        }
-
         String normalized = normalize(value);
         if (normalized == null) {
             return new ConversionResult(null, null);
@@ -111,16 +131,28 @@ public class EnglishKoreanNameService {
 
         StringBuilder result = new StringBuilder();
         NameConversionSource source = NameConversionSource.NIKL_EXAMPLE;
-        for (String word : normalized.split("\\s+")) {
+        String[] priorityWords = priorityKey.split("\\s+");
+        String[] normalizedWords = normalized.split("\\s+");
+        for (int index = 0; index < normalizedWords.length; index++) {
+            String word = normalizedWords[index];
             if (word.isBlank()) {
                 continue;
             }
             if (!result.isEmpty()) {
                 result.append(' ');
             }
+            String priorityWord = index < priorityWords.length ? priorityWords[index] : "";
+            String mappedName = PRIORITY_NAME_MAP.get(priorityWord);
+            if (mappedName != null) {
+                source = NameConversionSource.MANUAL;
+                result.append(mappedName);
+                continue;
+            }
             String officialExample = OFFICIAL_EXAMPLE_DICTIONARY.get(word);
             if (officialExample == null) {
-                source = NameConversionSource.LOANWORD_RULE;
+                if (source != NameConversionSource.MANUAL) {
+                    source = NameConversionSource.LOANWORD_RULE;
+                }
                 result.append(TRANSLITERATOR.transliterate(word));
             } else {
                 result.append(officialExample);
@@ -138,7 +170,7 @@ public class EnglishKoreanNameService {
             return null;
         }
         return value.toUpperCase(Locale.ROOT)
-                .replace('’', '\'')
+                .replace('\u2019', '\'')
                 .replace('`', '\'')
                 .replaceAll("'", "")
                 .replaceAll("[^A-Z\\s-]", " ")
@@ -152,7 +184,7 @@ public class EnglishKoreanNameService {
             return null;
         }
         return value.toLowerCase(Locale.ROOT)
-                .replace('’', '\'')
+                .replace('\u2019', '\'')
                 .replace('`', '\'')
                 .replaceAll("'", "")
                 .replaceAll("[^a-z\\s-]", " ")
@@ -167,8 +199,6 @@ public class EnglishKoreanNameService {
         }
         return value.replaceAll("\\s+", " ").trim();
     }
-
-
 
     public record ConversionResult(String koreanName, NameConversionSource source) {
     }

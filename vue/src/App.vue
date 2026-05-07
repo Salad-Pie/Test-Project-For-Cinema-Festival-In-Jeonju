@@ -65,7 +65,7 @@ const publicRoutePages = [
   { key: 'identifierReissue.title', href: '/identifier-code-reissue' },
   { key: 'tablet.verifyTitle', href: '/tablet' },
   { key: 'certificateDownload.title', href: '/certificate-download' },
-  { href: '/ending-credits', label: '인도네시아 팸투어 엔딩 크레딧' },
+  { href: '/ending-credits', label: 'Indonesia Fam Tour Ending Credits' },
   { key: 'nav.ideaContest', href: '/idea-contest' },
   { key: 'nav.sponsorshipApplication', href: '/sponsorship-application' },
   { key: 'nav.streetCollaboration', href: '/street-collaboration' },
@@ -95,15 +95,15 @@ const axShopShopDate = '2026-05-09'
 const axShopShopHour = '14'
 const pdRecruitDate = '2026-05-09'
 const pdRecruitHour = '19'
-const locationAddress = '전북특별자치도 전주시 완산구 전주객사3길 67'
+const locationAddress = '??????????밸븶筌믩끃??獄???????멥렑????????쇰뮛??????????熬곣뫖利당춯??쎾퐲??????????????????????????????밸븶筌믩끃??獄???????멥렑?????????????밸븶筌믩끃??獄???????멥렑?????????????밸븶筌믩끃??獄???????멥렑???????怨쀫엥??????????????嚥???癲??????67'
 const kakaoDirectionsUrl = `https://map.kakao.com/link/search/${encodeURIComponent(locationAddress)}`
 const naverDirectionsUrl = `https://map.naver.com/p/search/${encodeURIComponent(locationAddress)}`
 const ideaPosterUrl = 'https://zdo.co.kr/theme/home/html/image/top_logo_m.png'
 const customPaymentProviderValue = '__CUSTOM__'
 const sponsorshipPaymentProviderOptionsByType = {
-  BANK: ['국민은행', '신한은행', '우리은행', '하나은행', '농협은행', '기업은행', '카카오뱅크', '토스뱅크', '케이뱅크'],
-  PAYMENT: ['카카오페이', '네이버페이', '토스페이', '페이코', 'PayPal'],
-  CARD: ['신한카드', '삼성카드', 'KB국민카드', '현대카드', '롯데카드', '우리카드', '하나카드', 'BC카드', 'Visa', 'Mastercard'],
+  BANK: ['KB', 'SHINHAN', 'WOORI', 'HANA', 'NH', 'IBK', 'KAKAO BANK', 'TOSS BANK', 'K BANK'],
+  PAYMENT: ['KAKAO PAY', 'NAVER PAY', 'TOSS PAY', 'PAYCO', 'PayPal'],
+  CARD: ['SHINHAN CARD', 'SAMSUNG CARD', 'KB CARD', 'HYUNDAI CARD', 'LOTTE CARD', 'WOORI CARD', 'HANA CARD', 'BC CARD', 'Visa', 'Mastercard'],
 }
 
 const q = new URLSearchParams(window.location.search)
@@ -196,6 +196,7 @@ const state = reactive({
     entries: [],
     isFullscreen: false,
     leadMessage: '',
+    tailMessage: '',
     rollDurationSeconds: 18,
     rollGapPx: 72,
     fontScalePercent: 100,
@@ -206,6 +207,15 @@ const state = reactive({
   },
   signatureNameLanguage: 'EN',
   signatureKoreanName: '',
+  signaturePreview: {
+    token: '',
+    recognizedText: '',
+    englishName: '',
+    koreanName: '',
+    koreanMeaningText: '',
+    detectedLanguage: '',
+    ocrConfidence: null,
+  },
   adminAccess: null,
 })
 
@@ -218,62 +228,26 @@ const sponsorshipPaymentProviderOptions = computed(
   () => sponsorshipPaymentProviderOptionsByType[state.sponsorship.paymentMethodType] || []
 )
 const endingCreditsRouteLabel = computed(() => {
-  if (locale.value === 'ko') return '인도네시아 팸투어 엔딩 크레딧'
-  if (locale.value === 'ja') return 'インドネシア ファムツアー エンディングクレジット'
-  if (locale.value === 'zh') return '印度尼西亚考察团片尾字幕'
+  if (locale.value === 'ko') return '\uC778\uB3C4\uB124\uC2DC\uC544 \uD33D\uD22C\uC5B4 \uC5D4\uB529 \uD06C\uB808\uB51F'
   return 'Indonesia Fam Tour Ending Credits'
 })
 const endingCreditsText = computed(() => {
   if (locale.value === 'ko') {
     return {
-      title: '인도네시아 팸투어 엔딩 크레딧',
-      description: '식별자 코드를 입력하면 참여자의 영어 이름, 한글 이름, 서예 서명 이미지를 화면에 표시합니다.',
-      groupTitle: 'Special Thanks',
-      groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
-      inputLabel: '6자리 식별자 코드',
-      inputPlaceholder: '숫자 6자리를 입력하세요',
-      button: '엔딩 크레딧 불러오기',
-      englishName: '영어 이름',
-      koreanName: '한글 이름',
-      signature: '서예 서명',
-      resultTitle: 'Ending Credit Cast',
-    }
-  }
-  if (locale.value === 'ja') {
-    return {
-      title: 'インドネシア ファムツアー エンディングクレジット',
-      description: '識別コードを入力すると、英語名、韓国語名、書芸署名を表示します。',
-      groupTitle: 'Special Thanks',
-      groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
-      inputLabel: '6桁の識別コード',
-      inputPlaceholder: '6桁の数字を入力してください',
-      button: 'エンディングクレジットを表示',
-      englishName: 'English Name',
-      koreanName: 'Korean Name',
-      signature: 'Calligraphy Signature',
-      resultTitle: 'Ending Credit Cast',
-    }
-  }
-  if (locale.value === 'zh') {
-    return {
-      title: '印度尼西亚考察团片尾字幕',
-      description: '输入识别码后，可显示英文名、韩文名和书法签名图像。',
-      groupTitle: 'Special Thanks',
-      groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
-      inputLabel: '6位识别码',
-      inputPlaceholder: '请输入6位数字',
-      button: '加载片尾字幕',
-      englishName: 'English Name',
-      koreanName: 'Korean Name',
-      signature: 'Calligraphy Signature',
+      title: '\uC778\uB3C4\uB124\uC2DC\uC544 \uD33D\uD22C\uC5B4 \uC5D4\uB529 \uD06C\uB808\uB51F',
+      description: '\uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC785\uB825\uD558\uBA74 \uCC38\uC5EC\uC790\uC758 \uC601\uC5B4 \uC774\uB984, \uD55C\uAE00 \uC774\uB984, \uC11C\uC608 \uC11C\uBA85 \uC774\uBBF8\uC9C0\uB97C \uC5D4\uB529 \uD06C\uB808\uB51F\uC5D0 \uD45C\uC2DC\uD569\uB2C8\uB2E4.',
+      inputLabel: '\u0036\uC790\uB9AC \uC2DD\uBCC4\uC790 \uCF54\uB4DC',
+      inputPlaceholder: '\uC22B\uC790 \u0036\uC790\uB9AC\uB97C \uC785\uB825\uD558\uC138\uC694.',
+      button: '\uC5D4\uB529 \uD06C\uB808\uB51F \uBD88\uB7EC\uC624\uAE30',
+      englishName: '\uC601\uC5B4 \uC774\uB984',
+      koreanName: '\uD55C\uAE00 \uC774\uB984',
+      signature: '\uC11C\uC608 \uC11C\uBA85',
       resultTitle: 'Ending Credit Cast',
     }
   }
   return {
     title: 'Indonesia Fam Tour Ending Credits',
-    description: 'Enter the 6-digit identifier code to display the participant English name, Korean name, and calligraphy signature.',
-    groupTitle: 'Special Thanks',
-    groupLines: ['Indonesia Fam Tour Visitors', 'BackToScreen AX Convergence Calligraphy Exhibition'],
+    description: 'Enter the identifier code to display the participant English name, Korean name, and calligraphy signature image in the ending credits.',
     inputLabel: '6-digit identifier code',
     inputPlaceholder: 'Enter 6 digits',
     button: 'Load Ending Credits',
@@ -289,6 +263,18 @@ const endingCreditsMessageGroups = computed(() => [
         id: 'lead',
         title: 'Opening Message',
         lines: state.endingCredits.leadMessage
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean),
+      }]
+    : []),
+])
+const endingCreditsClosingGroups = computed(() => [
+  ...(state.endingCredits.tailMessage.trim()
+    ? [{
+        id: 'tail',
+        title: 'Closing Message',
+        lines: state.endingCredits.tailMessage
           .split('\n')
           .map((line) => line.trim())
           .filter(Boolean),
@@ -578,6 +564,7 @@ watch(
     state.endingCredits.rollGapPx,
     state.endingCredits.fontScalePercent,
     state.endingCredits.leadMessage,
+    state.endingCredits.tailMessage,
   ],
   () => {
     window.setTimeout(() => {
@@ -1111,6 +1098,7 @@ async function verifyOnTablet() {
       body: JSON.stringify({ code: state.verifyCode }),
     })
     state.verifiedToken = result.verifiedToken
+    resetSignaturePreview()
     state.message = t('tablet.verifiedDone')
   } catch (e) {
     setSafeError(e)
@@ -1154,28 +1142,46 @@ function clearSignature() {
   const ctx = canvas.getContext('2d')
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
+  resetSignaturePreview()
+}
+
+function resetSignaturePreview() {
+  state.signaturePreview.token = ''
+  state.signaturePreview.recognizedText = ''
+  state.signaturePreview.englishName = ''
+  state.signaturePreview.koreanName = ''
+  state.signaturePreview.koreanMeaningText = ''
+  state.signaturePreview.detectedLanguage = ''
+  state.signaturePreview.ocrConfidence = null
+}
+
+async function createTabletSignatureFormData() {
+  const canvas = canvasRef.value
+  if (!canvas) return null
+
+  const signatureBlob = await new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(userError(t('tablet.signatureImageFailed')))
+    }, 'image/png')
+  })
+
+  const formData = new FormData()
+  formData.append('signatureImage', signatureBlob, 'signature.png')
+  formData.append('nameLanguage', state.signatureNameLanguage)
+  if (state.signatureKoreanName.trim()) {
+    formData.append('koreanName', state.signatureKoreanName.trim())
+  }
+  return formData
 }
 
 async function submitSignature() {
-  const canvas = canvasRef.value
-  if (!canvas) return
+  if (!canvasRef.value) return
 
   state.loading = true
   state.error = ''
   try {
-    const signatureBlob = await new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob)
-        else reject(userError(t('tablet.signatureImageFailed')))
-      }, 'image/png')
-    })
-    const formData = new FormData()
-    formData.append('signatureImage', signatureBlob, 'signature.png')
-    formData.append('nameLanguage', state.signatureNameLanguage)
-    if (state.signatureKoreanName.trim()) {
-      formData.append('koreanName', state.signatureKoreanName.trim())
-    }
-
+    const formData = await createTabletSignatureFormData()
     const res = await fetch(`${apiRoot}/auth/signature`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${state.verifiedToken}` },
@@ -1183,6 +1189,65 @@ async function submitSignature() {
     })
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     state.message = t('tablet.signatureSaved')
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
+async function previewSignatureOnTablet() {
+  if (!canvasRef.value) return
+
+  state.loading = true
+  state.error = ''
+  try {
+    const formData = await createTabletSignatureFormData()
+    const res = await fetch(`${apiRoot}/auth/signature/preview`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${state.verifiedToken}` },
+      body: formData,
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    const result = await res.json()
+    state.signaturePreview.token = result.previewToken || ''
+    state.signaturePreview.recognizedText = result.recognizedText || ''
+    state.signaturePreview.englishName = result.englishName || ''
+    state.signaturePreview.koreanName = result.koreanName || ''
+    state.signaturePreview.koreanMeaningText = result.koreanMeaningText || ''
+    state.signaturePreview.detectedLanguage = result.detectedLanguage || ''
+    state.signaturePreview.ocrConfidence = result.ocrConfidence
+    state.message = 'OCR 결과를 확인한 뒤 저장해 주세요.'
+  } catch (e) {
+    resetSignaturePreview()
+    setSafeError(e)
+  } finally {
+    state.loading = false
+  }
+}
+
+async function confirmPreviewSignatureOnTablet() {
+  if (!state.signaturePreview.token) {
+    setSafeError(userError('먼저 OCR 결과를 확인해 주세요.'))
+    return
+  }
+
+  state.loading = true
+  state.error = ''
+  try {
+    const res = await fetch(`${apiRoot}/auth/signature/confirm`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${state.verifiedToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        previewToken: state.signaturePreview.token,
+      }),
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    resetSignaturePreview()
+    state.message = '서명이 저장되었습니다.'
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -1294,7 +1359,7 @@ async function addEndingCreditsEntry() {
     }
 
     if (state.endingCredits.entries.some((entry) => entry.code === code)) {
-      throw userError('이미 추가된 식별자 코드입니다.')
+      throw userError('???? ???????????덉떻????????????됰Ŧ???????耀붾굝????嶺뚯쉳???????????????썹땟戮녹??諭?????⑸㎦??????????????')
     }
 
     const entryRes = await fetch(`${apiRoot}/ending-credits/lookup`, {
@@ -1334,13 +1399,13 @@ async function addEndingCreditsEntry() {
 async function showEndingCreditsFullscreen() {
   state.error = ''
   if (endingCreditsRollEntries.value.length === 0) {
-    setSafeError(userError('먼저 식별자 코드를 추가해 주세요.'))
+    setSafeError(userError('????????⑥レ뿥?????轅붽틓????? ???????됰Ŧ???????耀붾굝????嶺뚯쉳???????????????썹땟戮녹??諭?????⑸㎦???????????????ㅼ뒧???怨???????????????덉떻?????????????ш끽維뽳쭩?뱀땡??????????'))
     return
   }
 
   const target = endingCreditsShellRef.value
   if (!target || !target.requestFullscreen) {
-    setSafeError(userError('전체화면을 지원하지 않는 환경입니다.'))
+    setSafeError(userError('??????????밸븶筌믩끃??獄???????멥렑?????????????????嫄???????????????怨쀫엥??????????????????濡?씀?濾??? ?????????癲ル슢??蹂?㎟????????????????????'))
     return
   }
 
@@ -1348,7 +1413,7 @@ async function showEndingCreditsFullscreen() {
     await target.requestFullscreen()
     state.endingCredits.isFullscreen = true
   } catch (_) {
-    setSafeError(userError('전체화면 전환에 실패했습니다.'))
+    setSafeError(userError('??????????밸븶筌믩끃??獄???????멥렑??????????????????????????????????????산뭐????????????????????ㅻ쑋雍?'))
   }
 }
 
@@ -1371,7 +1436,7 @@ function downloadSignatureImage() {
 
 function downloadCertificateSample() {
   return downloadSignatureArtifact('/auth/signature/certificate-sample', 'certificate-sample.png', {
-    title: 'BackToScreen 참여 증명서',
+    title: 'BackToScreen Participation Certificate',
     fontFamily: 'Nanum Brush Script',
     nameX: 700,
     nameY: 540,
@@ -1437,8 +1502,8 @@ function downloadStoredCertificatePdf() {
               <span class="badge rounded-pill text-bg-light border border-info-subtle text-info-emphasis px-3 py-2 mb-3">
                 BackToScreen
               </span>
-              <h1 class="h2 fw-bold mb-2">폐영화관 재생프로젝트</h1>
-              <p class="text-secondary mb-0">AX 융복합 서예 전시</p>
+              <h1 class="h2 fw-bold mb-2">BackToScreen</h1>
+              <p class="text-secondary mb-0">AX Convergence Calligraphy Exhibition</p>
             </div>
             <div class="row g-3">
               <div v-for="page in bootstrapPages" :key="page.href" class="col-12 col-md-6 col-lg-4">
@@ -1498,6 +1563,21 @@ function downloadStoredCertificatePdf() {
                   alt="Calligraphy Signature"
                 />
               </div>
+
+              <div
+                v-for="group in endingCreditsClosingGroups"
+                :key="group.id"
+                class="ending-credits-group"
+              >
+                <p class="ending-credits-group-title">{{ group.title }}</p>
+                <p
+                  v-for="line in group.lines"
+                  :key="`${group.id}-${line}`"
+                  class="ending-credits-group-line"
+                >
+                  {{ line }}
+                </p>
+              </div>
             </div>
           </article>
         </div>
@@ -1509,15 +1589,23 @@ function downloadStoredCertificatePdf() {
           </div>
           <div class="ending-credits-settings-grid">
             <label class="ending-credits-field ending-credits-field-wide">
-              <span>최상단 첫 문구</span>
+              <span>{{ '\uCD5C\uC0C1\uB2E8 \uCCAB \uBB38\uAD6C' }}</span>
               <textarea
                 v-model="state.endingCredits.leadMessage"
                 rows="3"
-                placeholder="가장 먼저 올라갈 문구를 줄바꿈으로 입력하세요"
+                :placeholder="'\uAC00\uC7A5 \uBA3C\uC800 \uC62C\uB77C\uAC08 \uBB38\uAD6C\uB97C \uC904\uBC14\uAFC8\uC73C\uB85C \uC785\uB825\uD558\uC138\uC694.'"
+              />
+            </label>
+            <label class="ending-credits-field ending-credits-field-wide">
+              <span>{{ '\uCD5C\uD558\uB2E8 \uB9C8\uC9C0\uB9C9 \uBB38\uAD6C' }}</span>
+              <textarea
+                v-model="state.endingCredits.tailMessage"
+                rows="3"
+                :placeholder="'\uAC00\uC7A5 \uB9C8\uC9C0\uB9C9\uC5D0 \uC62C\uB77C\uAC08 \uBB38\uAD6C\uB97C \uC904\uBC14\uAFC8\uC73C\uB85C \uC785\uB825\uD558\uC138\uC694.'"
               />
             </label>
             <label class="ending-credits-field">
-              <span>롤링 속도(초)</span>
+              <span>?????轅붽틓????몃마??????????釉랁닑????????????????</span>
               <input
                 :value="state.endingCredits.rollDurationSeconds"
                 type="number"
@@ -1528,7 +1616,7 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <label class="ending-credits-field">
-              <span>항목 간격(px)</span>
+              <span>?????????????????????????px)</span>
               <input
                 :value="state.endingCredits.rollGapPx"
                 type="number"
@@ -1539,7 +1627,7 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <label class="ending-credits-field">
-              <span>글자 크기(%)</span>
+              <span>?????????????%)</span>
               <input
                 :value="state.endingCredits.fontScalePercent"
                 type="number"
@@ -1563,10 +1651,9 @@ function downloadStoredCertificatePdf() {
               />
             </label>
             <button :disabled="state.loading" @click="addEndingCreditsEntry">{{ endingCreditsText.button }}</button>
-            <button :disabled="state.loading || endingCreditsRollEntries.length === 0" @click="showEndingCreditsFullscreen">엔딩 크레딧 보기</button>
+            <button :disabled="state.loading || endingCreditsRollEntries.length === 0" @click="showEndingCreditsFullscreen">{{ '\uC5D4\uB529 \uD06C\uB808\uB51F \uBCF4\uAE30' }}</button>
           </div>
         </article>
-
         <article class="ending-credits-result-card">
           <p class="ending-credits-result-title">{{ endingCreditsText.resultTitle }}</p>
           <div class="ending-credits-list-wrap">
@@ -1577,7 +1664,7 @@ function downloadStoredCertificatePdf() {
                   <th>{{ endingCreditsText.englishName }}</th>
                   <th>{{ endingCreditsText.koreanName }}</th>
                   <th>{{ endingCreditsText.signature }}</th>
-                  <th>관리</th>
+                  <th>{{ '\uAD00\uB9AC' }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1585,27 +1672,27 @@ function downloadStoredCertificatePdf() {
                   <td>{{ entry.code }}</td>
                   <td>
                     <span class="ending-credits-ready-badge" :class="{ 'is-ready': entry.hasEnglishName }">
-                      {{ entry.hasEnglishName ? '준비됨' : '없음' }}
+                      {{ entry.hasEnglishName ? '\uC900\uBE44\uB428' : '\uBBF8\uC900\uBE44' }}
                     </span>
                     <strong v-if="entry.englishName">{{ entry.englishName }}</strong>
                   </td>
                   <td>
                     <span class="ending-credits-ready-badge" :class="{ 'is-ready': entry.hasKoreanName }">
-                      {{ entry.hasKoreanName ? '준비됨' : '없음' }}
+                      {{ entry.hasKoreanName ? '\uC900\uBE44\uB428' : '\uBBF8\uC900\uBE44' }}
                     </span>
                     <strong v-if="entry.koreanName">{{ entry.koreanName }}</strong>
                   </td>
                   <td>
                     <span class="ending-credits-ready-badge" :class="{ 'is-ready': entry.hasSignature }">
-                      {{ entry.hasSignature ? '준비됨' : '없음' }}
+                      {{ entry.hasSignature ? '\uC900\uBE44\uB428' : '\uBBF8\uC900\uBE44' }}
                     </span>
                   </td>
                   <td>
-                    <button class="ending-credits-delete-button" type="button" @click="removeEndingCreditsEntry(entry.code)">삭제</button>
+                    <button class="ending-credits-delete-button" type="button" @click="removeEndingCreditsEntry(entry.code)">{{ '\uC0AD\uC81C' }}</button>
                   </td>
                 </tr>
                 <tr v-if="state.endingCredits.entries.length === 0">
-                  <td colspan="5">추가된 식별자 코드가 없습니다.</td>
+                  <td colspan="5">{{ '\uCD94\uAC00\uB41C \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uAC00 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4.' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -1650,7 +1737,7 @@ function downloadStoredCertificatePdf() {
       </div>
       <div class="card idea-pane">
         <div class="idea-poster">
-          <img :src="artistMeetingPosterUrl" alt="전시 작가와의 만남 포스터" />
+          <img :src="artistMeetingPosterUrl" alt="Artist meeting poster" />
         </div>
       </div>
     </section>
@@ -2183,6 +2270,19 @@ function downloadStoredCertificatePdf() {
       <div class="actions">
         <button :disabled="state.loading" @click="clearSignature">{{ t('tablet.clear') }}</button>
         <button :disabled="state.loading || !state.verifiedToken" @click="submitSignature">{{ t('tablet.save') }}</button>
+      </div>
+      <div class="actions">
+        <button :disabled="state.loading || !state.verifiedToken" @click="previewSignatureOnTablet">OCR 확인</button>
+        <button :disabled="state.loading || !state.verifiedToken || !state.signaturePreview.token" @click="confirmPreviewSignatureOnTablet">확인 후 저장</button>
+      </div>
+      <div v-if="state.signaturePreview.token" class="card">
+        <h3>OCR 결과 확인</h3>
+        <p><strong>OCR 결과:</strong> {{ state.signaturePreview.recognizedText || '-' }}</p>
+        <p><strong>영어 이름:</strong> {{ state.signaturePreview.englishName || '-' }}</p>
+        <p><strong>한글 이름:</strong> {{ state.signaturePreview.koreanName || '-' }}</p>
+        <p><strong>의미 번역:</strong> {{ state.signaturePreview.koreanMeaningText || '-' }}</p>
+        <p><strong>감지 언어:</strong> {{ state.signaturePreview.detectedLanguage || '-' }}</p>
+        <p><strong>신뢰도:</strong> {{ state.signaturePreview.ocrConfidence ?? '-' }}</p>
       </div>
     </section>
 
