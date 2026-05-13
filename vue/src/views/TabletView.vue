@@ -148,6 +148,9 @@ async function submitSignature() {
     })
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     globalState.message = t('tablet.signatureSaved')
+    setTimeout(() => {
+      window.location.reload()
+    }, 1500)
   } catch (e) {
     setSafeError(e)
   } finally {
@@ -207,6 +210,9 @@ async function confirmPreviewSignatureOnTablet() {
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     resetSignaturePreview()
     globalState.message = '서명이 저장되었습니다.'
+    setTimeout(() => {
+      window.location.reload()
+    }, 1500)
   } catch (e) {
     setSafeError(e)
   } finally {

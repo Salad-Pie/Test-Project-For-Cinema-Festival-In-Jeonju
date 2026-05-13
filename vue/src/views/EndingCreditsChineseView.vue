@@ -239,140 +239,143 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
   <section class="ending-credits-cn-page">
     <div ref="shellRef" class="ending-credits-shell" :class="{ 'is-fullscreen': state.isFullscreen, 'is-black': state.currentPhase === phases.BLACK }">
       
-      <!-- 배경 포스터 (기존 유지) -->
-      <div v-if="state.currentPhase !== phases.BLACK && state.currentPhase !== phases.FINAL" class="poster-area">
-        <img :src="artistMeetingPosterUrl" alt="Poster" />
-      </div>
+      <!-- 상단 메인 영역 (100vh) -->
+      <div class="ending-credits-hero">
+        <!-- 배경 포스터 -->
+        <div v-if="state.currentPhase !== phases.BLACK && state.currentPhase !== phases.FINAL" class="poster-area">
+          <img :src="artistMeetingPosterUrl" alt="Poster" />
+        </div>
 
-      <!-- 메인 롤링 영역 -->
-      <div class="ending-credits-message-card">
-        
-        <!-- 단계 0: 이름 롤링 (컨트롤 설정 적용) -->
-        <div v-if="state.currentPhase === phases.NAMES" 
-             class="roll-container phase-names"
-             :style="{
-               '--ending-roll-duration': `${state.rollDurationSeconds}s`,
-               '--ending-roll-gap': `${state.rollGapPx}px`,
-               '--ending-font-scale': `${state.fontScalePercent / 100}`,
-               '--ending-roll-iteration-count': state.stopAfterOneCycle ? '1' : 'infinite'
-             }">
+        <!-- 메인 롤링 영역 -->
+        <div class="ending-credits-message-card">
           
-          <!-- 상단 커스텀 문구 -->
-          <div v-if="leadLines.length" class="ending-credits-group">
-            <p v-for="(line, idx) in leadLines" :key="idx" class="ending-credits-group-line">{{ line }}</p>
-          </div>
+          <!-- 단계 0: 이름 롤링 -->
+          <div v-if="state.currentPhase === phases.NAMES" 
+               class="roll-container phase-names"
+               :style="{
+                 '--ending-roll-duration': `${state.rollDurationSeconds}s`,
+                 '--ending-roll-gap': `${state.rollGapPx}px`,
+                 '--ending-font-scale': `${state.fontScalePercent / 100}`,
+                 '--ending-roll-iteration-count': state.stopAfterOneCycle ? '1' : 'infinite'
+               }">
+            
+            <div v-if="leadLines.length" class="ending-credits-group">
+              <p v-for="(line, idx) in leadLines" :key="idx" class="ending-credits-group-line">{{ line }}</p>
+            </div>
 
-          <!-- 가입자 이름 목록 -->
-          <div v-for="entry in rollEntries" :key="entry.code" 
-               class="ending-credits-cast-group" :class="{ 'is-highlighted': state.highlightedCodes[entry.code] }"
-               :data-code="entry.code">
-            <p class="name-original">{{ entry.originalName }}</p>
-            <p class="name-korean">{{ entry.koreanName }}</p>
-            <div class="welcome-msg">
-              <p class="msg-ko">전주에 온 것을 환영합니다</p>
-              <p class="msg-en">Welcome to Jeonju</p>
+            <div v-for="entry in rollEntries" :key="entry.code" 
+                 class="ending-credits-cast-group" :class="{ 'is-highlighted': state.highlightedCodes[entry.code] }"
+                 :data-code="entry.code">
+              <p class="name-original">{{ entry.originalName }}</p>
+              <p class="name-korean">{{ entry.koreanName }}</p>
+              <div class="welcome-msg">
+                <p class="msg-ko">전주에 온 것을 환영합니다</p>
+                <p class="msg-en">Welcome to Jeonju</p>
+              </div>
+            </div>
+
+            <div v-if="tailLines.length" class="ending-credits-group">
+              <p v-for="(line, idx) in tailLines" :key="idx" class="ending-credits-group-line">{{ line }}</p>
             </div>
           </div>
 
-          <!-- 하단 커스텀 문구 -->
-          <div v-if="tailLines.length" class="ending-credits-group">
-            <p v-for="(line, idx) in tailLines" :key="idx" class="ending-credits-group-line">{{ line }}</p>
+          <!-- 단계 1: 블랙 화면 -->
+
+          <!-- 단계 2: 최종 감사 문구 -->
+          <div v-if="state.currentPhase === phases.TAIL" class="roll-container phase-tail"
+               :style="{ '--ending-roll-duration': '300s' }">
+            <div class="tail-content">
+              <p v-for="(line, idx) in tailPreset1.split('\n')" :key="idx" 
+                 :class="{ 'highlight-line': line.trim().startsWith('“') }">
+                {{ line }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 단계 3: 최종 종료 안내 -->
+          <div v-if="state.currentPhase === phases.FINAL" class="final-message">
+            <p>다음 장소로 이동해주시면 감사하겠습니다.</p>
           </div>
         </div>
-
-        <!-- 단계 1: 블랙 화면 (CSS class 'is-black'으로 배경 처리됨) -->
-
-        <!-- 단계 2: 최종 감사 문구 (기존 고정 문구 유지) -->
-        <div v-if="state.currentPhase === phases.TAIL" class="roll-container phase-tail"
-             :style="{ '--ending-roll-duration': '300s' }">
-          <div class="tail-content">
-            <p v-for="(line, idx) in tailPreset1.split('\n')" :key="idx" 
-               :class="{ 'highlight-line': line.trim().startsWith('“') }">
-              {{ line }}
-            </p>
-          </div>
-        </div>
-
-        <!-- 단계 3: 최종 종료 안내 -->
-        <div v-if="state.currentPhase === phases.FINAL" class="final-message">
-          <p>다음 장소로 이동해주시면 감사하겠습니다.</p>
-        </div>
-
       </div>
 
-      <!-- 하단 컨트롤 패널 (인도네시아 페이지와 동일한 UI/기능) -->
-      <article v-if="!state.isFullscreen" class="control-panel card">
-        <div class="control-header">
-          <h5><i class="bi bi-gear-fill me-2"></i>엔딩 크레딧 설정 (중국어)</h5>
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-light" @click="fetchRecentEntries">최근 데이터 갱신</button>
-            <button class="btn btn-sm btn-warning" @click="toggleFullscreen">전체화면</button>
-          </div>
-        </div>
-
-        <div class="settings-grid">
-          <div class="setting-item full-width">
-            <div class="d-flex justify-content-between mb-1">
-              <label>최상단 추가 문구</label>
-              <button class="btn btn-xs btn-link p-0 text-info" @click="state.leadMessage = leadPreset1">기본값 적용</button>
+      <!-- 하단 컨트롤 패널 (레이아웃 하단에 추가됨) -->
+      <article v-if="!state.isFullscreen" class="control-panel-layout">
+        <div class="control-panel-card card shadow-lg">
+          <div class="control-header">
+            <h5><i class="bi bi-gear-fill me-2"></i>엔딩 크레딧 설정 (중국어)</h5>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-light" @click="fetchRecentEntries">최근 데이터 갱신</button>
+              <button class="btn btn-sm btn-warning" @click="toggleFullscreen">전체화면</button>
             </div>
-            <textarea v-model="state.leadMessage" rows="2" placeholder="롤링 시작 부분에 표시될 문구"></textarea>
           </div>
 
-          <div class="setting-item full-width">
-            <div class="d-flex justify-content-between mb-1">
-              <label>이름 뒤 추가 문구</label>
-              <button class="btn btn-xs btn-link p-0 text-info" @click="state.tailMessage = tailPreset1">기본값 적용</button>
+          <div class="settings-grid">
+            <div class="setting-item full-width">
+              <div class="d-flex justify-content-between mb-1">
+                <label>최상단 추가 문구</label>
+                <button class="btn btn-xs btn-link p-0 text-info" @click="state.leadMessage = leadPreset1">기본값 적용</button>
+              </div>
+              <textarea v-model="state.leadMessage" rows="2" placeholder="롤링 시작 부분에 표시될 문구"></textarea>
             </div>
-            <textarea v-model="state.tailMessage" rows="2" placeholder="이름 목록 바로 뒤에 표시될 문구"></textarea>
+
+            <div class="setting-item full-width">
+              <div class="d-flex justify-content-between mb-1">
+                <label>이름 뒤 추가 문구</label>
+                <button class="btn btn-xs btn-link p-0 text-info" @click="state.tailMessage = tailPreset1">기본값 적용</button>
+              </div>
+              <textarea v-model="state.tailMessage" rows="2" placeholder="이름 목록 바로 뒤에 표시될 문구"></textarea>
+            </div>
+
+            <div class="setting-item">
+              <label>롤링 속도 (초)</label>
+              <input v-model.number="state.rollDurationSeconds" type="number" min="10" max="600" />
+            </div>
+            <div class="setting-item">
+              <label>항목 간격 (px)</label>
+              <input v-model.number="state.rollGapPx" type="number" min="20" max="300" />
+            </div>
+            <div class="setting-item">
+              <label>글자 크기 (%)</label>
+              <input v-model.number="state.fontScalePercent" type="number" min="50" max="200" />
+            </div>
+            <div class="setting-item d-flex align-items-center">
+              <label class="mb-0 me-2">1회 재생 후 멈춤</label>
+              <input v-model="state.stopAfterOneCycle" type="checkbox" />
+            </div>
           </div>
 
-          <div class="setting-item">
-            <label>롤링 속도 (초)</label>
-            <input v-model.number="state.rollDurationSeconds" type="number" min="10" max="600" />
-          </div>
-          <div class="setting-item">
-            <label>항목 간격 (px)</label>
-            <input v-model.number="state.rollGapPx" type="number" min="20" max="300" />
-          </div>
-          <div class="setting-item">
-            <label>글자 크기 (%)</label>
-            <input v-model.number="state.fontScalePercent" type="number" min="50" max="200" />
-          </div>
-          <div class="setting-item d-flex align-items-center">
-            <label class="mb-0 me-2">1회 재생 후 멈춤</label>
-            <input v-model="state.stopAfterOneCycle" type="checkbox" />
-          </div>
-        </div>
+          <div class="entry-management">
+            <div class="entry-input">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">코드</span>
+                <input v-model="state.code" type="text" class="form-control" placeholder="6자리" maxlength="6" />
+                <button class="btn btn-primary" @click="addEntry" :disabled="state.loading">추가</button>
+              </div>
+            </div>
 
-        <div class="entry-input mt-3">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text">코드</span>
-            <input v-model="state.code" type="text" class="form-control" placeholder="6자리" maxlength="6" />
-            <button class="btn btn-primary" @click="addEntry" :disabled="state.loading">추가</button>
+            <div class="entry-list">
+              <table class="table table-sm table-dark table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>코드</th>
+                    <th>이름</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="entry in state.entries" :key="entry.code">
+                    <td><code>{{ entry.code }}</code></td>
+                    <td>{{ entry.koreanName || entry.originalName }}</td>
+                    <td><button class="btn btn-xs btn-outline-danger" @click="removeEntry(entry.code)">삭제</button></td>
+                  </tr>
+                  <tr v-if="state.entries.length === 0">
+                    <td colspan="3" class="text-center text-muted">데이터가 없습니다.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-
-        <div class="entry-list mt-3">
-          <table class="table table-sm table-dark table-hover mb-0">
-            <thead>
-              <tr>
-                <th>코드</th>
-                <th>이름</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="entry in state.entries" :key="entry.code">
-                <td><code>{{ entry.code }}</code></td>
-                <td>{{ entry.koreanName || entry.originalName }}</td>
-                <td><button class="btn btn-xs btn-outline-danger" @click="removeEntry(entry.code)">삭제</button></td>
-              </tr>
-              <tr v-if="state.entries.length === 0">
-                <td colspan="3" class="text-center text-muted">데이터가 없습니다.</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </article>
 
@@ -385,14 +388,14 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
   width: 100%;
   height: 100vh;
   background: #000;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto; /* 하단 레이아웃을 보기 위해 스크롤 허용 */
 }
 
 .ending-credits-shell {
-  position: relative;
-  width: 100%;
-  height: 100%;
   display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   background: #000;
   color: #fff;
   transition: background 1s ease;
@@ -400,6 +403,13 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
 
 .is-black {
   background: #000 !important;
+}
+
+.ending-credits-hero {
+  display: flex;
+  width: 100%;
+  height: 100vh; /* 메인 영역은 화면을 꽉 채움 */
+  flex-shrink: 0;
 }
 
 .poster-area {
@@ -477,7 +487,7 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
 .welcome-msg .msg-en { font-size: 1.1rem; color: #666; }
 
 .phase-tail {
-  animation-duration: 300s !important; /* 마지막 문구는 아주 천천히 */
+  animation-duration: 300s !important;
 }
 
 .tail-content {
@@ -506,70 +516,85 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
   to { opacity: 1; }
 }
 
-/* 컨트롤 패널 (인도네시아 뷰와 조화롭게 구성) */
-.control-panel {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 420px;
-  max-height: 75vh;
-  background: rgba(15, 15, 15, 0.9) !important;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  color: #fff;
-  padding: 20px;
-  overflow-y: auto;
-  z-index: 1000;
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+/* 하단 컨트롤 패널 레이아웃 */
+.control-panel-layout {
+  width: 100%;
+  padding: 40px 24px;
+  background: #000;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.is-fullscreen .control-panel {
+.is-fullscreen .control-panel-layout {
   display: none;
+}
+
+.control-panel-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: rgba(20, 20, 20, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #fff;
+  padding: 30px;
+  border-radius: 20px;
 }
 
 .control-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-.control-header h5 { margin: 0; font-weight: 700; color: #fff; }
+.control-header h5 { margin: 0; font-weight: 700; color: #fff; font-size: 1.25rem; }
 
 .settings-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-.setting-item.full-width { grid-column: span 2; }
-.setting-item label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 5px; font-weight: 600; }
+.setting-item.full-width { grid-column: span 4; }
+.setting-item label { display: block; font-size: 0.9rem; color: #aaa; margin-bottom: 8px; font-weight: 600; }
 .setting-item input, .setting-item textarea {
   width: 100%;
-  background: #222;
+  background: #111;
   border: 1px solid #333;
   color: #fff;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
 }
 .setting-item input:focus, .setting-item textarea:focus {
   outline: none;
   border-color: #ffc107;
 }
 
+.entry-management {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
 .entry-list {
   background: #000;
-  border-radius: 8px;
-  max-height: 180px;
+  border-radius: 10px;
+  max-height: 250px;
   overflow-y: auto;
   border: 1px solid #222;
 }
 
-.table { --bs-table-bg: transparent; color: #fff; font-size: 0.85rem; }
-.btn-xs { padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; }
-code { color: #ffc107; background: rgba(255,193,7,0.1); padding: 2px 4px; border-radius: 4px; }
+.table { --bs-table-bg: transparent; color: #fff; font-size: 0.9rem; }
+.btn-xs { padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; }
+code { color: #ffc107; background: rgba(255,193,7,0.1); padding: 3px 6px; border-radius: 4px; }
+
+@media (max-width: 992px) {
+  .settings-grid { grid-template-columns: 1fr 1fr; }
+  .setting-item.full-width { grid-column: span 2; }
+  .entry-management { grid-template-columns: 1fr; }
+}
 </style>
