@@ -285,7 +285,7 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
           <div v-if="state.currentPhase === phases.TAIL" class="roll-container phase-tail"
                :style="{ '--ending-roll-duration': '300s' }">
             <div class="tail-content">
-              <p v-for="(line, idx) in tailPreset1.split('\n')" :key="idx" 
+              <p v-for="(line, idx) in tailLines" :key="idx" 
                  :class="{ 'highlight-line': line.trim().startsWith('“') }">
                 {{ line }}
               </p>
