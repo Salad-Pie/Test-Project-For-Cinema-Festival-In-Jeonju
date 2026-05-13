@@ -32,8 +32,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,9 +40,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
+@Slf4j
 public class AuthService {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private static final int CODE_GENERATION_MAX_ATTEMPTS = 20;
     private static final int IDENTIFIER_REISSUE_MAX_ATTEMPTS = 5;
     private static final Duration IDENTIFIER_REISSUE_WINDOW = Duration.ofMinutes(10);

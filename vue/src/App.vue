@@ -58,6 +58,7 @@ import AdminUsersView from './views/AdminUsersView.vue'
 import AdminConfigView from './views/AdminConfigView.vue'
 import AdminExportView from './views/AdminExportView.vue'
 import AdminI18nEditorView from './views/AdminI18nEditorView.vue'
+import AdminDataView from './views/AdminDataView.vue'
 import OauthCallbackView from './views/OauthCallbackView.vue'
 import CertificateDownloadView from './views/CertificateDownloadView.vue'
 import TabletView from './views/TabletView.vue'
@@ -71,7 +72,7 @@ const address = useAddress(globalState)
 
 // 2. 초기화된 모듈에서 필요한 변수 및 함수 추출
 const { state, setSafeError, userError, goToSuccessPage } = globalState
-const { pageHref, isHome, isBootstrapHome, isEndingCreditsPage, isEndingCreditsChinesePage, isSuccessPage, isIdeaContestPage, isArtistMeetingPage, isAxSpacePage, isKartAxPage, isAxShopShopPage, isPdRecruitPage, isAdminDashboardPage, isAdminReservationsPage, isAdminSignaturesPage, isAdminStatisticsPage, isAdminOCRReviewPage, isAdminUsersPage, isAdminConfigPage, isAdminExportPage, isAdminI18nEditorPage, isOriginalRoute, isBootstrapRoute, isIdentifierCodeReissuePage, isEmailLoginPage, isBootstrapLoginPage, isIdeaContestLoginPage, isSponsorshipPage, isSponsorshipThanksPage, isStreetCollaborationPage, isExhibitionSurveyPage, isExhibitionSurveySuccessPage, isExperienceZoneSurveyPage, isExperienceZoneSurveySuccessPage, isProjectParticipantPage, isStreamingRecruitPage, isLocationPage, isEmailSignupPage, isOauthCallbackPage, isCertificateDownloadPage, isTabletPage } = routing
+const { pageHref, isHome, isBootstrapHome, isEndingCreditsPage, isEndingCreditsChinesePage, isSuccessPage, isIdeaContestPage, isArtistMeetingPage, isAxSpacePage, isKartAxPage, isAxShopShopPage, isPdRecruitPage, isAdminDashboardPage, isAdminReservationsPage, isAdminSignaturesPage, isAdminStatisticsPage, isAdminOCRReviewPage, isAdminUsersPage, isAdminConfigPage, isAdminExportPage, isAdminI18nEditorPage, isAdminDataPage, isOriginalRoute, isBootstrapRoute, isIdentifierCodeReissuePage, isEmailLoginPage, isBootstrapLoginPage, isIdeaContestLoginPage, isSponsorshipPage, isSponsorshipThanksPage, isStreetCollaborationPage, isExhibitionSurveyPage, isExhibitionSurveySuccessPage, isExperienceZoneSurveyPage, isExperienceZoneSurveySuccessPage, isProjectParticipantPage, isStreamingRecruitPage, isLocationPage, isEmailSignupPage, isOauthCallbackPage, isCertificateDownloadPage, isTabletPage } = routing
 const { startOAuth, redirectToLogin, goEmailLoginPage } = auth
 const { openAddressSearch } = address
 
@@ -223,7 +224,7 @@ onMounted(async () => {
   const adminPages = [
     isAdminDashboardPage, isAdminReservationsPage, isAdminSignaturesPage,
     isAdminStatisticsPage, isAdminOCRReviewPage, isAdminUsersPage,
-    isAdminConfigPage, isAdminExportPage, isAdminI18nEditorPage
+    isAdminConfigPage, isAdminExportPage, isAdminI18nEditorPage, isAdminDataPage
   ]
 
   // 관리자 페이지 진입 시 권한 확인
@@ -303,7 +304,7 @@ provide('appContext', {
     
     <!-- 관리자 관련 화면 -->
     <AdminDashboardView v-if="isAdminDashboardPage && state.adminAccess === true" />
-    <AdminAccessDeniedView v-if="(isAdminDashboardPage || isAdminReservationsPage || isAdminSignaturesPage || isAdminStatisticsPage || isAdminOCRReviewPage || isAdminUsersPage || isAdminConfigPage || isAdminExportPage || isAdminI18nEditorPage) && state.adminAccess === false" />
+    <AdminAccessDeniedView v-if="(isAdminDashboardPage || isAdminReservationsPage || isAdminSignaturesPage || isAdminStatisticsPage || isAdminOCRReviewPage || isAdminUsersPage || isAdminConfigPage || isAdminExportPage || isAdminI18nEditorPage || isAdminDataPage) && state.adminAccess === false" />
     <AdminReservationsView v-if="isAdminReservationsPage && state.adminAccess === true" />
     <AdminSignaturesView v-if="isAdminSignaturesPage && state.adminAccess === true" />
     <AdminStatisticsView v-if="isAdminStatisticsPage && state.adminAccess === true" />
@@ -312,6 +313,7 @@ provide('appContext', {
     <AdminConfigView v-if="isAdminConfigPage && state.adminAccess === true" />
     <AdminExportView v-if="isAdminExportPage && state.adminAccess === true" />
     <AdminI18nEditorView v-if="isAdminI18nEditorPage && state.adminAccess === true" />
+    <AdminDataView v-if="isAdminDataPage && state.adminAccess === true" />
 
     <EmailSignupView v-if="isEmailSignupPage" />
     <OauthCallbackView v-if="isOauthCallbackPage" />

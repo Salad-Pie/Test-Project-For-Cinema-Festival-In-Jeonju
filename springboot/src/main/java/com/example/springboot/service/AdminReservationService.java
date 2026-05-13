@@ -21,12 +21,14 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class AdminReservationService {
 
     private static final String ROLE_ADMIN = "ADMIN";
@@ -46,25 +48,6 @@ public class AdminReservationService {
     private final ExhibitionSurveyRepository exhibitionSurveyRepository;
     private final ExperienceZoneSurveyRepository experienceZoneSurveyRepository;
 
-    public AdminReservationService(
-            UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider,
-            StreetCollaborationReservationRepository streetRepository,
-            ExhibitionArtistMeetingReservationRepository artistMeetingRepository,
-            ProjectRecruitmentReservationRepository projectRecruitmentRepository,
-            SponsorshipApplicationRepository sponsorshipRepository,
-            ExhibitionSurveyRepository exhibitionSurveyRepository,
-            ExperienceZoneSurveyRepository experienceZoneSurveyRepository
-    ) {
-        this.userRepository = userRepository;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.streetRepository = streetRepository;
-        this.artistMeetingRepository = artistMeetingRepository;
-        this.projectRecruitmentRepository = projectRecruitmentRepository;
-        this.sponsorshipRepository = sponsorshipRepository;
-        this.exhibitionSurveyRepository = exhibitionSurveyRepository;
-        this.experienceZoneSurveyRepository = experienceZoneSurveyRepository;
-    }
 
     public List<AdminReservationTypeResponse> types(String authorization) {
         requireAdmin(authorization);

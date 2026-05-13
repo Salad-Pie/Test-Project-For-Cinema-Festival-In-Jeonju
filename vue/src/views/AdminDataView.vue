@@ -1,0 +1,136 @@
+<script setup>
+import { inject, reactive, onMounted, watch } from 'vue'
+import { apiRoot } from '../config/api'
+import { getIdeaContestAuthToken } from '../utils/authStorage'
+import { parseErrorResponse } from '../api/client'
+
+const { t, state: globalState, setSafeError, userError } = inject('appContext')
+
+const adminDataState = reactive({
+  items: [],
+  selectedEntity: 'users',
+  entities: [
+    { key: 'users', label: '사용자 (User)' },
+    { key: 'signatures', label: '서명 (Signature)' },
+    { key: 'exhibition-surveys', label: '전시 설문 (ExhibitionSurvey)' },
+    { key: 'experience-zone-surveys', label: '체험존 설문 (ExperienceZoneSurvey)' },
+    { key: 'sponsorship-applications', label: '후원 신청 (SponsorshipApplication)' },
+    { key: 'street-collaboration-reservations', label: '소상공인 협력 (StreetCollaboration)' },
+    { key: 'project-recruitments', label: '프로젝트 모집 (ProjectRecruitment)' },
+    { key: 'idea-contests', label: '아이디어 공모 (IdeaContest)' },
+  ],
+  headers: []
+})
+
+async function fetchAdminData() {
+  globalState.loading = true
+  globalState.error = ''
+  try {
+    const authToken = getIdeaContestAuthToken()
+    if (!authToken) throw userError(t('common.loginTokenRequired'))
+
+    const res = await fetch(`${apiRoot}/admin/data/${adminDataState.selectedEntity}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    
+    const data = await res.json()
+    adminDataState.items = data
+    
+    // 데이터가 있으면 헤더 추출
+    if (data.length > 0) {
+      adminDataState.headers = Object.keys(data[0])
+    } else {
+      adminDataState.headers = []
+    }
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    globalState.loading = false
+  }
+}
+
+watch(() => adminDataState.selectedEntity, () => {
+  fetchAdminData()
+})
+
+onMounted(() => {
+  fetchAdminData()
+})
+</script>
+
+<template>
+  <section class="card admin-data">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">{{ t('adminData.title') }}</h2>
+      <button class="btn btn-outline-primary btn-sm" @click="fetchAdminData" :disabled="globalState.loading">
+        {{ t('adminSignatures.refresh') }}
+      </button>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label font-weight-bold">{{ t('adminData.selectEntity') }}</label>
+      <div class="d-flex flex-wrap gap-2">
+        <button 
+          v-for="entity in adminDataState.entities" 
+          :key="entity.key"
+          :class="['btn', adminDataState.selectedEntity === entity.key ? 'btn-primary' : 'btn-outline-secondary']"
+          @click="adminDataState.selectedEntity = entity.key"
+          :disabled="globalState.loading"
+        >
+          {{ entity.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap mt-3 shadow-sm rounded">
+      <table class="admin-table table table-hover">
+        <thead class="thead-light">
+          <tr>
+            <th v-for="header in adminDataState.headers" :key="header">{{ header }}</th>
+            <th v-if="adminDataState.headers.length === 0">No Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, idx) in adminDataState.items" :key="idx">
+            <td v-for="header in adminDataState.headers" :key="header" class="text-truncate" style="max-width: 200px;" :title="item[header]">
+              {{ item[header] !== null ? item[header] : '-' }}
+            </td>
+          </tr>
+          <tr v-if="adminDataState.items.length === 0">
+            <td :colspan="adminDataState.headers.length || 1" class="text-center py-5">
+              <div class="text-muted">
+                <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                {{ t('adminReservations.empty') }}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.admin-data {
+  padding: 2rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.admin-table-wrap {
+  overflow-x: auto;
+  background: white;
+}
+.admin-table th {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

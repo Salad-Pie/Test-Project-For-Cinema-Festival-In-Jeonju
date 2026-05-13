@@ -1,14 +1,21 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "street_collaboration_reservations")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StreetCollaborationReservation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @Column(nullable = false, length = 100)
@@ -21,42 +28,12 @@ public class StreetCollaborationReservation {
     private LocalDateTime reservationAt;
 
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public LocalDateTime getReservationAt() {
-        return reservationAt;
-    }
-
-    public void setReservationAt(LocalDateTime reservationAt) {
-        this.reservationAt = reservationAt;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 }
+

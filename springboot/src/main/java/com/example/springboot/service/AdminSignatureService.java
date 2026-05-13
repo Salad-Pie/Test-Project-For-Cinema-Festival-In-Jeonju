@@ -7,12 +7,14 @@ import com.example.springboot.repository.SignatureRepository;
 import com.example.springboot.repository.UserRepository;
 import com.example.springboot.security.JwtTokenProvider;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class AdminSignatureService {
 
     private static final String ROLE_ADMIN = "ADMIN";
@@ -21,18 +23,6 @@ public class AdminSignatureService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final S3UploadService s3UploadService;
-
-    public AdminSignatureService(
-            SignatureRepository signatureRepository,
-            UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider,
-            S3UploadService s3UploadService
-    ) {
-        this.signatureRepository = signatureRepository;
-        this.userRepository = userRepository;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.s3UploadService = s3UploadService;
-    }
 
     public List<AdminSignatureResponse> signatures(String authorization) {
         requireAdmin(authorization);

@@ -21,6 +21,7 @@ const { t, pageHref } = inject('appContext')
       <a class="route-button" :href="pageHref('/admin/config')">{{ t('admin.goToConfig') }}</a>
       <a class="route-button" :href="pageHref('/admin/export')">{{ t('admin.goToExport') }}</a>
       <a class="route-button" :href="pageHref('/admin/i18n-editor')">{{ t('admin.goToI18nEditor') }}</a>
+      <a class="route-button" :href="pageHref('/admin/data')" style="background-color: #6c757d;">{{ t('admin.goToDataBrowser') }}</a>
     </div>
   </section>
 </template>

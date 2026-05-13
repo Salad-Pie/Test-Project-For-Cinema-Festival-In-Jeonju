@@ -1,19 +1,17 @@
 package com.example.springboot.service;
 
 import com.example.springboot.dto.AdminReservationResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AdminExportService {
 
     private final AdminReservationService reservationService;
-
-    public AdminExportService(AdminReservationService reservationService) {
-        this.reservationService = reservationService;
-    }
 
     public String exportReservationsToCsv(String authorization) {
         List<AdminReservationResponse> reservations = reservationService.reservations(authorization, null, null, null, null);

@@ -14,8 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
@@ -24,9 +23,8 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@Slf4j
 public class GoogleVisionOcrService {
-
-    private static final Logger log = LoggerFactory.getLogger(GoogleVisionOcrService.class);
 
     private final RestClient restClient;
     private final String apiKey;

@@ -13,7 +13,7 @@ const pageSize = 3
 const fetchRankings = async () => {
   try {
     loading.value = true
-    const data = await apiFetch('/point-reward/ranking?hours=2')
+    const data = await apiFetch('/point-reward/ranking?hours=0')
     rankings.value = data || []
   } catch (e) {
     console.error('Failed to fetch rankings:', e)
@@ -24,10 +24,10 @@ const fetchRankings = async () => {
 
 // 내 순위 정보 계산
 const myRanking = computed(() => {
-  const userId = getIdeaContestUserId()
+  const userId = getIdeaContestUserId()?.trim().toLowerCase()
   if (!userId) return null
-  // userId(email)과 rankings의 email을 매칭
-  return rankings.value.find(r => r.email === userId)
+  // userId(email)과 rankings의 email을 매칭 (대소문자/공백 무시)
+  return rankings.value.find(r => r.email?.trim().toLowerCase() === userId)
 })
 
 // 현재 페이지에 해당하는 데이터 계산
@@ -80,10 +80,10 @@ const getRankIcon = (rank) => {
     <div class="card ranking-card border-0 shadow-lg">
       <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
         <h3 class="ranking-main-title mb-0">
-          <span class="badge bg-danger pulse-animation me-2">LIVE</span>
-          {{ t('ranking.title', '실시간 활동 랭킹') }}
+          <span class="badge bg-primary me-2">ALL-TIME</span>
+          {{ t('ranking.allTimeTitle', '전체 기간 포인트 랭킹') }}
         </h3>
-        <small class="text-custom-muted fw-bold">{{ t('ranking.lastTwoHours', '최근 2시간 기준') }}</small>
+        <small class="text-custom-muted fw-bold">{{ t('ranking.totalStatus', '누적 데이터 기준') }}</small>
       </div>
 
       <div class="card-body px-4 pb-3">

@@ -2,6 +2,7 @@ package com.example.springboot.controller;
 
 import com.example.springboot.domain.I18nMessage;
 import com.example.springboot.service.I18nService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,13 +11,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/i18n")
+@RequiredArgsConstructor
 public class I18nController {
 
     private final I18nService i18nService;
-
-    public I18nController(I18nService i18nService) {
-        this.i18nService = i18nService;
-    }
 
     @GetMapping("/messages/{locale}")
     public ResponseEntity<Map<String, String>> getMessages(@PathVariable String locale) {

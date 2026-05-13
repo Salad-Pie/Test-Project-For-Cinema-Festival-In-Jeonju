@@ -101,6 +101,7 @@ export function useRouting() {
   const isAdminConfigPage = computed(() => routePath.value.startsWith('/admin/config'))
   const isAdminExportPage = computed(() => routePath.value.startsWith('/admin/export'))
   const isAdminI18nEditorPage = computed(() => routePath.value.startsWith('/admin/i18n-editor'))
+  const isAdminDataPage = computed(() => routePath.value.startsWith('/admin/data'))
 
   return {
     isOriginalRoute,
@@ -146,5 +147,6 @@ export function useRouting() {
     isAdminConfigPage,
     isAdminExportPage,
     isAdminI18nEditorPage,
+    isAdminDataPage,
   }
 }

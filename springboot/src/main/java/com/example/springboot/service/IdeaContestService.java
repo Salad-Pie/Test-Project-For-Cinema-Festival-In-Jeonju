@@ -11,14 +11,16 @@ import com.example.springboot.security.JwtTokenProvider;
 import com.example.springboot.security.TokenType;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class IdeaContestService {
 
     private final IdeaContestRepository ideaContestRepository;
@@ -26,22 +28,6 @@ public class IdeaContestService {
     private final S3UploadService s3UploadService;
     private final JwtTokenProvider jwtTokenProvider;
     private final PointRewardService pointRewardService;
-
-    public IdeaContestService(
-            IdeaContestRepository ideaContestRepository,
-            UserRepository userRepository,
-            S3UploadService s3UploadService,
-            JwtTokenProvider jwtTokenProvider,
-            PointRewardService pointRewardService
-    ) {
-        this.ideaContestRepository = ideaContestRepository;
-        this.userRepository = userRepository;
-        this.s3UploadService = s3UploadService;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.pointRewardService = pointRewardService;
-    }
-
-    private static final Logger log = LoggerFactory.getLogger(IdeaContestService.class);
 
     public IdeaContestResponse create(String token, List<MultipartFile> images) {
         log.info("Idea contest proposal request received. imageCount={}", images == null ? 0 : images.size());

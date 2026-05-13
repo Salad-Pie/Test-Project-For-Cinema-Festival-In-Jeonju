@@ -6,6 +6,7 @@ import com.example.springboot.service.AdminReservationService;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,13 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin/reservations")
+@RequiredArgsConstructor
 public class AdminReservationController {
 
     private final AdminReservationService service;
-
-    public AdminReservationController(AdminReservationService service) {
-        this.service = service;
-    }
 
     @GetMapping("/types")
     public ResponseEntity<List<AdminReservationTypeResponse>> types(

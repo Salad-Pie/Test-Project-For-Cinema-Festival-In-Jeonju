@@ -1,13 +1,20 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "memo_images")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MemoImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -22,40 +29,5 @@ public class MemoImage {
 
     @Column(nullable = false)
     private Long fileSize;
-
-    public Long getId() {
-        return id;
-    }
-
-    public IdeaContest getIdeaContest() {
-        return ideaContest;
-    }
-
-    public void setIdeaContest(IdeaContest ideaContest) {
-        this.ideaContest = ideaContest;
-    }
-
-    public String getOriginalFilename() {
-        return originalFilename;
-    }
-
-    public void setOriginalFilename(String originalFilename) {
-        this.originalFilename = originalFilename;
-    }
-
-    public String getS3Key() {
-        return s3Key;
-    }
-
-    public void setS3Key(String s3Key) {
-        this.s3Key = s3Key;
-    }
-
-    public Long getFileSize() {
-        return fileSize;
-    }
-
-    public void setFileSize(Long fileSize) {
-        this.fileSize = fileSize;
-    }
 }
+

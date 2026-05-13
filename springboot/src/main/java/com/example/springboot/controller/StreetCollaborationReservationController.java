@@ -7,20 +7,17 @@ import com.example.springboot.service.StreetCollaborationReservationService;
 import com.example.springboot.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/street-collaboration-reservations")
+@RequiredArgsConstructor
 public class StreetCollaborationReservationController {
 
     private final StreetCollaborationReservationService service;
     private final JwtTokenProvider jwtTokenProvider;
-
-    public StreetCollaborationReservationController(StreetCollaborationReservationService service, JwtTokenProvider jwtTokenProvider) {
-        this.service = service;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     @PostMapping
     public ResponseEntity<StreetCollaborationReservationResponse> create(

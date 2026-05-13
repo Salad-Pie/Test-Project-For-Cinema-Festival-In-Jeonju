@@ -14,11 +14,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ExhibitionArtistMeetingReservationService {
 
     private static final Map<LocalDate, Set<LocalTime>> ALLOWED_SLOTS = Map.of(
@@ -30,18 +32,6 @@ public class ExhibitionArtistMeetingReservationService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PointRewardService pointRewardService;
-
-    public ExhibitionArtistMeetingReservationService(
-            ExhibitionArtistMeetingReservationRepository repository,
-            UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider,
-            PointRewardService pointRewardService
-    ) {
-        this.repository = repository;
-        this.userRepository = userRepository;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.pointRewardService = pointRewardService;
-    }
 
     public ExhibitionArtistMeetingReservationResponse create(
             String authorization,

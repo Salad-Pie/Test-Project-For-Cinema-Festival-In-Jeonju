@@ -5,20 +5,17 @@ import com.example.springboot.dto.SponsorshipApplicationResponse;
 import com.example.springboot.service.SponsorshipApplicationService;
 import com.example.springboot.security.JwtTokenProvider;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/sponsorship-applications")
+@RequiredArgsConstructor
 public class SponsorshipApplicationController {
 
     private final SponsorshipApplicationService service;
     private final JwtTokenProvider jwtTokenProvider;
-
-    public SponsorshipApplicationController(SponsorshipApplicationService service, JwtTokenProvider jwtTokenProvider) {
-        this.service = service;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     @PostMapping
     public ResponseEntity<SponsorshipApplicationResponse> create(

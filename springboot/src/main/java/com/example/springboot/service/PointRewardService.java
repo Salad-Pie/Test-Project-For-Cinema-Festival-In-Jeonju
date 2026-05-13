@@ -1,6 +1,7 @@
 package com.example.springboot.service;
 
 import com.example.springboot.domain.PointReward;
+import com.example.springboot.domain.User;
 import com.example.springboot.dto.PointRankingResponse;
 import com.example.springboot.repository.PointRewardRepository;
 import com.example.springboot.repository.UserRepository;
@@ -10,20 +11,19 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class PointRewardService {
 
     private final PointRewardRepository pointRewardRepository;
     private final UserRepository userRepository;
     private final Random random = new Random();
-
-    public PointRewardService(PointRewardRepository pointRewardRepository, UserRepository userRepository) {
-        this.pointRewardRepository = pointRewardRepository;
-        this.userRepository = userRepository;
-    }
 
     /**
      * 유저에게 활동 포인트를 적립합니다. (1~5점 랜덤)
@@ -34,6 +34,9 @@ public class PointRewardService {
         
         int currentBalance = pointRewardRepository.findLastBalanceByUserId(userId).orElse(0);
         int nextBalance = currentBalance + pointsToEarn;
+
+        log.info("Earning points for user: {}. Current: {}, Earned: {}, Next: {}, Reason: {}", 
+                userId, currentBalance, pointsToEarn, nextBalance, reason);
 
         PointReward reward = new PointReward();
         reward.setUserId(userId);
@@ -51,10 +54,15 @@ public class PointRewardService {
      */
     @Transactional(readOnly = true)
     public List<PointRankingResponse> getRecentRanking(int hours) {
-        OffsetDateTime threshold = OffsetDateTime.now().minusHours(hours);
-        List<com.example.springboot.domain.User> recentUsers = userRepository.findByCreatedAtAfter(threshold);
+        List<User> users;
+        if (hours <= 0) {
+            users = userRepository.findAll();
+        } else {
+            OffsetDateTime threshold = OffsetDateTime.now().minusHours(hours);
+            users = userRepository.findByCreatedAtAfter(threshold);
+        }
 
-        List<PointRankingResponse> rankings = recentUsers.stream()
+        List<PointRankingResponse> rankings = users.stream()
                 .map(user -> {
                     int balance = pointRewardRepository.findLastBalanceByUserId(user.getId()).orElse(0);
                     return new PointRankingResponse(user.getEmail(), balance, 0);

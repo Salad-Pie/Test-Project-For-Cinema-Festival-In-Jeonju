@@ -1,15 +1,22 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "\"user\"")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(lombok.AccessLevel.NONE)
     private Long id;
 
     @Column(length = 255)
@@ -91,154 +98,6 @@ public class User {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = OffsetDateTime.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getNationality() {
-        return nationality;
-    }
-
-    public void setNationality(String nationality) {
-        this.nationality = nationality;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public boolean isVerifiedIdentity() {
-        return isVerifiedIdentity;
-    }
-
-    public void setVerifiedIdentity(boolean verifiedIdentity) {
-        isVerifiedIdentity = verifiedIdentity;
-    }
-
-    public OffsetDateTime getLastLoginAt() {
-        return lastLoginAt;
-    }
-
-    public void setLastLoginAt(OffsetDateTime lastLoginAt) {
-        this.lastLoginAt = lastLoginAt;
-    }
-
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public OffsetDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public OffsetDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(OffsetDateTime deletedAt) {
-        this.deletedAt = deletedAt;
-    }
-
-    public SignupProvider getProvider() {
-        return provider;
-    }
-
-    public void setProvider(SignupProvider provider) {
-        this.provider = provider;
-    }
-
-    public String getProviderUserId() {
-        return providerUserId;
-    }
-
-    public void setProviderUserId(String providerUserId) {
-        this.providerUserId = providerUserId;
     }
 
     // Legacy compatibility methods for current service/controller code.

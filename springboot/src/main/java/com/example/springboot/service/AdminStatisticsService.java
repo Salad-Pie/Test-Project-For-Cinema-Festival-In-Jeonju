@@ -2,6 +2,7 @@ package com.example.springboot.service;
 
 import com.example.springboot.dto.admin.AdminStatisticsResponse;
 import com.example.springboot.repository.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class AdminStatisticsService {
 
     private final UserRepository userRepository;
@@ -23,25 +25,6 @@ public class AdminStatisticsService {
     private final SponsorshipApplicationRepository sponsorshipRepo;
     private final ExhibitionSurveyRepository exhibitionSurveyRepo;
     private final ExperienceZoneSurveyRepository experienceSurveyRepo;
-
-    public AdminStatisticsService(
-            UserRepository userRepository,
-            SignatureRepository signatureRepository,
-            StreetCollaborationReservationRepository streetRepo,
-            ExhibitionArtistMeetingReservationRepository artistRepo,
-            ProjectRecruitmentReservationRepository projectRepo,
-            SponsorshipApplicationRepository sponsorshipRepo,
-            ExhibitionSurveyRepository exhibitionSurveyRepo,
-            ExperienceZoneSurveyRepository experienceSurveyRepo) {
-        this.userRepository = userRepository;
-        this.signatureRepository = signatureRepository;
-        this.streetRepo = streetRepo;
-        this.artistRepo = artistRepo;
-        this.projectRepo = projectRepo;
-        this.sponsorshipRepo = sponsorshipRepo;
-        this.exhibitionSurveyRepo = exhibitionSurveyRepo;
-        this.experienceSurveyRepo = experienceSurveyRepo;
-    }
 
     public AdminStatisticsResponse getStatistics() {
         long totalUsers = userRepository.count();

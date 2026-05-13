@@ -17,8 +17,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,9 +31,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 @Service
+@Slf4j
 public class S3UploadService {
 
-    private static final Logger log = LoggerFactory.getLogger(S3UploadService.class);
     private static final String WEBP_CONTENT_TYPE = "image/webp";
     private static final float WEBP_COMPRESSION_QUALITY = 0.8f;
 

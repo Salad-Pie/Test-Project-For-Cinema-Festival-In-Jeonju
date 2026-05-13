@@ -1,14 +1,21 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "identifier_codes")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class IdentifierCode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -19,34 +26,12 @@ public class IdentifierCode {
     private String code;
 
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 }
+

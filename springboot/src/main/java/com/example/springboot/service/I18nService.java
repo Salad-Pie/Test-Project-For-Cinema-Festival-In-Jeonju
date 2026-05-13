@@ -10,16 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class I18nService {
 
     private final I18nMessageRepository repository;
-
-    public I18nService(I18nMessageRepository repository) {
-        this.repository = repository;
-    }
 
     @Cacheable(value = "i18n", key = "#locale")
     @Transactional(readOnly = true)

@@ -16,6 +16,7 @@ import com.example.springboot.dto.VerifyResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.springboot.service.AuthService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,13 +24,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     @PostMapping("/login/email")
     public ResponseEntity<LoginResponse> loginEmail(@Valid @RequestBody EmailLoginRequest request) {

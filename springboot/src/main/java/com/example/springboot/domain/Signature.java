@@ -1,14 +1,21 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "signatures")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Signature {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(lombok.AccessLevel.NONE)
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
@@ -80,9 +87,11 @@ public class Signature {
     private LocalDateTime ocrProcessedAt;
 
     @Column(nullable = false)
+    @Setter(lombok.AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    @Setter(lombok.AccessLevel.NONE)
     private LocalDateTime updatedAt;
 
     @PrePersist
@@ -95,177 +104,5 @@ public class Signature {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getOriginalS3Key() {
-        return originalS3Key;
-    }
-
-    public void setOriginalS3Key(String originalS3Key) {
-        this.originalS3Key = originalS3Key;
-    }
-
-    public Long getOriginalFileSize() {
-        return originalFileSize;
-    }
-
-    public void setOriginalFileSize(Long originalFileSize) {
-        this.originalFileSize = originalFileSize;
-    }
-
-    public String getOriginalContentType() {
-        return originalContentType;
-    }
-
-    public void setOriginalContentType(String originalContentType) {
-        this.originalContentType = originalContentType;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public String getRecognizedText() {
-        return recognizedText;
-    }
-
-    public void setRecognizedText(String recognizedText) {
-        this.recognizedText = recognizedText;
-    }
-
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    public void setOriginalName(String originalName) {
-        this.originalName = originalName;
-    }
-
-    public NameLanguage getNameLanguage() {
-        return nameLanguage;
-    }
-
-    public void setNameLanguage(NameLanguage nameLanguage) {
-        this.nameLanguage = nameLanguage;
-    }
-
-    public String getKoreanText() {
-        return koreanText;
-    }
-
-    public void setKoreanText(String koreanText) {
-        this.koreanText = koreanText;
-    }
-
-    public String getKoreanMeaningText() {
-        return koreanMeaningText;
-    }
-
-    public void setKoreanMeaningText(String koreanMeaningText) {
-        this.koreanMeaningText = koreanMeaningText;
-    }
-
-    public String getEnglishName() {
-        return englishName;
-    }
-
-    public void setEnglishName(String englishName) {
-        this.englishName = englishName;
-    }
-
-    public String getKoreanName() {
-        return koreanName;
-    }
-
-    public void setKoreanName(String koreanName) {
-        this.koreanName = koreanName;
-    }
-
-    public NameConversionSource getNameConversionSource() {
-        return nameConversionSource;
-    }
-
-    public void setNameConversionSource(NameConversionSource nameConversionSource) {
-        this.nameConversionSource = nameConversionSource;
-    }
-
-    public SignatureLanguage getDetectedLanguage() {
-        return detectedLanguage;
-    }
-
-    public void setDetectedLanguage(SignatureLanguage detectedLanguage) {
-        this.detectedLanguage = detectedLanguage;
-    }
-
-    public Double getOcrConfidence() {
-        return ocrConfidence;
-    }
-
-    public void setOcrConfidence(Double ocrConfidence) {
-        this.ocrConfidence = ocrConfidence;
-    }
-
-    public OcrProvider getOcrProvider() {
-        return ocrProvider;
-    }
-
-    public void setOcrProvider(OcrProvider ocrProvider) {
-        this.ocrProvider = ocrProvider;
-    }
-
-    public OcrStatus getOcrStatus() {
-        return ocrStatus;
-    }
-
-    public void setOcrStatus(OcrStatus ocrStatus) {
-        this.ocrStatus = ocrStatus;
-    }
-
-    public String getOcrErrorMessage() {
-        return ocrErrorMessage;
-    }
-
-    public void setOcrErrorMessage(String ocrErrorMessage) {
-        this.ocrErrorMessage = ocrErrorMessage;
-    }
-
-    public String getPreprocessedS3Key() {
-        return preprocessedS3Key;
-    }
-
-    public void setPreprocessedS3Key(String preprocessedS3Key) {
-        this.preprocessedS3Key = preprocessedS3Key;
-    }
-
-    public String getOcrRawResponseS3Key() {
-        return ocrRawResponseS3Key;
-    }
-
-    public void setOcrRawResponseS3Key(String ocrRawResponseS3Key) {
-        this.ocrRawResponseS3Key = ocrRawResponseS3Key;
-    }
-
-    public LocalDateTime getOcrProcessedAt() {
-        return ocrProcessedAt;
-    }
-
-    public void setOcrProcessedAt(LocalDateTime ocrProcessedAt) {
-        this.ocrProcessedAt = ocrProcessedAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 }

@@ -1,16 +1,23 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "idea_contests")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class IdeaContest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -18,9 +25,11 @@ public class IdeaContest {
     private User user;
 
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "ideaContest", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<MemoImage> memoImages = new ArrayList<>();
 
     @PrePersist
@@ -28,28 +37,9 @@ public class IdeaContest {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public List<MemoImage> getMemoImages() {
-        return memoImages;
-    }
-
     public void addMemoImage(MemoImage memoImage) {
         memoImage.setIdeaContest(this);
         this.memoImages.add(memoImage);
     }
 }
+

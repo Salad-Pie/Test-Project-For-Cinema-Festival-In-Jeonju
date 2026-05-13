@@ -6,27 +6,30 @@ import com.example.springboot.dto.SimpleCreatedResponse;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.ExperienceZoneSurveyRepository;
+import com.example.springboot.util.PhoneUtils;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ExperienceZoneSurveyService {
 
     private final ExperienceZoneSurveyRepository repository;
     private final PointRewardService pointRewardService;
-
-    public ExperienceZoneSurveyService(ExperienceZoneSurveyRepository repository, PointRewardService pointRewardService) {
-        this.repository = repository;
-        this.pointRewardService = pointRewardService;
-    }
+    private final PhoneUtils phoneUtils;
+    private final Clock clock;
 
     public SimpleCreatedResponse create(ExperienceZoneSurveyRequest request, Long userId) {
         String normalizedName = request.name().trim();
-        String normalizedPhone = normalizePhone(request.phoneNumber());
+        String normalizedPhone = phoneUtils.normalize(request.phoneNumber());
+        
+        LocalDateTime tenMinutesAgo = LocalDateTime.now(clock).minusMinutes(10);
         boolean duplicateIn10m = repository.existsByNameAndPhoneNumberAndCreatedAtAfter(
-                normalizedName, normalizedPhone, LocalDateTime.now().minusMinutes(10)
+                normalizedName, normalizedPhone, tenMinutesAgo
         );
         if (duplicateIn10m) {
             throw new BusinessException(ErrorCode.DUPLICATE_SURVEY);
@@ -48,12 +51,5 @@ public class ExperienceZoneSurveyService {
         }
 
         return new SimpleCreatedResponse(saved.getId());
-    }
-
-    private String normalizePhone(String phoneNumber) {
-        String digits = phoneNumber.replaceAll("[^0-9]", "");
-        if (digits.length() == 11) return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
-        if (digits.length() == 10) return digits.substring(0, 3) + "-" + digits.substring(3, 6) + "-" + digits.substring(6);
-        return phoneNumber.trim();
     }
 }

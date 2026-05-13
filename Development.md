@@ -55,6 +55,7 @@
 | AX Shop&Shop | 전화번호 선택 입력 허용 | `projectKey=ax-shop-shop` |
 | 예외 표준화 | 예외 원문 미노출, 짧은 고정 메시지 응답 | ApiExceptionHandler |
 | 요청 로깅 | HTTP 요청 처리 로그 기록 | RequestLoggingFilter |
+| 데이터 브라우저 | 관리자용 전체 엔티티 데이터 조회 API | `/api/admin/data/{entityType}` |
 
 ## 주요 API 목록
 
@@ -80,6 +81,7 @@
 | `/api/exhibition-surveys` | POST | 전시 설문 제출 |
 | `/api/experience-zone-surveys` | POST | 체험존 설문 제출 |
 | `/api/project-recruitments/{projectKey}` | POST | 프로젝트 모집 신청 |
+| `/api/admin/data/{entityType}` | GET | 전체 엔티티 데이터 조회 (Admin) |
 
 ## 데이터/보안 처리
 
@@ -285,6 +287,19 @@
 | 사용자 입력 | 별도 이메일/전화번호 입력 없음. 로그인 사용자 정보만 사용 |
 | 루트 노출 | `/` Bootstrap 허브 버튼 목록에 추가, `/admin` 계열은 계속 미노출 |
 
+## 아이디어 공모전 및 포인트 랭킹 대시보드 고도화
+
+| 항목 | 내용 |
+|---|---|
+| 아이디어 공모전 | 이미지 업로드 및 제출 로직 안정화 (`apiFetch` 표준화) |
+| 포인트 적립 | 아이디어 제출 완료 시 1,000 SP 자동 적립 로직 구현 |
+| 랭킹 시스템 | 2시간 제한에서 전체 기간(All-time)으로 랭킹 산출 범위 확대 |
+| 대시보드 디자인 | 부트스트랩 활용 및 라이트 테마(White/Light Blue) 개편, 시인성 극대화 |
+| 페이지네이션 | 랭킹 리스트 3인 1페이지 방식의 페이지네이션 도입 |
+| 개인화 기능 | 마스킹된 이메일 기반 정체성 표시 및 '내 순위' 별도 표기 섹션 추가 |
+| API 유틸리티 | `client.js` 고도화 (FormData 자동 감지 및 인증 헤더 주입) |
+| 예외 처리 | 성공 응답 후 리다이렉트 시 `pageHref` 인자 누락 에러 수정 및 방어 로직 추가 |
+
 ## 영어 이름 한글 변환 보강 및 관리자 서명 검수
 
 | 항목 | 내용 |
@@ -296,3 +311,54 @@
 | 관리자 페이지 | `/admin/signatures` 추가 |
 | 관리자 대시보드 | `/admin`에서 예약 관리와 서명 검수 페이지로 각각 라우팅 가능 |
 | 검수 데이터 | OCR 원문, 영어 이름, 한글 이름, 한글 의미 번역, 변환 기준, OCR 상태/신뢰도 조회 가능 |
+
+## 에이전트 운영 규칙 고도화 (2026-05-13)
+
+| 항목 | 내용 |
+|---|---|
+| AGENTS.md 강화 | 개발 기록(Development.md) 및 사후 강평(AGENTS.md) 의무화 규칙 추가 |
+| Development.md 역할 명확화 | 모든 개발/수정 내역 및 변경 이력을 실시간으로 기록하는 마스터 문서로 지정 |
+| 자체 개선 프로세스 | `AGENTS.md`를 통한 실수 복기 및 방지 대책 수립 프로세스 공식화 |
+
+## Spring Boot Lombok 도입 및 리팩터링 (2026-05-13)
+
+| 항목 | 내용 |
+|---|---|
+| 의존성 추가 | `build.gradle`에 Lombok (compileOnly, annotationProcessor) 의존성 추가 |
+| Domain 리팩터링 | `User`, `Signature`, `AdminAuditLog` 등 주요 엔티티에 `@Getter`, `@Setter`, `@NoArgsConstructor`, `@Builder` 적용 및 보일러플레이트 제거 |
+| Service 리팩터링 | `AdminReservationService`에 `@RequiredArgsConstructor` 적용, `AuthService` 및 `GoogleVisionOcrService`에 `@Slf4j` 적용 |
+| Controller 리팩터링 | `AdminReservationController` 등에 `@RequiredArgsConstructor` 적용 |
+| 호환성 유지 | 기존의 커스텀 Getter/Setter 및 비표준 메서드 로직 유지 |
+| 검증 완료 | `./gradlew build` 및 `./gradlew test` 수행 결과 전체 성공 확인 |
+
+## 전수 검사 및 Lombok 표준화 리팩터링 (2026-05-13)
+
+| 항목 | 내용 |
+|---|---|
+| Domain 전수 리팩터링 | `ExhibitionSurvey`, `IdeaContest`, `MemoImage`, `PointReward`, `SponsorshipApplication` 등 모든 엔티티에 Lombok 적용 |
+| Service 전수 리팩터링 | `S3UploadService`, `IdeaContestService`, `AdminStatisticsService` 등에 `@RequiredArgsConstructor` 및 `@Slf4j` 적용 |
+| Controller 리팩터링 | `AuthController`, `PointRewardController` 등에 `@RequiredArgsConstructor` 적용 |
+| 로직 일관성 검수 | 엔티티 간 연관관계 편의 메서드(`addMemoImage` 등) 및 커스텀 로직 유지 여부 확인 |
+| 빌드 안정성 확보 | `S3UploadService` 등 리팩터링 과정에서 발생한 Logger 중복 정의 등 컴파일 에러 수정 및 빌드 성공 확인 |
+
+## 핵심 비즈니스 로직 테스트 코드 작성 (2026-05-13)
+
+| 항목 | 내용 |
+|---|---|
+| 인증 및 보안 | `AuthServiceTest`, `JwtTokenProviderTest` 작성을 통해 로그인 및 토큰 발급 로직 검증 |
+| 예약 및 통계 | `AdminReservationServiceTest`, `AdminStatisticsServiceTest` 작성을 통해 관리자 기능 검증 |
+| 리워드 및 포인트 | `PointRewardServiceTest` 작성을 통해 포인트 적립 및 랭킹 산정 로직 검증 |
+| 설문 및 공모전 | `IdeaContestServiceTest`, `ExhibitionSurveyServiceTest`, `ExperienceZoneSurveyServiceTest` 작성 |
+| 테스트 지향 설계 | 향후 모든 신규 코드 작성 시 테스트 용이성을 최우선으로 고려하는 원칙 수립 |
+| 최종 검증 | `./gradlew test` 실행 결과 모든 테스트(36개) 통과 확인 (BUILD SUCCESSFUL) |
+
+## 관리자 데이터 브라우저 및 통합 테스트 안정화 (2026-05-13)
+
+| 항목 | 내용 |
+|---|---|
+| 통합 테스트 | `ExhibitionSurveyIntegrationTest` 500 에러 해결 및 MockMvc 설정 최적화 |
+| Backend API | `AdminDataController`, `AdminDataService`를 통한 전 엔티티 조회 기능 구현 |
+| Frontend UI | `AdminDataView.vue`를 통한 동적 데이터 테이블 브라우저 구현 |
+| 권한 제어 | 관리자 권한(`ADMIN` role) 필수 체크 로직 적용 |
+| 다국어 지원 | 데이터 브라우저 관련 한국어/영어 문구 추가 |
+| 빌드 검증 | Spring Boot `compileJava` 및 Vue `npm run build` 전체 성공 확인 |

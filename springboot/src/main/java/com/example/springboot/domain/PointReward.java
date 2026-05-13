@@ -1,6 +1,7 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -9,10 +10,16 @@ import org.hibernate.annotations.CreationTimestamp;
  */
 @Entity
 @Table(name = "point_reward")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PointReward {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     // FK to user(id) - 주석 처리 및 필드로 유지
@@ -34,6 +41,7 @@ public class PointReward {
     private Integer pointsDelta;
 
     @Column(name = "balance_after", nullable = false)
+    @Builder.Default
     private Integer balanceAfter = 0;
 
     @Column(name = "reason_text", length = 255)
@@ -41,69 +49,6 @@ public class PointReward {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
-
-    public Long getId() {
-        return id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-
-    public Long getActivityRecordId() {
-        return activityRecordId;
-    }
-
-    public void setActivityRecordId(Long activityRecordId) {
-        this.activityRecordId = activityRecordId;
-    }
-
-    public String getPointType() {
-        return pointType;
-    }
-
-    public void setPointType(String pointType) {
-        this.pointType = pointType;
-    }
-
-    public Integer getPointsDelta() {
-        return pointsDelta;
-    }
-
-    public void setPointsDelta(Integer pointsDelta) {
-        this.pointsDelta = pointsDelta;
-    }
-
-    public Integer getBalanceAfter() {
-        return balanceAfter;
-    }
-
-    public void setBalanceAfter(Integer balanceAfter) {
-        this.balanceAfter = balanceAfter;
-    }
-
-    public String getReasonText() {
-        return reasonText;
-    }
-
-    public void setReasonText(String reasonText) {
-        this.reasonText = reasonText;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 }

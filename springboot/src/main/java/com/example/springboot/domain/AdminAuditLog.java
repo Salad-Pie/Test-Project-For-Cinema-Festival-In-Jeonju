@@ -1,14 +1,21 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "admin_audit_logs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AdminAuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(lombok.AccessLevel.NONE)
     private Long id;
 
     @Column(name = "admin_id")
@@ -27,23 +34,11 @@ public class AdminAuditLog {
     private String ipAddress;
 
     @Column(name = "created_at", nullable = false)
+    @Setter(lombok.AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-
-    public Long getId() { return id; }
-    public Long getAdminId() { return adminId; }
-    public void setAdminId(Long adminId) { this.adminId = adminId; }
-    public String getActionType() { return actionType; }
-    public void setActionType(String actionType) { this.actionType = actionType; }
-    public String getApiUrl() { return apiUrl; }
-    public void setApiUrl(String apiUrl) { this.apiUrl = apiUrl; }
-    public String getParameters() { return parameters; }
-    public void setParameters(String parameters) { this.parameters = parameters; }
-    public String getIpAddress() { return ipAddress; }
-    public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
 }

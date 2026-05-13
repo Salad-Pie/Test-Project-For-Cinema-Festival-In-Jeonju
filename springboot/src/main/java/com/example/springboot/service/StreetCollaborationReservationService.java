@@ -7,27 +7,26 @@ import com.example.springboot.dto.StreetCollaborationReservationResponse;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.StreetCollaborationReservationRepository;
+import com.example.springboot.util.PhoneUtils;
 import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class StreetCollaborationReservationService {
 
     private static final int CAPACITY_PER_SLOT = 50;
     private final StreetCollaborationReservationRepository repository;
     private final PointRewardService pointRewardService;
-
-    public StreetCollaborationReservationService(StreetCollaborationReservationRepository repository, PointRewardService pointRewardService) {
-        this.repository = repository;
-        this.pointRewardService = pointRewardService;
-    }
+    private final PhoneUtils phoneUtils;
 
     public StreetCollaborationReservationResponse create(StreetCollaborationReservationRequest request, Long userId) {
         validateReservationAt(request.reservationAt());
         String normalizedName = request.name().trim();
-        String normalizedPhone = normalizePhone(request.phoneNumber());
+        String normalizedPhone = phoneUtils.normalize(request.phoneNumber());
 
         boolean alreadyReserved = repository.existsByReservationAtAndNameAndPhoneNumber(
                 request.reservationAt(),
@@ -76,17 +75,6 @@ public class StreetCollaborationReservationService {
                 remaining,
                 available
         );
-    }
-
-    private String normalizePhone(String phoneNumber) {
-        String digits = phoneNumber.replaceAll("[^0-9]", "");
-        if (digits.length() == 11) {
-            return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
-        }
-        if (digits.length() == 10) {
-            return digits.substring(0, 3) + "-" + digits.substring(3, 6) + "-" + digits.substring(6);
-        }
-        return phoneNumber.trim();
     }
 
     private void validateReservationAt(java.time.LocalDateTime reservationAt) {

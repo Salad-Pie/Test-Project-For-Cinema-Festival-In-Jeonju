@@ -10,15 +10,24 @@ import com.example.springboot.repository.ProjectRecruitmentReservationRepository
 import com.example.springboot.repository.UserRepository;
 import com.example.springboot.security.JwtTokenProvider;
 import com.example.springboot.security.TokenType;
+import com.example.springboot.util.PhoneUtils;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ProjectRecruitmentReservationService {
+
+    private final ProjectRecruitmentReservationRepository repository;
+    private final UserRepository userRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final PointRewardService pointRewardService;
+    private final PhoneUtils phoneUtils;
 
     private static final String AX_SHOP_SHOP_PROJECT_KEY = "ax-shop-shop";
     private static final String PHONE_NUMBER_PATTERN = "^[0-9\\-+() ]{8,20}$";
@@ -29,23 +38,6 @@ public class ProjectRecruitmentReservationService {
             AX_SHOP_SHOP_PROJECT_KEY, new Slot(LocalDate.of(2026, 5, 9), LocalTime.of(14, 0)),
             "pd-writer-edit-sound", new Slot(LocalDate.of(2026, 5, 9), LocalTime.of(19, 0))
     );
-
-    private final ProjectRecruitmentReservationRepository repository;
-    private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final PointRewardService pointRewardService;
-
-    public ProjectRecruitmentReservationService(
-            ProjectRecruitmentReservationRepository repository,
-            UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider,
-            PointRewardService pointRewardService
-    ) {
-        this.repository = repository;
-        this.userRepository = userRepository;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.pointRewardService = pointRewardService;
-    }
 
     public ProjectRecruitmentReservationResponse create(
             String projectKey,
@@ -79,7 +71,7 @@ public class ProjectRecruitmentReservationService {
         ProjectRecruitmentReservation entity = new ProjectRecruitmentReservation();
         entity.setProjectKey(projectKey);
         entity.setUser(user);
-        entity.setPhoneNumber(normalizePhone(request.phoneNumber()));
+        entity.setPhoneNumber(phoneUtils.normalize(request.phoneNumber()));
         entity.setDate(request.date());
         entity.setTime(request.time());
         ProjectRecruitmentReservation saved = repository.save(entity);
@@ -108,16 +100,6 @@ public class ProjectRecruitmentReservationService {
         if (!phoneNumber.matches(PHONE_NUMBER_PATTERN)) {
             throw new IllegalArgumentException("phoneNumber format is invalid.");
         }
-    }
-
-    private String normalizePhone(String phoneNumber) {
-        if (phoneNumber == null || phoneNumber.isBlank()) {
-            return "";
-        }
-        String digits = phoneNumber.replaceAll("[^0-9]", "");
-        if (digits.length() == 11) return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
-        if (digits.length() == 10) return digits.substring(0, 3) + "-" + digits.substring(3, 6) + "-" + digits.substring(6);
-        return phoneNumber.trim();
     }
 
     private record Slot(LocalDate date, LocalTime time) {}

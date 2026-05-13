@@ -1,14 +1,21 @@
 package com.example.springboot.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "experience_zone_surveys")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ExperienceZoneSurvey {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @Column(nullable = false, length = 100)
@@ -36,30 +43,12 @@ public class ExperienceZoneSurvey {
     private String feedback;
 
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getPhoneNumber() { return phoneNumber; }
-    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getImpressiveSpace() { return impressiveSpace; }
-    public void setImpressiveSpace(String impressiveSpace) { this.impressiveSpace = impressiveSpace; }
-    public String getImprovementIdeaSpace() { return improvementIdeaSpace; }
-    public void setImprovementIdeaSpace(String improvementIdeaSpace) { this.improvementIdeaSpace = improvementIdeaSpace; }
-    public String getStreamingParticipation() { return streamingParticipation; }
-    public void setStreamingParticipation(String streamingParticipation) { this.streamingParticipation = streamingParticipation; }
-    public String getDesiredGoods() { return desiredGoods; }
-    public void setDesiredGoods(String desiredGoods) { this.desiredGoods = desiredGoods; }
-    public String getFeedback() { return feedback; }
-    public void setFeedback(String feedback) { this.feedback = feedback; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
 }
 
