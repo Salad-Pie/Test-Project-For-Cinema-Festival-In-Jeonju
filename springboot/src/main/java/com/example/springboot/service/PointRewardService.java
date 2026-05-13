@@ -57,7 +57,7 @@ public class PointRewardService {
         List<PointRankingResponse> rankings = recentUsers.stream()
                 .map(user -> {
                     int balance = pointRewardRepository.findLastBalanceByUserId(user.getId()).orElse(0);
-                    return new PointRankingResponse(user.getName(), user.getNickname(), balance, 0);
+                    return new PointRankingResponse(user.getEmail(), balance, 0);
                 })
                 .sorted(Comparator.comparingInt(PointRankingResponse::totalPoints).reversed())
                 .collect(Collectors.toList());
@@ -65,7 +65,7 @@ public class PointRewardService {
         // 순위 매기기
         AtomicInteger ranker = new AtomicInteger(1);
         return rankings.stream()
-                .map(r -> new PointRankingResponse(r.name(), r.nickname(), r.totalPoints(), ranker.getAndIncrement()))
+                .map(r -> new PointRankingResponse(r.email(), r.totalPoints(), ranker.getAndIncrement()))
                 .collect(Collectors.toList());
     }
 }

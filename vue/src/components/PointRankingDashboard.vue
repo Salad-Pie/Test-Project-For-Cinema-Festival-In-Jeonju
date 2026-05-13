@@ -17,12 +17,28 @@ const fetchRankings = async () => {
   }
 }
 
+// 이메일 마스킹 로직: 앞 3글자 유지, 나머지는 별표 처리 (예: sal***@naver.com)
+const maskEmail = (email) => {
+  if (!email) return '익명 사용자'
+  const [localPart, domain] = email.split('@')
+  if (localPart.length <= 3) {
+    return localPart + '***' + (domain ? '@' + domain : '')
+  }
+  return localPart.substring(0, 3) + '***@' + domain
+}
+
 onMounted(() => {
   fetchRankings()
-  // 30초마다 갱신
   const timer = setInterval(fetchRankings, 30000)
   return () => clearInterval(timer)
 })
+
+const getRankClass = (rank) => {
+  if (rank === 1) return 'rank-gold'
+  if (rank === 2) return 'rank-silver'
+  if (rank === 3) return 'rank-bronze'
+  return 'rank-normal'
+}
 
 const getRankIcon = (rank) => {
   if (rank === 1) return '🥇'
@@ -33,32 +49,49 @@ const getRankIcon = (rank) => {
 </script>
 
 <template>
-  <div class="ranking-dashboard">
-    <div class="ranking-header">
-      <h2 class="ranking-title">
-        <span class="live-badge">LIVE</span>
-        최근 2시간 가입자 포인트 랭킹
-      </h2>
-      <p class="ranking-subtitle">현재 가장 활발하게 활동 중인 시네마 페스티벌 멤버들입니다.</p>
-    </div>
+  <div class="ranking-container mb-4">
+    <div class="card ranking-card border-0 shadow-lg">
+      <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+        <h3 class="ranking-main-title mb-0">
+          <span class="badge bg-danger pulse-animation me-2">LIVE</span>
+          {{ t('ranking.title', '실시간 활동 랭킹') }}
+        </h3>
+        <small class="text-white-50">{{ t('ranking.lastTwoHours', '최근 2시간 기준') }}</small>
+      </div>
 
-    <div v-if="loading && rankings.length === 0" class="ranking-loading">
-      데이터를 불러오는 중...
-    </div>
-
-    <div v-else-if="rankings.length === 0" class="ranking-empty">
-      최근 2시간 내 새로운 활동이 없습니다. 첫 주인공이 되어보세요!
-    </div>
-
-    <div v-else class="ranking-list">
-      <div v-for="user in rankings.slice(0, 5)" :key="user.rank" class="ranking-item" :class="'rank-' + user.rank">
-        <div class="rank-badge">{{ getRankIcon(user.rank) }}</div>
-        <div class="user-info">
-          <span class="user-name">{{ user.nickname || user.name || '익명 관광객' }}</span>
+      <div class="card-body px-4 pb-4">
+        <div v-if="loading && rankings.length === 0" class="text-center py-5">
+          <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
         </div>
-        <div class="user-points">
-          <span class="points-value">{{ user.totalPoints }}</span>
-          <span class="points-unit">SP</span>
+
+        <div v-else-if="rankings.length === 0" class="text-center py-5 text-white-50 italic">
+          {{ t('ranking.noActivity', '최근 활동이 없습니다. 첫 주인공이 되어보세요!') }}
+        </div>
+
+        <div v-else class="ranking-list mt-3">
+          <div 
+            v-for="user in rankings.slice(0, 5)" 
+            :key="user.rank" 
+            class="ranking-row d-flex align-items-center mb-3 p-3 rounded-4 transition-all"
+            :class="getRankClass(user.rank)"
+          >
+            <div class="rank-position me-3 d-flex align-items-center justify-content-center">
+              <span class="rank-number">{{ getRankIcon(user.rank) }}</span>
+            </div>
+            
+            <div class="user-details flex-grow-1">
+              <div class="user-identity text-white fw-bold">
+                {{ maskEmail(user.email) }}
+              </div>
+            </div>
+
+            <div class="points-display text-end">
+              <span class="points-amount fw-black text-warning h4 mb-0">{{ user.totalPoints.toLocaleString() }}</span>
+              <span class="points-label ms-1 text-white-50 small">SP</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -66,139 +99,86 @@ const getRankIcon = (rank) => {
 </template>
 
 <style scoped>
-.ranking-dashboard {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+.ranking-card {
+  background: rgba(20, 20, 30, 0.7);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.ranking-main-title {
   color: #fff;
-  animation: fadeIn 0.8s ease-out;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
-.ranking-header {
-  margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 12px;
+.pulse-animation {
+  animation: pulse-red 2s infinite;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  font-size: 0.65rem;
+  padding: 0.35em 0.65em;
+  vertical-align: middle;
 }
 
-.ranking-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-  background: linear-gradient(90deg, #fff, #a5b4fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-.live-badge {
-  background: #ef4444;
-  color: white;
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-  -webkit-text-fill-color: white;
-  animation: pulse 2s infinite;
+.ranking-row {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ranking-subtitle {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 4px 0 0 0;
-}
-
-.ranking-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.ranking-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
-}
-
-.ranking-item:hover {
-  transform: translateX(5px);
-  background: rgba(255, 255, 255, 0.07);
+.ranking-row:hover {
+  transform: scale(1.02) translateX(5px);
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.rank-badge {
-  width: 40px;
-  font-size: 1.2rem;
+.rank-position {
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+.rank-number {
+  font-size: 1.25rem;
   font-weight: 800;
-  text-align: center;
 }
 
-.user-info {
-  flex: 1;
+.user-identity {
+  font-size: 1.05rem;
+  letter-spacing: 0.2px;
 }
 
-.user-name {
-  font-weight: 600;
-  font-size: 1.1rem;
+/* 랭킹별 특별 스타일 */
+.rank-gold {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.02));
+  border-left: 5px solid #fbbf24 !important;
+}
+.rank-gold .points-amount { color: #fbbf24 !important; text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+
+.rank-silver {
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.1), rgba(226, 232, 240, 0.02));
+  border-left: 5px solid #e2e8f0 !important;
+}
+.rank-silver .points-amount { color: #e2e8f0 !important; }
+
+.rank-bronze {
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.1), rgba(217, 119, 6, 0.02));
+  border-left: 5px solid #d97706 !important;
+}
+.rank-bronze .points-amount { color: #d97706 !important; }
+
+.rank-normal {
+  border-left: 5px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.user-points {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.points-value {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #fbbf24;
-}
-
-.points-unit {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* 상위권 특별 스타일 */
-.rank-1 {
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), transparent);
-  border-left: 4px solid #fbbf24;
-}
-
-.rank-2 {
-  background: linear-gradient(90deg, rgba(148, 163, 184, 0.1), transparent);
-  border-left: 4px solid #94a3b8;
-}
-
-.rank-3 {
-  background: linear-gradient(90deg, rgba(217, 119, 6, 0.1), transparent);
-  border-left: 4px solid #d97706;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-.ranking-loading, .ranking-empty {
-  text-align: center;
-  padding: 30px;
-  color: rgba(255, 255, 255, 0.5);
-  font-style: italic;
-}
+.fw-black { font-weight: 900; }
+.transition-all { transition: all 0.3s ease; }
 </style>

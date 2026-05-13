@@ -1,8 +1,7 @@
 package com.example.springboot.dto;
 
 public record PointRankingResponse(
-    String name,
-    String nickname,
+    String email,
     int totalPoints,
     int rank
 ) {}
