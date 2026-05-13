@@ -77,12 +77,12 @@ const highlightTimer = ref(null)
 const phaseTimer = ref(null)
 
 /**
- * 백엔드로부터 최근 30분 내 가입 유저 조회 (기존 기능 유지)
+ * 백엔드로부터 최근 가입 유저 조회
  */
-async function fetchRecentEntries() {
+async function fetchRecentEntries(minutes = 60) {
   state.loading = true
   try {
-    const res = await fetch(`${apiRoot}/ending-credits/recent?minutes=60`)
+    const res = await fetch(`${apiRoot}/ending-credits/recent?minutes=${minutes}`)
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     const data = await res.json()
     data.forEach(entry => {
@@ -101,6 +101,13 @@ async function fetchRecentEntries() {
   } finally {
     state.loading = false
   }
+}
+
+/**
+ * 일일 데이터 갱신 (최근 24시간)
+ */
+async function fetchDailyEntries() {
+  await fetchRecentEntries(180)
 }
 
 /**
@@ -305,7 +312,8 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
           <div class="control-header">
             <h5><i class="bi bi-gear-fill me-2"></i>엔딩 크레딧 설정 (중국어)</h5>
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-light" @click="fetchRecentEntries">최근 데이터 갱신</button>
+              <button class="btn btn-sm btn-outline-info" @click="fetchDailyEntries">일일 데이터 갱신</button>
+              <button class="btn btn-sm btn-outline-light" @click="fetchRecentEntries()">최근 데이터 갱신</button>
               <button class="btn btn-sm btn-warning" @click="toggleFullscreen">시작</button>
             </div>
           </div>
