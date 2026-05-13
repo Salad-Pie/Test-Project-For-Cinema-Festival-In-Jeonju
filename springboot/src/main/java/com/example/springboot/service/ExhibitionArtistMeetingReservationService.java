@@ -29,15 +29,18 @@ public class ExhibitionArtistMeetingReservationService {
     private final ExhibitionArtistMeetingReservationRepository repository;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PointRewardService pointRewardService;
 
     public ExhibitionArtistMeetingReservationService(
             ExhibitionArtistMeetingReservationRepository repository,
             UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            PointRewardService pointRewardService
     ) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.pointRewardService = pointRewardService;
     }
 
     public ExhibitionArtistMeetingReservationResponse create(
@@ -67,6 +70,7 @@ public class ExhibitionArtistMeetingReservationService {
         entity.setTime(request.time());
 
         ExhibitionArtistMeetingReservation saved = repository.save(entity);
+        pointRewardService.earnActivityPoints(userId, "작가와의 만남 예약 신청 완료");
         return new ExhibitionArtistMeetingReservationResponse(
                 saved.getId(),
                 saved.getUser().getId(),

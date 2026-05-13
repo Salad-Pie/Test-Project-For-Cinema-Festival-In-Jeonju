@@ -1,10 +1,12 @@
 <script setup>
 import { inject, computed } from 'vue'
+import PointRankingDashboard from '../components/PointRankingDashboard.vue'
 
 const { t, startOAuth, pageHref, goEmailLoginPage, state } = inject('appContext')
 </script>
 
 <template>
+  <PointRankingDashboard />
   <section class="card">
     <div class="home-layout">
       <div class="home-group">

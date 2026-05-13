@@ -23,17 +23,20 @@ public class IdeaContestService {
     private final UserRepository userRepository;
     private final S3UploadService s3UploadService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PointRewardService pointRewardService;
 
     public IdeaContestService(
             IdeaContestRepository ideaContestRepository,
             UserRepository userRepository,
             S3UploadService s3UploadService,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            PointRewardService pointRewardService
     ) {
         this.ideaContestRepository = ideaContestRepository;
         this.userRepository = userRepository;
         this.s3UploadService = s3UploadService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.pointRewardService = pointRewardService;
     }
 
     public IdeaContestResponse create(String token, List<MultipartFile> images) {
@@ -70,6 +73,7 @@ public class IdeaContestService {
         }
 
         IdeaContest saved = ideaContestRepository.save(ideaContest);
+        pointRewardService.earnActivityPoints(userId, "아이디어 공모전 제안 완료");
         return toResponse(saved);
     }
 

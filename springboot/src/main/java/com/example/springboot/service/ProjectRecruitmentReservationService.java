@@ -33,15 +33,18 @@ public class ProjectRecruitmentReservationService {
     private final ProjectRecruitmentReservationRepository repository;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PointRewardService pointRewardService;
 
     public ProjectRecruitmentReservationService(
             ProjectRecruitmentReservationRepository repository,
             UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            PointRewardService pointRewardService
     ) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.pointRewardService = pointRewardService;
     }
 
     public ProjectRecruitmentReservationResponse create(
@@ -80,6 +83,7 @@ public class ProjectRecruitmentReservationService {
         entity.setDate(request.date());
         entity.setTime(request.time());
         ProjectRecruitmentReservation saved = repository.save(entity);
+        pointRewardService.earnActivityPoints(userId, "프로젝트 참여 신청 완료 (" + projectKey + ")");
 
         return new ProjectRecruitmentReservationResponse(
                 saved.getId(), saved.getUser().getId(), saved.getProjectKey(),

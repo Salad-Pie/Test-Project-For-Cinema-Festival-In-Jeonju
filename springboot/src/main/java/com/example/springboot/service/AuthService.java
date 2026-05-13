@@ -61,6 +61,7 @@ public class AuthService {
     private final SignatureImageService signatureImageService;
     private final CertificatePdfService certificatePdfService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PointRewardService pointRewardService;
     private final String tabletBaseUrl;
     private final Map<String, ReissueRateLimit> identifierReissueRateLimits = new ConcurrentHashMap<>();
     private final Map<String, SignaturePreviewSession> signaturePreviewSessions = new ConcurrentHashMap<>();
@@ -77,6 +78,7 @@ public class AuthService {
             SignatureImageService signatureImageService,
             CertificatePdfService certificatePdfService,
             JwtTokenProvider jwtTokenProvider,
+            PointRewardService pointRewardService,
             @Value("${app.tablet-base-url}") String tabletBaseUrl
     ) {
         this.userRepository = userRepository;
@@ -90,6 +92,7 @@ public class AuthService {
         this.signatureImageService = signatureImageService;
         this.certificatePdfService = certificatePdfService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.pointRewardService = pointRewardService;
         this.tabletBaseUrl = tabletBaseUrl;
     }
 
@@ -112,6 +115,7 @@ public class AuthService {
         user.setPhoneNumber(phone);
         user = userRepository.save(user);
 
+        pointRewardService.earnActivityPoints(user.getId(), "신규 회원가입 축하 포인트 (EMAIL)");
         return issueIdentifierAndRegisterToken(user, "ko");
     }
 
@@ -234,6 +238,7 @@ public class AuthService {
         user.setPhoneNumber(phone);
         user = userRepository.save(user);
 
+        pointRewardService.earnActivityPoints(user.getId(), "신규 회원가입 축하 포인트 (OAUTH)");
         return issueIdentifierAndRegisterToken(user, language);
     }
 
@@ -432,6 +437,7 @@ public class AuthService {
         signature.setOcrErrorMessage(null);
         signature.setOcrProcessedAt(LocalDateTime.now());
         Signature saved = signatureRepository.save(signature);
+        pointRewardService.earnActivityPoints(user.getId(), "디지털 서명 참여 리워드");
         log.info("Signature saved from session. userId={} signatureId={}", user.getId(), saved.getId());
         return new SignatureResponse(
                 saved.getId(),
