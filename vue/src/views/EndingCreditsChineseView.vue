@@ -310,7 +310,7 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
             <h5><i class="bi bi-gear-fill me-2"></i>엔딩 크레딧 설정 (중국어)</h5>
             <div class="d-flex gap-2">
               <button class="btn btn-sm btn-outline-light" @click="fetchRecentEntries">최근 데이터 갱신</button>
-              <button class="btn btn-sm btn-warning" @click="toggleFullscreen">전체화면</button>
+              <button class="btn btn-sm btn-warning" @click="toggleFullscreen">시작</button>
             </div>
           </div>
 
