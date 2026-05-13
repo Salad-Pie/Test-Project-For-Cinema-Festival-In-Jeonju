@@ -24,14 +24,21 @@ function setLocale(next) {
 
 <template>
   <!-- 언어 선택 드롭다운 영역 -->
-  <div class="actions" style="justify-content: space-between; align-items: center; margin-bottom: 8px">
-    <a :href="pageHref('/')" class="route-button" style="background: rgba(255, 255, 255, 0.9); color: #0d6efd; border: 1px solid #0d6efd; padding: 6px 14px; font-size: 14px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5Z"/>
-        <path d="m8 3.293 6 6V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V9.293l6-6Z"/>
-      </svg>
-      {{ t('nav.home') }}
-    </a>
+  <div class="actions" style="justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+    <div class="nav-links" style="display: flex; gap: 8px; align-items: center;">
+      <a :href="pageHref('/')" class="route-button nav-btn">
+        <i class="bi bi-house-door-fill"></i> {{ t('nav.home') }}
+      </a>
+      <a :href="pageHref('/login-page')" class="route-button nav-btn">
+        <i class="bi bi-person-fill"></i> {{ t('nav.login') }}
+      </a>
+      <a :href="pageHref('/tablet')" class="route-button nav-btn">
+        <i class="bi bi-pen-fill"></i> {{ t('nav.signature') }}
+      </a>
+      <a :href="pageHref('/ending-credits-cn')" class="route-button nav-btn">
+        <i class="bi bi-camera-reels-fill"></i> {{ t('nav.endingCredits') }}
+      </a>
+    </div>
     <label class="locale-select-label">
       <select :value="locale" aria-label="Language Select" @change="setLocale($event.target.value)">
         <!-- 엔딩 크레딧 페이지와 일반 페이지의 언어 표기 방식 대응 -->
