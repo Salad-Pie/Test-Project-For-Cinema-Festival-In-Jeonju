@@ -1,10 +1,12 @@
 <script setup>
 import { inject } from 'vue'
+import PointRankingDashboard from '../components/PointRankingDashboard.vue'
 
 const { t, bootstrapPages } = inject('appContext')
 </script>
 
 <template>
+  <PointRankingDashboard />
   <section class="bootstrap-hub-page">
     <div class="container-fluid py-5">
       <div class="row justify-content-center">
