@@ -9,6 +9,14 @@ export function saveIdeaContestLogin(userId) {
   } catch (_) {}
 }
 
+export function getIdeaContestUserId() {
+  try {
+    return localStorage.getItem(ideaContestAuthKey) || ''
+  } catch (_) {
+    return ''
+  }
+}
+
 export function isIdeaContestLoggedIn() {
   try {
     const userId = localStorage.getItem(ideaContestAuthKey)
