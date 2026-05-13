@@ -277,10 +277,6 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
                 <p class="msg-en">Welcome to Jeonju</p>
               </div>
             </div>
-
-            <div v-if="tailLines.length" class="ending-credits-group">
-              <p v-for="(line, idx) in tailLines" :key="idx" class="ending-credits-group-line">{{ line }}</p>
-            </div>
           </div>
 
           <!-- 단계 1: 블랙 화면 -->
