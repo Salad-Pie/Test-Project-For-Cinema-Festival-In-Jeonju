@@ -1,3 +1,4 @@
+<script setup>
 import { ref, onMounted, inject, computed } from 'vue'
 import { getIdeaContestUserId } from '../utils/authStorage'
 
