@@ -5,9 +5,9 @@
  */
 import { onMounted, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { createApiFetch } from './api/client'
+import { createApiFetch, apiFetchWithBase } from './api/client'
 import { apiBase, apiRoot } from './config/api'
-import { getIdeaContestAuthToken, isIdeaContestLoggedIn } from './utils/authStorage'
+import { getIdeaContestAuthToken, isIdeaContestLoggedIn, saveIdeaContestAuthToken, saveIdeaContestLogin, getGlobalRedirectPath, clearGlobalRedirectPath } from './utils/authStorage'
 import artistMeetingPosterUrl from './assets/artist-meeting-poster.png'
 
 // --- 비즈니스 로직 분리를 위한 Composables 임포트 ---
@@ -169,16 +169,21 @@ onMounted(async () => {
     if (code && stateVal) {
       try {
         state.loading = true
-        const res = await apiFetch('/oauth/exchange', {
+        // 인증 시작 시와 동일한 베이스 URL 결정
+        const authBase = auth.shouldUseIdeaContestAuthApi() ? ideaAuthApiBase : apiBase
+        const res = await apiFetchWithBase(authBase, '/oauth/exchange', {
           method: 'POST',
           body: JSON.stringify({ code, state: stateVal })
         })
         
-        if (res.token) {
-          localStorage.setItem('zdo.authToken', res.token)
+        if (res.registerToken) {
+          saveIdeaContestAuthToken(res.registerToken)
+          if (res.userId) {
+            saveIdeaContestLogin(res.userId)
+          }
           // 리다이렉트 경로 복구
-          const redirectPath = localStorage.getItem('zdo.redirectPath') || '/'
-          localStorage.removeItem('zdo.redirectPath')
+          const redirectPath = getGlobalRedirectPath() || '/'
+          clearGlobalRedirectPath()
           window.location.href = redirectPath
           return
         }
