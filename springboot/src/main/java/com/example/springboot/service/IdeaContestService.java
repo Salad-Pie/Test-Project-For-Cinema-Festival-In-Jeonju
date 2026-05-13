@@ -54,9 +54,9 @@ public class IdeaContestService {
         }
 
         TokenType tokenType = jwtTokenProvider.extractTokenType(token);
-        if (tokenType != TokenType.REGISTER && tokenType != TokenType.VERIFIED) {
-            log.warn("Idea contest failed: Invalid token type. tokenType={}", tokenType);
-            throw new IllegalArgumentException("token type is not valid for idea contest.");
+        if (tokenType == TokenType.OAUTH_STATE) {
+            log.warn("Idea contest failed: Temporary OAuth state token cannot be used for submission.");
+            throw new IllegalArgumentException("login is required for idea contest.");
         }
 
         Long userId = jwtTokenProvider.extractUserId(token);

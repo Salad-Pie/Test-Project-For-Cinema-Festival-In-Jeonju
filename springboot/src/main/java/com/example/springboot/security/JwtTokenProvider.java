@@ -79,8 +79,18 @@ public class JwtTokenProvider {
     public TokenType extractTokenType(String token) {
         try {
             Claims claims = parse(token);
-            return TokenType.valueOf(claims.get("type", String.class));
+            String type = claims.get("type", String.class);
+            if (type == null) {
+                throw new IllegalArgumentException("token type is missing in claims.");
+            }
+            return TokenType.valueOf(type);
+        } catch (JwtException e) {
+            log.warn("JWT parsing failed: {}", e.getMessage());
+            throw new IllegalArgumentException("invalid or expired token.");
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
+            log.error("Unexpected error extracting token type", e);
             throw new IllegalArgumentException("invalid token type.");
         }
     }
