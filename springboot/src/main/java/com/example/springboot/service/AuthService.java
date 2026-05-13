@@ -48,7 +48,7 @@ public class AuthService {
     private static final int IDENTIFIER_REISSUE_MAX_ATTEMPTS = 5;
     private static final Duration IDENTIFIER_REISSUE_WINDOW = Duration.ofMinutes(10);
     private static final Duration SIGNATURE_PREVIEW_EXPIRATION = Duration.ofMinutes(10);
-    private static final String IDENTIFIER_REISSUE_RESPONSE_MESSAGE = "\uC785\uB825\uD558\uC2E0 \uC815\uBCF4\uAC00 \uB4F1\uB85D\uB418\uC5B4 \uC788\uB2E4\uBA74 \uC0C8 \uC2DD\uBCC4\uC790 \uCF54\uB4DC\uB97C \uC804\uC1A1\uD588\uC2B5\uB2C8\uB2E4.";
+    private static final String IDENTIFIER_REISSUE_RESPONSE_MESSAGE = "입력하신 정보가 등록되어 있다면 새 식별자 코드를 전송했습니다.";
 
     private final UserRepository userRepository;
     private final IdentifierCodeRepository identifierCodeRepository;
@@ -350,7 +350,7 @@ public class AuthService {
             byte[] signatureImageBytes = signatureImage.getBytes();
             GoogleVisionOcrService.OcrResult ocrResult = googleVisionOcrService.extractSignatureText(signatureImage);
             String recognizedText = normalizeOcrText(ocrResult.text());
-            SignatureLanguage language = detectKoOrEn(recognizedText);
+            SignatureLanguage language = detectLanguage(recognizedText);
             if (recognizedText == null || language == null) {
                 throw new BusinessException(ErrorCode.OCR_RECOGNITION_FAILED);
             }
@@ -511,12 +511,12 @@ public class AuthService {
 
     public byte[] renderKoreanCalligraphyCertificatePdfSample(CertificateSampleRequest request) {
         String englishName = blankToDefault(request == null ? null : request.englishName(), "ALEXANDER MICHAEL JOHNSON");
-        String koreanName = blankToDefault(request == null ? null : request.koreanName(), "\uC774\uCC3D\uC12D");
+        String koreanName = blankToDefault(request == null ? null : request.koreanName(), "이창섭");
         return certificatePdfService.renderKoreanCalligraphyCertificate(englishName, koreanName, null);
     }
 
     public byte[] renderStrongCalligraphyTextSample(SignatureRenderRequest request) {
-        String text = blankToDefault(request == null ? null : request.text(), "\uC774\uCC3D\uC12D");
+        String text = blankToDefault(request == null ? null : request.text(), "이창섭");
         return signatureImageService.renderStrongCalligraphyText(
                 text,
                 request == null ? null : request.width(),
@@ -711,7 +711,7 @@ public class AuthService {
         return value.replaceAll("\\s+", " ").trim();
     }
 
-    private SignatureLanguage detectKoOrEn(String text) {
+    private SignatureLanguage detectLanguage(String text) {
         if (text == null || text.isBlank()) {
             return null;
         }
@@ -719,15 +719,22 @@ public class AuthService {
         long koreanCount = text.chars()
                 .filter(ch -> (ch >= 0xAC00 && ch <= 0xD7A3) || (ch >= 0x3131 && ch <= 0x318E))
                 .count();
+        long hanziCount = text.chars()
+                .filter(ch -> (ch >= 0x4E00 && ch <= 0x9FFF))
+                .count();
         long englishCount = text.chars()
                 .filter(ch -> (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))
                 .count();
 
-        if (koreanCount == 0 && englishCount == 0) {
+        if (koreanCount == 0 && hanziCount == 0 && englishCount == 0) {
             return null;
         }
-        if (koreanCount >= englishCount) {
+
+        if (koreanCount >= hanziCount && koreanCount >= englishCount) {
             return SignatureLanguage.KO;
+        }
+        if (hanziCount >= englishCount) {
+            return SignatureLanguage.ZH;
         }
         return SignatureLanguage.EN;
     }
@@ -792,12 +799,16 @@ public class AuthService {
     private NameLanguage normalizeNameLanguage(String nameLanguageRaw, SignatureLanguage detectedLanguage) {
         String value = blankToNull(nameLanguageRaw);
         if (value == null) {
-            return detectedLanguage == SignatureLanguage.KO ? NameLanguage.OTHER : NameLanguage.EN;
+            if (detectedLanguage == SignatureLanguage.KO) return NameLanguage.OTHER;
+            if (detectedLanguage == SignatureLanguage.ZH) return NameLanguage.ZH;
+            return NameLanguage.EN;
         }
         try {
             return NameLanguage.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return detectedLanguage == SignatureLanguage.KO ? NameLanguage.OTHER : NameLanguage.EN;
+            if (detectedLanguage == SignatureLanguage.KO) return NameLanguage.OTHER;
+            if (detectedLanguage == SignatureLanguage.ZH) return NameLanguage.ZH;
+            return NameLanguage.EN;
         }
     }
 
@@ -832,4 +843,3 @@ public class AuthService {
     ) {
     }
 }
-

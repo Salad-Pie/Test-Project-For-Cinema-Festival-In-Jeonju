@@ -54,7 +54,41 @@ public class EnglishKoreanNameService {
             Map.entry("HADI", "\uD558\uB514"),
             Map.entry("HANDRIAN", "\uD55C\uB4DC\uB9AC\uC548"),
             Map.entry("KANG", "\uAC15"),
-            Map.entry("BONGJU", "\uBD09\uC8FC")
+            Map.entry("BONGJU", "\uBD09\uC8FC"),
+            // Chinese Surnames (Pinyin to Hangul)
+            Map.entry("ZHANG", "\uC7A5"),
+            Map.entry("LI", "\uB9AC"),
+            Map.entry("WANG", "\uC651"),
+            Map.entry("CHEN", "\uC9C4"),
+            Map.entry("LIU", "\uC720"),
+            Map.entry("YANG", "\uC591"),
+            Map.entry("HUANG", "\uD669"),
+            Map.entry("ZHAO", "\uC870"),
+            Map.entry("WU", "\uC624"),
+            Map.entry("ZHOU", "\uC8FC"),
+            Map.entry("XU", "\uC11C"),
+            Map.entry("SUN", "\uC190"),
+            Map.entry("MA", "\uB9C8"),
+            Map.entry("CHU", "\uCC08"),
+            Map.entry("LIN", "\uB9B0"),
+            Map.entry("GUO", "\uACFD"),
+            Map.entry("HE", "\uD558"),
+            Map.entry("GAO", "\uACE0"),
+            Map.entry("LUO", "\uB098"),
+            Map.entry("XIAO", "\uC18C"),
+            Map.entry("LIANG", "\uC591"),
+            Map.entry("HAN", "\uD55C"),
+            Map.entry("WEI", "\uC704"),
+            Map.entry("FENG", "\uD48D"),
+            Map.entry("SONG", "\uC1A1"),
+            Map.entry("XIE", "\uC0AC"),
+            Map.entry("TANG", "\uB2F9"),
+            Map.entry("YU", "\uC720"),
+            Map.entry("CAO", "\uC870"),
+            Map.entry("YUAN", "\uC6D0"),
+            Map.entry("PAN", "\uD310"),
+            Map.entry("TIAN", "\uC804"),
+            Map.entry("DONG", "\uB3D9")
     );
 
     private static final Map<String, String> OFFICIAL_EXAMPLE_DICTIONARY = Map.ofEntries(
@@ -114,7 +148,7 @@ public class EnglishKoreanNameService {
     }
 
     public ConversionResult convertByOfficialLoanwordPolicy(String value, NameLanguage language) {
-        if (language != NameLanguage.EN) {
+        if (language != NameLanguage.EN && language != NameLanguage.ZH) {
             String normalizedNonEnglish = normalizeNonEnglish(value);
             return new ConversionResult(normalizedNonEnglish, NameConversionSource.MANUAL_REVIEW);
         }

@@ -160,6 +160,36 @@ onMounted(async () => {
     return
   }
 
+  // --- OAuth 콜백 처리 ---
+  if (isOauthCallbackPage.value) {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const stateVal = params.get('state')
+    
+    if (code && stateVal) {
+      try {
+        state.loading = true
+        const res = await apiFetch('/oauth/exchange', {
+          method: 'POST',
+          body: JSON.stringify({ code, state: stateVal })
+        })
+        
+        if (res.token) {
+          localStorage.setItem('zdo.authToken', res.token)
+          // 리다이렉트 경로 복구
+          const redirectPath = localStorage.getItem('zdo.redirectPath') || '/'
+          localStorage.removeItem('zdo.redirectPath')
+          window.location.href = redirectPath
+          return
+        }
+      } catch (e) {
+        setSafeError(e)
+      } finally {
+        state.loading = false
+      }
+    }
+  }
+
   // --- 접근 제어 (Access Control) 로직 ---
   
   // 로그인이 필요한 일반 페이지 목록
