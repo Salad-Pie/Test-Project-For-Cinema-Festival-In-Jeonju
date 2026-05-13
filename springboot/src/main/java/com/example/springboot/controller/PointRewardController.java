@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/point-reward")
+@RequestMapping("/api/auth/point-reward")
 public class PointRewardController {
 
     private final PointRewardService pointRewardService;
