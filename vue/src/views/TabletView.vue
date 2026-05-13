@@ -271,9 +271,6 @@ async function confirmPreviewSignatureOnTablet() {
       <p><strong>OCR 결과:</strong> {{ tabletState.signaturePreview.recognizedText || '-' }}</p>
       <p><strong>영어 이름:</strong> {{ tabletState.signaturePreview.englishName || '-' }}</p>
       <p><strong>한글 이름:</strong> {{ tabletState.signaturePreview.koreanName || '-' }}</p>
-      <p><strong>의미 번역:</strong> {{ tabletState.signaturePreview.koreanMeaningText || '-' }}</p>
-      <p><strong>감지 언어:</strong> {{ tabletState.signaturePreview.detectedLanguage || '-' }}</p>
-      <p><strong>신뢰도:</strong> {{ tabletState.signaturePreview.ocrConfidence ?? '-' }}</p>
     </div>
   </section>
 </template>
