@@ -54,8 +54,13 @@ export function useGlobalState() {
       // 세션 스토리지를 통해 메시지 전달
       sessionStorage.setItem(successMessageStorageKey, message)
     } catch (_) {}
-    // 성공 페이지로 이동
-    window.location.href = pageHref('/success')
+    
+    // 성공 페이지로 이동 (pageHref가 함수가 아닐 경우를 대비한 안전 장치)
+    if (typeof pageHref === 'function') {
+      window.location.href = pageHref('/success')
+    } else {
+      window.location.href = '/success'
+    }
   }
 
   return {

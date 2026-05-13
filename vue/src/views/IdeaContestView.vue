@@ -4,7 +4,7 @@ import { apiRoot } from '../config/api'
 import { parseErrorResponse } from '../api/client'
 import { getIdeaContestAuthToken } from '../utils/authStorage'
 
-const { t, state: globalState, setSafeError, userError, goToSuccessPage, ideaPosterUrl, apiFetch } = inject('appContext')
+const { t, state: globalState, setSafeError, userError, goToSuccessPage, ideaPosterUrl, apiFetch, pageHref } = inject('appContext')
 
 const ideaContestState = reactive({
   files: [],
@@ -39,7 +39,7 @@ async function submitIdeaContest() {
     })
 
     console.log('Idea contest submission success:', json)
-    goToSuccessPage(t('idea.submitted', { count: json.images?.length ?? 0 }))
+    goToSuccessPage(t('idea.submitted', { count: json.images?.length ?? 0 }), pageHref)
   } catch (e) {
     console.error('Idea contest submission error:', e)
     setSafeError(e)
