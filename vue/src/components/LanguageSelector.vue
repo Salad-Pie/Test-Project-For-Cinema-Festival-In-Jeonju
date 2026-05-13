@@ -27,16 +27,16 @@ function setLocale(next) {
   <div class="actions" style="justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
     <div class="nav-links" style="display: flex; gap: 8px; align-items: center;">
       <a :href="pageHref('/')" class="route-button nav-btn">
-        <i class="bi bi-house-door-fill"></i> {{ t('nav.home') }}
+        <i class="bi bi-house-door-fill"></i> 홈
       </a>
       <a :href="pageHref('/login-page')" class="route-button nav-btn">
-        <i class="bi bi-person-fill"></i> {{ t('nav.login') }}
+        <i class="bi bi-person-fill"></i> 로그인
       </a>
       <a :href="pageHref('/tablet')" class="route-button nav-btn">
-        <i class="bi bi-pen-fill"></i> {{ t('nav.signature') }}
+        <i class="bi bi-pen-fill"></i> 서명
       </a>
       <a :href="pageHref('/ending-credits-cn')" class="route-button nav-btn">
-        <i class="bi bi-camera-reels-fill"></i> {{ t('nav.endingCredits') }}
+        <i class="bi bi-camera-reels-fill"></i> 엔딩 크레딧
       </a>
     </div>
     <label class="locale-select-label">

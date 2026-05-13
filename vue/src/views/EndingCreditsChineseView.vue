@@ -9,6 +9,7 @@ const { t, locale, state: globalState, setSafeError, userError, artistMeetingPos
  * 중국 관광객 전용 엔딩 크레딧 설정 (기존 단계 유지)
  */
 const phases = {
+  IDLE: -1,
   NAMES: 0,
   BLACK: 1,
   TAIL: 2,
@@ -56,7 +57,7 @@ const tailPreset1 = `“이제 우리는 손님과 주최자가 아니라… 친
 
 const state = reactive({
   entries: [],
-  currentPhase: phases.NAMES,
+  currentPhase: phases.IDLE,
   isFullscreen: false,
   highlightedCodes: {},
   loading: false,
@@ -211,9 +212,9 @@ async function toggleFullscreen() {
   } else {
     await document.exitFullscreen()
     state.isFullscreen = false
-    // 전체화면 해제 시 타이머 중단 (선택 사항: 원하시면 유지 가능)
+    // 전체화면 해제 시 타이머 중단 및 IDLE 상태로 복구
     clearTimeout(phaseTimer.value)
-    state.currentPhase = phases.NAMES
+    state.currentPhase = phases.IDLE
   }
 }
 
