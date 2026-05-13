@@ -65,7 +65,7 @@ const state = reactive({
   // 인도네시아 페이지와 동일한 기능 추가
   leadMessage: '',
   tailMessage: '',
-  rollDurationSeconds: 60, // 중국어 페이지 특성상 더 긴 호흡 권장
+  rollDurationSeconds: 30, // 30초를 기본값으로 설정
   rollGapPx: 100,
   fontScalePercent: 100,
   stopAfterOneCycle: false,
@@ -220,6 +220,8 @@ async function toggleFullscreen() {
 
 onMounted(async () => {
   await fetchRecentEntries()
+  // 하단 문구 자동 적용
+  state.tailMessage = tailPreset1
   // 자동 시작 제거
   highlightTimer.value = setInterval(monitorCenterLine, 150)
   document.addEventListener('fullscreenchange', syncFullscreen)
