@@ -1,7 +1,18 @@
+import { getIdeaContestAuthToken } from '../utils/authStorage'
+
 export async function apiFetchWithBase(baseUrl, pathname, options = {}, fallbackMessage = 'Request failed.') {
+  const token = getIdeaContestAuthToken()
   const mergedHeaders = {
-    'Content-Type': 'application/json',
     ...(options.headers || {}),
+  }
+  
+  // FormData인 경우 브라우저가 자동으로 boundary를 포함한 Content-Type을 설정하도록 함
+  if (!(options.body instanceof FormData)) {
+    mergedHeaders['Content-Type'] = 'application/json'
+  }
+  
+  if (token && !mergedHeaders['Authorization']) {
+    mergedHeaders['Authorization'] = `Bearer ${token}`
   }
 
   const res = await fetch(`${baseUrl}${pathname}`, {

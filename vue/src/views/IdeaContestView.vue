@@ -4,7 +4,7 @@ import { apiRoot } from '../config/api'
 import { parseErrorResponse } from '../api/client'
 import { getIdeaContestAuthToken } from '../utils/authStorage'
 
-const { t, state: globalState, setSafeError, userError, goToSuccessPage, ideaPosterUrl } = inject('appContext')
+const { t, state: globalState, setSafeError, userError, goToSuccessPage, ideaPosterUrl, apiFetch } = inject('appContext')
 
 const ideaContestState = reactive({
   files: [],
@@ -23,26 +23,25 @@ async function submitIdeaContest() {
       throw userError(t('common.loginTokenRequired'))
     }
 
+    if (ideaContestState.files.length === 0) {
+      throw userError(t('common.placeholders.imageFile'))
+    }
+
     const formData = new FormData()
     for (const file of ideaContestState.files) {
       formData.append('images', file)
     }
 
-    const res = await fetch(`${apiRoot}/idea-contests`, {
+    // apiFetch를 사용하여 인증 헤더 및 베이스 URL 자동 처리
+    const json = await apiFetch('/idea-contests', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
       body: formData,
     })
 
-    if (!res.ok) {
-      throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
-    }
-
-    const json = await res.json()
+    console.log('Idea contest submission success:', json)
     goToSuccessPage(t('idea.submitted', { count: json.images?.length ?? 0 }))
   } catch (e) {
+    console.error('Idea contest submission error:', e)
     setSafeError(e)
   } finally {
     globalState.loading = false

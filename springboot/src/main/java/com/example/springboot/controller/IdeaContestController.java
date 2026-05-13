@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/idea-contests")
+@RequestMapping("/api/auth/idea-contests")
 public class IdeaContestController {
 
     private final IdeaContestService ideaContestService;

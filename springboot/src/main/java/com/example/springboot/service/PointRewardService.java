@@ -51,7 +51,7 @@ public class PointRewardService {
      */
     @Transactional(readOnly = true)
     public List<PointRankingResponse> getRecentRanking(int hours) {
-        LocalDateTime threshold = LocalDateTime.now().minusHours(hours);
+        OffsetDateTime threshold = OffsetDateTime.now().minusHours(hours);
         List<com.example.springboot.domain.User> recentUsers = userRepository.findByCreatedAtAfter(threshold);
 
         List<PointRankingResponse> rankings = recentUsers.stream()
