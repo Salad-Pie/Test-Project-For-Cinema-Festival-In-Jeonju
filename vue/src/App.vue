@@ -5,8 +5,9 @@
  */
 import { onMounted, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { i18n } from './i18n'
 import { createApiFetch, apiFetchWithBase } from './api/client'
-import { apiBase, apiRoot } from './config/api'
+import { apiBase, apiRoot, ideaAuthApiBase } from './config/api'
 import { getIdeaContestAuthToken, isIdeaContestLoggedIn, saveIdeaContestAuthToken, saveIdeaContestLogin, getGlobalRedirectPath, clearGlobalRedirectPath } from './utils/authStorage'
 import artistMeetingPosterUrl from './assets/artist-meeting-poster.png'
 
@@ -169,14 +170,20 @@ onMounted(async () => {
     if (code && stateVal) {
       try {
         state.loading = true
-        // 인증 시작 시와 동일한 베이스 URL 결정
-        const authBase = auth.shouldUseIdeaContestAuthApi() ? ideaAuthApiBase : apiBase
+        // 직접 로컬 스토리지 확인하여 베이스 URL 결정 (함수 호출 에러 방지)
+        const savedRedirect = localStorage.getItem('zdoPostLoginRedirectPath') || ''
+        const authBase = savedRedirect === '/idea-contest' ? ideaAuthApiBase : apiBase
+        
+        console.log('Starting OAuth exchange...', { authBase, code, state: stateVal })
+        
         const res = await apiFetchWithBase(authBase, '/oauth/exchange', {
           method: 'POST',
           body: JSON.stringify({ code, state: stateVal })
         })
         
-        if (res.registerToken) {
+        console.log('OAuth exchange success:', res)
+        
+        if (res && res.registerToken) {
           saveIdeaContestAuthToken(res.registerToken)
           if (res.userId) {
             saveIdeaContestLogin(res.userId)
@@ -186,8 +193,11 @@ onMounted(async () => {
           clearGlobalRedirectPath()
           window.location.href = redirectPath
           return
+        } else {
+          throw new Error('Invalid response: missing registerToken')
         }
       } catch (e) {
+        console.error('OAuth Exchange Error:', e)
         setSafeError(e)
       } finally {
         state.loading = false
