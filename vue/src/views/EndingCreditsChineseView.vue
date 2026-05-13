@@ -82,7 +82,7 @@ const phaseTimer = ref(null)
 async function fetchRecentEntries() {
   state.loading = true
   try {
-    const res = await fetch(`${apiRoot}/ending-credits/recent?minutes=30`)
+    const res = await fetch(`${apiRoot}/ending-credits/recent?minutes=60`)
     if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
     const data = await res.json()
     data.forEach(entry => {
