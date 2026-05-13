@@ -4,7 +4,7 @@ import com.example.springboot.domain.PointReward;
 import com.example.springboot.dto.PointRankingResponse;
 import com.example.springboot.repository.PointRewardRepository;
 import com.example.springboot.repository.UserRepository;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
