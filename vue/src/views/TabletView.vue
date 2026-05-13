@@ -9,7 +9,7 @@ const { t, state: globalState, setSafeError, userError, apiFetch } = inject('app
 const tabletState = reactive({
   verifyCode: '',
   verifiedToken: '',
-  signatureNameLanguage: 'EN',
+  signatureNameLanguage: 'ZH',
   signatureKoreanName: '',
   signaturePreview: {
     token: '',

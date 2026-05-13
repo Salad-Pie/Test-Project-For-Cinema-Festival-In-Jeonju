@@ -69,7 +69,7 @@ public class EnglishKoreanNameService {
             {"CHA", "\uCC28"}, {"CHAI", "\uCC44"}, {"CHAN", "\uCC2C"}, {"CHANG", "\uC7A5"}, {"CHAO", "\uCD08"},
             {"CHE", "\uAC70"}, {"CHEN", "\uC9C4"}, {"CHENG", "\uC131"}, {"CHI", "\uC9C0"}, {"CHONG", "\uCDA9"},
             {"CHOU", "\uC8FC"}, {"CHU", "\uCD94"}, {"CHUAN", "\uCC1C"}, {"CHUANG", "\uCC3D"}, {"CHUI", "\uCD94"},
-            {"CHUN", "\uCD98"}, {"CHUO", "\uD0 탁"}, {"CI", "\uC790"}, {"CONG", "\uC885"}, {"COU", "\uC8FC"},
+            {"CHUN", "\uCD98"}, {"CHUO", "\uD0C1"}, {"CI", "\uC790"}, {"CONG", "\uC885"}, {"COU", "\uC8FC"},
             {"CU", "\uCD08"}, {"CUAN", "\uCC2C"}, {"CUI", "\uCD5C"}, {"CUN", "\uCD0C"}, {"CUO", "\uCC29"},
             {"DA", "\uB300"}, {"DAI", "\uB300"}, {"DAN", "\uB2E8"}, {"DANG", "\uB2F9"}, {"DAO", "\uB304"},
             {"DE", "\uB355"}, {"DENG", "\uB4F1"}, {"DI", "\uC9C0"}, {"DIAN", "\uC804"}, {"DIAO", "\uC870"},
