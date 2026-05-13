@@ -17,18 +17,21 @@ public class SponsorshipApplicationService {
     private final SponsorshipApplicationRepository repository;
     private final DataEncryptionService dataEncryptionService;
     private final DataHashService dataHashService;
+    private final PointRewardService pointRewardService;
 
     public SponsorshipApplicationService(
             SponsorshipApplicationRepository repository,
             DataEncryptionService dataEncryptionService,
-            DataHashService dataHashService
+            DataHashService dataHashService,
+            PointRewardService pointRewardService
     ) {
         this.repository = repository;
         this.dataEncryptionService = dataEncryptionService;
         this.dataHashService = dataHashService;
+        this.pointRewardService = pointRewardService;
     }
 
-    public SponsorshipApplicationResponse create(SponsorshipApplicationRequest request) {
+    public SponsorshipApplicationResponse create(SponsorshipApplicationRequest request, Long userId) {
         String normalizedName = request.name().trim();
         String normalizedPhone = normalizePhone(request.phoneNumber());
         String normalizedBankAccount = normalizeBankAccount(request.bankAccount());
@@ -56,6 +59,11 @@ public class SponsorshipApplicationService {
         entity.setAddress(normalizedAddress);
 
         SponsorshipApplication saved = repository.save(entity);
+        
+        if (userId != null) {
+            pointRewardService.earnActivityPoints(userId, "후원 신청 참여 리워드");
+        }
+
         return new SponsorshipApplicationResponse(
                 saved.getId(),
                 saved.getName(),

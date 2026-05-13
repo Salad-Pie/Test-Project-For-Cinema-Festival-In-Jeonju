@@ -15,12 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class ExperienceZoneSurveyService {
 
     private final ExperienceZoneSurveyRepository repository;
+    private final PointRewardService pointRewardService;
 
-    public ExperienceZoneSurveyService(ExperienceZoneSurveyRepository repository) {
+    public ExperienceZoneSurveyService(ExperienceZoneSurveyRepository repository, PointRewardService pointRewardService) {
         this.repository = repository;
+        this.pointRewardService = pointRewardService;
     }
 
-    public SimpleCreatedResponse create(ExperienceZoneSurveyRequest request) {
+    public SimpleCreatedResponse create(ExperienceZoneSurveyRequest request, Long userId) {
         String normalizedName = request.name().trim();
         String normalizedPhone = normalizePhone(request.phoneNumber());
         boolean duplicateIn10m = repository.existsByNameAndPhoneNumberAndCreatedAtAfter(
@@ -40,6 +42,11 @@ public class ExperienceZoneSurveyService {
         entity.setDesiredGoods(request.desiredGoods().trim());
         entity.setFeedback(request.feedback().trim());
         ExperienceZoneSurvey saved = repository.save(entity);
+
+        if (userId != null) {
+            pointRewardService.earnActivityPoints(userId, "체험존 설문 참여 리워드");
+        }
+
         return new SimpleCreatedResponse(saved.getId());
     }
 

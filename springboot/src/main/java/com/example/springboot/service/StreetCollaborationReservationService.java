@@ -17,12 +17,14 @@ public class StreetCollaborationReservationService {
 
     private static final int CAPACITY_PER_SLOT = 50;
     private final StreetCollaborationReservationRepository repository;
+    private final PointRewardService pointRewardService;
 
-    public StreetCollaborationReservationService(StreetCollaborationReservationRepository repository) {
+    public StreetCollaborationReservationService(StreetCollaborationReservationRepository repository, PointRewardService pointRewardService) {
         this.repository = repository;
+        this.pointRewardService = pointRewardService;
     }
 
-    public StreetCollaborationReservationResponse create(StreetCollaborationReservationRequest request) {
+    public StreetCollaborationReservationResponse create(StreetCollaborationReservationRequest request, Long userId) {
         validateReservationAt(request.reservationAt());
         String normalizedName = request.name().trim();
         String normalizedPhone = normalizePhone(request.phoneNumber());
@@ -47,6 +49,11 @@ public class StreetCollaborationReservationService {
         entity.setReservationAt(request.reservationAt());
 
         StreetCollaborationReservation saved = repository.save(entity);
+
+        if (userId != null) {
+            pointRewardService.earnActivityPoints(userId, "거리 협업 예약 참여 리워드");
+        }
+
         return new StreetCollaborationReservationResponse(
                 saved.getId(),
                 saved.getName(),
