@@ -8,7 +8,7 @@ public enum ErrorCode {
     DUPLICATE_SURVEY(HttpStatus.CONFLICT, "이미 설문에 참여한 내역이 있습니다. 잠시 후 다시 시도해 주세요."),
     CAPACITY_FULL(HttpStatus.CONFLICT, "해당 시간은 신청이 마감되었습니다."),
     INVALID_RESERVATION_SLOT(HttpStatus.BAD_REQUEST, "신청 가능한 날짜와 시간을 확인해 주세요."),
-    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "JPG, JPEG, PNG 파일만 업로드할 수 있습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "JPG, PNG, WebP, GIF, BMP 형식의 이미지만 업로드할 수 있습니다."),
     INVALID_FILE(HttpStatus.BAD_REQUEST, "업로드할 이미지 파일을 확인해 주세요."),
     STORAGE_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "파일 저장 설정이 필요합니다. 관리자에게 문의해 주세요."),
     CERTIFICATE_TEMPLATE_NOT_FOUND(HttpStatus.SERVICE_UNAVAILABLE, "증명서 템플릿 설정이 필요합니다. 관리자에게 문의해 주세요."),

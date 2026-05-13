@@ -148,12 +148,16 @@ public class S3UploadService {
 
     private void validateSupportedImage(MultipartFile file, String originalFilename) {
         String extension = getExtension(originalFilename);
-        if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
+        List<String> allowedExtensions = List.of("jpg", "jpeg", "png", "webp", "gif", "bmp");
+        if (!allowedExtensions.contains(extension)) {
+            log.warn("Unsupported file extension: {}", extension);
             throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
 
         String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
-        if (!contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
+        List<String> allowedContentTypes = List.of("image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp");
+        if (!allowedContentTypes.contains(contentType)) {
+            log.warn("Unsupported content type: {}", contentType);
             throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
         }
     }

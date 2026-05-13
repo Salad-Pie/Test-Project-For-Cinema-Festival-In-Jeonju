@@ -32,7 +32,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         log.info("Handled bad request. message={}", ex.getMessage());
-        return ResponseEntity.badRequest().body(new ApiErrorResponse("BAD_REQUEST", BAD_REQUEST_MESSAGE, null));
+        return ResponseEntity.badRequest().body(new ApiErrorResponse("BAD_REQUEST", ex.getMessage(), null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -60,6 +60,13 @@ public class ApiExceptionHandler {
         log.info("Handled data integrity error. message={}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ApiErrorResponse("DUPLICATE_APPLICATION", DUPLICATE_MESSAGE, null));
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMaxUploadSizeExceeded(org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        log.info("Handled max upload size exceeded error. message={}", ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(new ApiErrorResponse("FILE_TOO_LARGE", "파일 크기는 최대 20MB까지 허용됩니다.", null));
     }
 
     @ExceptionHandler(Exception.class)

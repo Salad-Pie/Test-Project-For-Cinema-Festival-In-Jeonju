@@ -2,6 +2,11 @@ spring:
   application:
     name: springboot
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
   jpa:
     show-sql: true
     hibernate:
