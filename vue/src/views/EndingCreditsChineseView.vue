@@ -65,7 +65,7 @@ const state = reactive({
   // 인도네시아 페이지와 동일한 기능 추가
   leadMessage: '',
   tailMessage: '',
-  rollDurationSeconds: 30, // 30초를 기본값으로 설정
+  rollDurationSeconds: 60, // 60초를 기본값으로 설정
   rollGapPx: 100,
   fontScalePercent: 100,
   stopAfterOneCycle: false,
