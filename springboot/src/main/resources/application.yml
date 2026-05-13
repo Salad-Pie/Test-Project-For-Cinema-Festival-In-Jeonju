@@ -4,6 +4,12 @@ spring:
 
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: update
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
   mail:
     host: smtp.gmail.com
@@ -72,4 +78,4 @@ app:
       region: ${AWS_REGION:ap-northeast-2}
       presigned-download-expiration-minutes: ${AWS_S3_PRESIGNED_DOWNLOAD_EXPIRATION_MINUTES:10}
   security:
-    data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:}
+    data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:12345678901234567890123456789012}

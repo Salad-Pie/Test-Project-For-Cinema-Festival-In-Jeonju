@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record AdminSignatureResponse(
         Long id,
         Long userId,
+        String imageUrl,
         String originalName,
         String recognizedText,
         String englishName,

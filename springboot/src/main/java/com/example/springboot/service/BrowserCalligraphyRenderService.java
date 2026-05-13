@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class BrowserCalligraphyRenderService {
 
     private static final Logger log = LoggerFactory.getLogger(BrowserCalligraphyRenderService.class);
-    private static final String FONT_RESOURCE_PATH = "/fonts/NanumBrushScript-Regular.ttf";
+    private static final String FONT_RESOURCE_PATH = "/fonts/YMAE07.TTF";
 
     public byte[] render(String text, int width, int height) {
         String normalizedText = text == null ? "" : text.trim();
@@ -57,7 +57,7 @@ public class BrowserCalligraphyRenderService {
                   <meta charset=\"UTF-8\" />
                   <style>
                     @font-face {
-                      font-family: 'NanumBrushScript';
+                      font-family: 'YangjaeMaehwaS';
                       src: url('%s') format('truetype');
                       font-weight: 400;
                       font-style: normal;
@@ -88,7 +88,7 @@ public class BrowserCalligraphyRenderService {
                       padding: 18px 32px;
                     }
                     .calligraphy-text {
-                      font-family: 'NanumBrushScript', cursive;
+                      font-family: 'YangjaeMaehwaS', cursive;
                       font-size: 180px;
                       font-weight: 400;
                       color: #050505;

@@ -18,7 +18,7 @@ public class CertificatePdfService {
     private static final String TEMPLATE_PATH = "/certificates/Certification_Sample.pdf";
     private static final Box ENGLISH_NAME_BOX = new Box(185, 563, 235, 46);
     private static final Box KOREAN_NAME_BOX = new Box(205, 513, 195, 46);
-    private static final Box ORIGINAL_SIGNATURE_BOX = new Box(220, 405, 165, 76);
+    private static final Box ORIGINAL_SIGNATURE_BOX = new Box(125, 360, 360, 121);
     private static final int IMAGE_SCALE = 4;
 
     private final SignatureImageService signatureImageService;

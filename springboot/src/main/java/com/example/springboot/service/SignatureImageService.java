@@ -10,7 +10,9 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
+import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -18,10 +20,13 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,6 +36,7 @@ public class SignatureImageService {
     private static final String BUNDLED_KOREAN_CALLIGRAPHY_FONT_PATH = "/fonts/GapyeongHanseokbongB.ttf";
     private static final String BUNDLED_KOREAN_SERIF_FONT_PATH = "/fonts/HANBatangB.ttf";
     private static final String BUNDLED_LATIN_SCRIPT_FONT_PATH = "/fonts/BRUSHSCI.TTF";
+    private static final String BUNDLED_YANGJAE_MAEHWA_FONT_PATH = "fonts/YMAE07.TTF";
 
     private static final String[] KOREAN_FONT_CANDIDATES = {
             "Nanum Brush Script",
@@ -222,6 +228,73 @@ public class SignatureImageService {
                 imageHeight
         );
         return renderStrongCalligraphyTextLegacy(value, imageWidth, imageHeight);
+    }
+
+    public byte[] renderYangjaeMaehwaSignatureText(String text, Integer width, Integer height) {
+        String value = defaultText(text);
+        int imageWidth = defaultNumber(width, 1400);
+        int imageHeight = defaultNumber(height, 520);
+        int fakeBoldCount = 1;
+
+        log.info(
+                "Rendering Yangjae Maehwa signature text. textLength={} width={} height={} fakeBoldCount={}",
+                value.length(),
+                imageWidth,
+                imageHeight,
+                fakeBoldCount
+        );
+
+          BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+          Graphics2D graphics = image.createGraphics();
+          try {
+              applyYangjaeQuality(graphics);
+              graphics.setBackground(new Color(0, 0, 0, 0));
+              graphics.clearRect(0, 0, imageWidth, imageHeight);
+              graphics.setColor(new Color(5, 5, 5));
+
+            FontRenderContext fontRenderContext = graphics.getFontRenderContext();
+            double contentLeftPadding = imageWidth * 0.02d;
+            double contentRightPadding = imageWidth * 0.02d;
+            double availableWidth = Math.max(1d, imageWidth - contentLeftPadding - contentRightPadding);
+            double availableHeight = imageHeight * 0.78d;
+            int baseFontSize = findYangjaeFixedFontSize(imageHeight);
+            Font font = resolveYangjaeSingleLineFont(graphics, value, baseFontSize, fontRenderContext, availableWidth, availableHeight);
+            graphics.setFont(font);
+            TextLayout textLayout = new TextLayout(value, font, fontRenderContext);
+            Rectangle2D bounds = textLayout.getBounds();
+            double scaleX = Math.min(1.10d, (availableWidth * 0.94d) / Math.max(1d, bounds.getWidth()));
+            double baselineY = (imageHeight - bounds.getHeight()) / 2d - bounds.getY();
+
+            log.info(
+                    "Rendering Yangjae Maehwa signature layout. textLength={} availableWidth={} availableHeight={} fontSize={} boundsWidth={} boundsHeight={} scaleX={}",
+                    value.length(),
+                    availableWidth,
+                    availableHeight,
+                    font.getSize2D(),
+                    bounds.getWidth(),
+                    bounds.getHeight(),
+                    scaleX
+            );
+
+            Graphics2D transformedGraphics = (Graphics2D) graphics.create();
+            try {
+                transformedGraphics.setRenderingHints(graphics.getRenderingHints());
+                AffineTransform transform = new AffineTransform();
+                transform.translate(contentLeftPadding - bounds.getX() * scaleX, baselineY);
+                transform.scale(scaleX, 1d);
+                transform.shear(-0.18d, 0d);
+                transform.rotate(Math.toRadians(-1.2d), imageWidth / 2d, imageHeight / 2d);
+                transformedGraphics.setTransform(transform);
+
+                drawFakeBoldString(transformedGraphics, value, 0f, 0f, fakeBoldCount);
+            } finally {
+                transformedGraphics.dispose();
+            }
+
+            return toPng(image);
+        } finally {
+            graphics.dispose();
+        }
     }
 
     private byte[] renderStrongCalligraphyTextLegacy(String value, int imageWidth, int imageHeight) {
@@ -610,6 +683,13 @@ public class SignatureImageService {
         graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
     }
 
+    private void applyYangjaeQuality(Graphics2D graphics) {
+        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+    }
+
     private byte[] toPng(BufferedImage image) {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             ImageIO.write(image, "png", output);
@@ -628,6 +708,51 @@ public class SignatureImageService {
             return defaultValue;
         }
         return value.trim();
+    }
+
+    private Font loadYangjaeMaehwaFont(float fontSize) {
+        try (InputStream inputStream = new ClassPathResource(BUNDLED_YANGJAE_MAEHWA_FONT_PATH).getInputStream()) {
+            try {
+                return Font.createFont(Font.TRUETYPE_FONT, inputStream).deriveFont(Font.PLAIN, fontSize);
+            } catch (Exception first) {
+                try (InputStream fallbackInputStream = new ClassPathResource(BUNDLED_YANGJAE_MAEHWA_FONT_PATH).getInputStream()) {
+                    return Font.createFont(Font.TYPE1_FONT, fallbackInputStream).deriveFont(Font.PLAIN, fontSize);
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("failed to load Yangjae Maehwa font.", e);
+        }
+    }
+
+    private int findYangjaeFixedFontSize(int height) {
+        return Math.max(64, (int) Math.round(height * 0.42d));
+    }
+
+    private Font resolveYangjaeSingleLineFont(
+            Graphics2D graphics,
+            String text,
+            int baseFontSize,
+            FontRenderContext fontRenderContext,
+            double availableWidth,
+            double availableHeight
+    ) {
+        for (int fontSize = baseFontSize; fontSize >= Math.max(48, baseFontSize - 2); fontSize--) {
+            Font candidate = loadYangjaeMaehwaFont(fontSize);
+            TextLayout layout = new TextLayout(text, candidate, fontRenderContext);
+            Rectangle2D bounds = layout.getBounds();
+            if (bounds.getHeight() <= availableHeight && bounds.getWidth() <= availableWidth) {
+                return candidate;
+            }
+        }
+        return loadYangjaeMaehwaFont(baseFontSize);
+    }
+
+    private void drawFakeBoldString(Graphics2D graphics, String text, float x, float y, int fakeBoldCount) {
+        for (int dx = 0; dx <= fakeBoldCount; dx++) {
+            for (int dy = 0; dy <= fakeBoldCount; dy++) {
+                graphics.drawString(text, x + dx, y + dy);
+            }
+        }
     }
 
     private Font createFont(String fontFamily, int style, int size, String sampleText) {

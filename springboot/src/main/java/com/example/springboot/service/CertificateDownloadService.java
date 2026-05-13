@@ -3,10 +3,13 @@ package com.example.springboot.service;
 import com.example.springboot.domain.IdentifierCode;
 import com.example.springboot.domain.Signature;
 import com.example.springboot.dto.EndingCreditsEntryResponse;
+import com.example.springboot.dto.RecentSignatureResponse;
 import com.example.springboot.exception.BusinessException;
 import com.example.springboot.exception.ErrorCode;
 import com.example.springboot.repository.IdentifierCodeRepository;
 import com.example.springboot.repository.SignatureRepository;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -75,6 +78,25 @@ public class CertificateDownloadService {
                 koreanName != null,
                 true
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecentSignatureResponse> getRecentSignaturesForEndingCredits(int minutesAgo) {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(minutesAgo);
+        List<Signature> signatures = signatureRepository.findByCreatedAtAfter(threshold);
+        
+        return signatures.stream()
+                .map(sig -> {
+                    String code = identifierCodeRepository.findTopByUserIdOrderByIdDesc(sig.getUser().getId())
+                            .map(IdentifierCode::getCode)
+                            .orElse("******");
+                    return new RecentSignatureResponse(
+                            code,
+                            blankToDefault(sig.getOriginalName(), sig.getEnglishName()),
+                            resolveKoreanName(sig)
+                    );
+                })
+                .toList();
     }
 
     private Signature findSignatureByCode(String code) {

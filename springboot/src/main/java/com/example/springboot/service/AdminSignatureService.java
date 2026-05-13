@@ -20,15 +20,18 @@ public class AdminSignatureService {
     private final SignatureRepository signatureRepository;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final S3UploadService s3UploadService;
 
     public AdminSignatureService(
             SignatureRepository signatureRepository,
             UserRepository userRepository,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            S3UploadService s3UploadService
     ) {
         this.signatureRepository = signatureRepository;
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.s3UploadService = s3UploadService;
     }
 
     public List<AdminSignatureResponse> signatures(String authorization) {
@@ -36,6 +39,31 @@ public class AdminSignatureService {
         return signatureRepository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt")).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public List<AdminSignatureResponse> lowConfidenceSignatures(String authorization, Double threshold) {
+        requireAdmin(authorization);
+        return signatureRepository.findByOcrConfidenceLessThan(threshold).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public AdminSignatureResponse updateSignature(String authorization, Long id, String correctedText, String status) {
+        requireAdmin(authorization);
+        Signature signature = signatureRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Signature not found."));
+        
+        if (correctedText != null) {
+            signature.setKoreanName(correctedText); 
+            signature.setNameConversionSource(com.example.springboot.domain.NameConversionSource.MANUAL);
+        }
+        
+        if (status != null) {
+            signature.setOcrStatus(com.example.springboot.domain.OcrStatus.valueOf(status.toUpperCase()));
+        }
+        
+        return toResponse(signature);
     }
 
     private void requireAdmin(String authorization) {
@@ -56,9 +84,19 @@ public class AdminSignatureService {
     }
 
     private AdminSignatureResponse toResponse(Signature item) {
+        String imageUrl = null;
+        if (item.getOriginalS3Key() != null) {
+            try {
+                imageUrl = s3UploadService.createPresignedDownloadUrl(item.getOriginalS3Key());
+            } catch (Exception e) {
+                // Log error or ignore
+            }
+        }
+
         return new AdminSignatureResponse(
                 item.getId(),
                 item.getUser().getId(),
+                imageUrl,
                 item.getOriginalName(),
                 item.getRecognizedText(),
                 item.getEnglishName(),
