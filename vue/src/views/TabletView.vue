@@ -260,7 +260,6 @@ async function confirmPreviewSignatureOnTablet() {
     />
     <div class="actions">
       <button :disabled="globalState.loading" @click="clearSignature">{{ t('tablet.clear') }}</button>
-      <button :disabled="globalState.loading || !tabletState.verifiedToken" @click="submitSignature">{{ t('tablet.save') }}</button>
     </div>
     <div class="actions">
       <button :disabled="globalState.loading || !tabletState.verifiedToken" @click="previewSignatureOnTablet">OCR 확인</button>
