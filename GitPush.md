@@ -23,6 +23,15 @@
 - **[MODIFY]** `vue/src/views/TabletView.vue`
   - **[UPDATE]** 서명 저장 완료 후 1.5초 뒤 화면 자동 새로고침(Refresh) 로직 추가
   - **[CLEANUP]** OCR 확인 결과에서 의미 번역, 감지 언어, 신뢰도 정보 노출 제거
+- **[MODIFY]** `vue/src/views/EmailSignupView.vue`
+  - **[FEAT]** 회원가입 성공 시 2초 후 이메일 로그인 페이지로 자동 리다이렉트 기능 추가
+- **[MODIFY]** `vue/src/components/LanguageSelector.vue` & `vue/src/i18n.js`
+  - **[FEAT]** 모든 페이지 상단에 전역 '홈으로' 버튼 추가 및 다국어 지원
+- **[MODIFY]** `springboot/src/main/java/com/example/springboot/service/EnglishKoreanNameService.java`
+  - **[UPDATE]** 전수 병음(400여 개)에 대한 한국어 한자 독음 매핑 완료 (XI, ZHANG 등 정밀 보완)
+- **[MODIFY]** `vue/src/views/EndingCreditsChineseView.vue`
+  - **[FEAT]** 25분 자동 시퀀스 트리거를 '전체화면 진입 시점'으로 변경
+  - **[UPDATE]** 중국인 전용 작별 인사 '자동 문구' 매크로 업데이트 및 버튼 명칭 변경
 
 ### 🛠️ 주요 기능 검증 결과
 1. **OAuth 로그인**: 카카오/구글 로그인 후 정상적으로 토큰이 발급되어 로컬 스토리지에 저장됨을 확인.

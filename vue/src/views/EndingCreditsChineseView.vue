@@ -31,32 +31,28 @@ AX 융복합 한 코드 프로젝트
 
 // 중국인 관광객용 최종 문구 (기존 유지용)
 const tailPreset1 = `“이제 우리는 손님과 주최자가 아니라… 친구가 되었습니다!”
-“Now we are not just guests and hosts…
-we have become friends!”
+“现在，我们不再只是客人与主人……
+我们已经成为朋友了！”
 
 오늘 전주에서 함께한 시간이
 여러분에게 따뜻한 기억으로
 남기를 바랍니다.
-We hope the time we
-spent together in Jeonju today
-becomes a warm memory for
-all of you.
+希望今天我们在全州一起度过的时光，
+能成为大家温暖的回忆。
 
 여러분과 함께 한국의 문화와
-마음을 나눌 수 있어 정말 행
-복했습니다.
-We were very happy to
-share Korean culture and heart
-with you.
+마음을 나눌 수 있어 정말 행복했습니다.
+能够和大家一起分享韩国의 文化与心意，
+我们感到非常幸福。
 
 다음에는 여행자가 아니라
-친구로 만나기를 기대하겠습니다
-Next time, we look forward to
-meeting you as friends,
-not as travelers.
+친구로 만나기를 기대하겠습니다.
+期待下一次，
+我们不再以旅行者的身份相见，
+而是作为朋友再次相聚。
 
 감사합니다.
-Thank you very much.`
+非常感谢大家。`
 
 const state = reactive({
   entries: [],
@@ -210,15 +206,20 @@ async function toggleFullscreen() {
   if (!document.fullscreenElement) {
     await target.requestFullscreen()
     state.isFullscreen = true
+    // 전체화면 진입 시 시퀀스 처음부터 시작
+    startPhaseTimer()
   } else {
     await document.exitFullscreen()
     state.isFullscreen = false
+    // 전체화면 해제 시 타이머 중단 (선택 사항: 원하시면 유지 가능)
+    clearTimeout(phaseTimer.value)
+    state.currentPhase = phases.NAMES
   }
 }
 
 onMounted(async () => {
   await fetchRecentEntries()
-  startPhaseTimer()
+  // 자동 시작 제거
   highlightTimer.value = setInterval(monitorCenterLine, 150)
   document.addEventListener('fullscreenchange', syncFullscreen)
 })
@@ -237,7 +238,7 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
 
 <template>
   <section class="ending-credits-cn-page">
-    <div ref="shellRef" class="ending-credits-shell" :class="{ 'is-fullscreen': state.isFullscreen, 'is-black': state.currentPhase === phases.BLACK }">
+    <div ref="shellRef" class="ending-credits-shell" :class="{ 'is-fullscreen': state.isFullscreen, 'is-black': state.currentPhase === phases.BLACK || state.currentPhase === phases.FINAL }">
       
       <!-- 상단 메인 영역 (100vh) -->
       <div class="ending-credits-hero">
@@ -314,7 +315,7 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
             <div class="setting-item full-width">
               <div class="d-flex justify-content-between mb-1">
                 <label>최상단 추가 문구</label>
-                <button class="btn btn-xs btn-link p-0 text-info" @click="state.leadMessage = leadPreset1">기본값 적용</button>
+                <button class="btn btn-xs btn-link p-0 text-info" @click="state.leadMessage = leadPreset1">자동 문구</button>
               </div>
               <textarea v-model="state.leadMessage" rows="2" placeholder="롤링 시작 부분에 표시될 문구"></textarea>
             </div>
@@ -322,7 +323,7 @@ const tailLines = computed(() => state.tailMessage.split('\n').map(l => l.trim()
             <div class="setting-item full-width">
               <div class="d-flex justify-content-between mb-1">
                 <label>이름 뒤 추가 문구</label>
-                <button class="btn btn-xs btn-link p-0 text-info" @click="state.tailMessage = tailPreset1">기본값 적용</button>
+                <button class="btn btn-xs btn-link p-0 text-info" @click="state.tailMessage = tailPreset1">자동 문구</button>
               </div>
               <textarea v-model="state.tailMessage" rows="2" placeholder="이름 목록 바로 뒤에 표시될 문구"></textarea>
             </div>

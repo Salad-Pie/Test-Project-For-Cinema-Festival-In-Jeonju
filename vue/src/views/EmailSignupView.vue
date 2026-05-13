@@ -5,7 +5,7 @@ import { apiFetchWithBase } from '../api/client'
 import { saveIdeaContestLogin, saveIdeaContestAuthToken, getGlobalRedirectPath, clearGlobalRedirectPath } from '../utils/authStorage'
 import { parseJwtPayload } from '../utils/jwt'
 
-const { t, locale, state: globalState, setSafeError } = inject('appContext')
+const { t, locale, state: globalState, setSafeError, pageHref } = inject('appContext')
 
 const emailLoginState = reactive({
   email: '',
@@ -61,7 +61,9 @@ async function verifyEmailLoginCode() {
     saveIdeaContestLogin(result.userId)
     saveIdeaContestAuthToken(result.registerToken)
     globalState.message = t('auth.emailSignupSuccess')
-    redirectAfterLogin()
+    setTimeout(() => {
+      window.location.href = pageHref('/login/email')
+    }, 2000)
   } catch (e) {
     setSafeError(e)
   } finally {

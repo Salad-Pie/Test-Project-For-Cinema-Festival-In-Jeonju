@@ -4,6 +4,7 @@ const ko = {
   lang: { label: '언어', ko: '한국어', en: 'English', zh: '中文', ja: '日本語' },
   home: { login: '로그인', pageLinks: '페이지 이동' },
   nav: {
+    home: '홈으로',
     loginPage: '로그인 페이지',
     kakaoLogin: '카카오 로그인',
     googleLogin: '구글 로그인',
@@ -329,6 +330,7 @@ const en = {
   lang: { label: 'Language', ko: '한국어', en: 'English', zh: '中文', ja: '日本語' },
   home: { login: 'Login', pageLinks: 'Page Links' },
   nav: {
+    home: 'Home',
     loginPage: 'Login Page',
     kakaoLogin: 'Kakao Login',
     googleLogin: 'Google Login',
@@ -609,6 +611,7 @@ const zh = {
   lang: { label: '语言', ko: '한국어', en: 'English', zh: '中文', ja: '日本語' },
   home: { login: '登录', pageLinks: '页面链接' },
   nav: {
+    home: '回到首页',
     loginPage: '登录页面',
     kakaoLogin: 'Kakao 登录',
     googleLogin: 'Google 登录',
