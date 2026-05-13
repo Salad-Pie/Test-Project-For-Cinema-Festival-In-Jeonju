@@ -39,23 +39,34 @@ public class IdeaContestService {
         this.pointRewardService = pointRewardService;
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IdeaContestService.class);
+
     public IdeaContestResponse create(String token, List<MultipartFile> images) {
+        log.info("Idea contest proposal request received. imageCount={}", images == null ? 0 : images.size());
+        
         if (token == null || token.isBlank()) {
+            log.warn("Idea contest failed: Authorization token is missing.");
             throw new IllegalArgumentException("authorization token is required.");
         }
         if (images == null || images.stream().noneMatch(f -> f != null && !f.isEmpty())) {
+            log.warn("Idea contest failed: No valid images provided.");
             throw new IllegalArgumentException("at least one image is required.");
         }
 
         TokenType tokenType = jwtTokenProvider.extractTokenType(token);
         if (tokenType != TokenType.REGISTER && tokenType != TokenType.VERIFIED) {
+            log.warn("Idea contest failed: Invalid token type. tokenType={}", tokenType);
             throw new IllegalArgumentException("token type is not valid for idea contest.");
         }
 
         Long userId = jwtTokenProvider.extractUserId(token);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("user not found."));
+                .orElseThrow(() -> {
+                    log.warn("Idea contest failed: User not found. userId={}", userId);
+                    return new IllegalArgumentException("user not found.");
+                });
 
+        log.info("Creating idea contest for userId={}", userId);
         IdeaContest ideaContest = new IdeaContest();
         ideaContest.setUser(user);
 

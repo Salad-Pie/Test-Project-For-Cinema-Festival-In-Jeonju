@@ -1,6 +1,7 @@
 package com.example.springboot.service;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -205,9 +206,14 @@ public class S3UploadService {
     }
 
     private String toWebpFilename(String originalFilename) {
-        String normalized = originalFilename.replace('\\', '-').replace('/', '-');
+        // 공백, 괄호 등 특수문자를 하이픈(-)으로 치환하여 안전한 파일명 생성
+        String normalized = originalFilename.replaceAll("[\\\\/\\s()]+", "-");
         int extensionIndex = normalized.lastIndexOf('.');
         String baseName = extensionIndex > 0 ? normalized.substring(0, extensionIndex) : normalized;
+        
+        // 연속된 하이픈 제거 및 앞뒤 하이픈 정리
+        baseName = baseName.replaceAll("-+", "-").replaceAll("^-|-$", "");
+        
         if (baseName.isBlank()) {
             baseName = "memo-image";
         }
