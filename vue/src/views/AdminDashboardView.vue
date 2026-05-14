@@ -59,7 +59,6 @@ const adminMenus = [
   <section class="admin-dashboard-container py-4">
     <div class="header-section mb-5 text-center">
       <h1 class="display-5 fw-bold text-primary">{{ t('admin.dashboardTitle') }}</h1>
-      <p class="text-muted">시스템 운영 및 데이터 관리를 위한 통합 컨트롤 센터입니다.</p>
     </div>
 
     <div class="row g-4">

@@ -244,7 +244,7 @@ const ko = {
     certificateBatchDownload: '증명서 일괄 다운로드(ZIP)',
   },
   admin: {
-    dashboardTitle: '관리자 통합 대시보드',
+    dashboardTitle: 'ZDO 관리자 대시보드',
     goToReservations: '예약 및 신청 현황',
     goToStatistics: '실시간 데이터 통계',
     goToUsers: '사용자 및 권한 관리',
