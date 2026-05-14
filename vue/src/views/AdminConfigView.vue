@@ -13,9 +13,9 @@ const { t, state: globalState } = inject('appContext')
  */
 const configState = reactive({
   capacities: [
-    { project: 'AX Space', capacity: 20 },
-    { project: 'K-Art AX', capacity: 15 },
-    { project: 'Street Collab', capacity: 50 },
+    { project: 'AX 공간 (AX Space)', capacity: 20 },
+    { project: 'K-Art AX 신청', capacity: 15 },
+    { project: '소상공인 협력 (Street)', capacity: 50 },
   ],
   maintenanceMode: false,
 })
@@ -24,7 +24,7 @@ const configState = reactive({
  * 설정을 저장하는 함수 (현재는 UI 피드백만 제공)
  */
 function saveConfig() {
-  globalState.message = 'Settings saved successfully.'
+  globalState.message = '설정이 저장되었습니다.'
 }
 </script>
 
@@ -53,6 +53,6 @@ function saveConfig() {
     </div>
 
     <!-- 설정 저장 버튼 -->
-    <button class="btn btn-primary w-100" @click="saveConfig">Save All Settings</button>
+    <button class="btn btn-primary w-100" @click="saveConfig">모든 설정 저장</button>
   </section>
 </template>

@@ -83,7 +83,7 @@ onMounted(() => {
       </div>
       <div class="col-md-6 text-end pt-4">
         <span class="text-muted small me-2" v-if="adminDataState.items.length > 0">
-          Total: <strong>{{ adminDataState.items.length }}</strong> rows
+          총: <strong>{{ adminDataState.items.length }}</strong> 건
         </span>
       </div>
     </div>
@@ -93,7 +93,7 @@ onMounted(() => {
         <thead class="thead-light">
           <tr>
             <th v-for="header in adminDataState.headers" :key="header">{{ header }}</th>
-            <th v-if="adminDataState.headers.length === 0">No Data</th>
+            <th v-if="adminDataState.headers.length === 0">데이터 없음</th>
           </tr>
         </thead>
         <tbody>

@@ -60,8 +60,7 @@ function downloadCertificates() {
 
 <template>
   <section class="card admin-export">
-    <h2>{{ t('adminExport.title') }}</h2>
-    <p class="text-muted mb-4">{{ t('adminExport.description') || 'Export system data for external reporting and analysis.' }}</p>
+    <h2 class="mb-4">{{ t('adminExport.title') }}</h2>
     
     <div class="d-grid gap-3">
       <!-- 엑셀 내보내기 버튼 -->
@@ -80,7 +79,7 @@ function downloadCertificates() {
 
     <div v-if="exportState.loading" class="mt-3 text-center">
       <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-      <span>{{ t('common.processing') || 'Processing...' }}</span>
+      <span>{{ t('common.processing') || '처리 중...' }}</span>
     </div>
   </section>
 </template>

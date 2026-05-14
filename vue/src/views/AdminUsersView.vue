@@ -106,7 +106,7 @@ onMounted(() => {
                 :class="user.role === 'ADMIN' ? 'btn-outline-secondary' : 'btn-outline-danger'"
                 @click="toggleRole(user)"
               >
-                {{ user.role === 'ADMIN' ? 'Demote to USER' : 'Promote to ADMIN' }}
+                {{ user.role === 'ADMIN' ? 'USER로 변경' : 'ADMIN으로 승격' }}
               </button>
             </td>
           </tr>

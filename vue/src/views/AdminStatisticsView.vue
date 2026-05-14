@@ -73,7 +73,7 @@ onMounted(() => {
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>{{ t('adminStatistics.title') }}</h2>
       <button class="btn btn-sm btn-outline-primary" @click="fetchStatistics" :disabled="statsState.loading">
-        {{ t('common.refresh') || 'Refresh' }}
+        {{ t('common.refresh') || '새로고침' }}
       </button>
     </div>
 
@@ -138,27 +138,24 @@ onMounted(() => {
         <p v-else class="text-muted text-center py-5">{{ t('common.noData') }}</p>
       </article>
 
-      <!-- 사용자 언어 분포 (배지 형태) -->
+      <!-- 사용자 언어 분포 (시각화) -->
       <article class="card">
         <h3>{{ t('adminStatistics.userLocaleDistribution') }}</h3>
-        <div v-if="statsState.localeDistribution.length" class="d-flex flex-wrap gap-2 pt-3">
-          <div v-for="item in statsState.localeDistribution" :key="item.lang" class="locale-badge shadow-sm">
-            <span class="lang">{{ item.lang }}</span>
-            <span class="count">{{ item.count }}</span>
+        <div v-if="statsState.localeDistribution.length" class="share-chart mt-3">
+          <div v-for="item in statsState.localeDistribution" :key="item.lang" class="share-item">
+            <div class="share-info">
+              <span class="fw-bold">{{ item.lang }}</span>
+              <strong>{{ item.count }}건</strong>
+            </div>
+            <div class="progress-bg">
+              <div 
+                class="progress-fill bg-info" 
+                :style="{ width: `${(item.count / Math.max(...statsState.localeDistribution.map(i => i.count), 1)) * 100}%` }"
+              ></div>
+            </div>
           </div>
         </div>
         <p v-else class="text-muted text-center py-5">{{ t('common.noData') }}</p>
-      </article>
-
-      <!-- OCR 인식 정확도 (게이지 스타일) -->
-      <article class="card">
-        <h3>{{ t('adminStatistics.ocrAccuracy') }}</h3>
-        <div class="h-100 d-flex flex-column justify-content-center align-items-center pt-3">
-          <div class="accuracy-circle shadow-sm">
-            <span class="value">{{ statsState.ocrAccuracy }}%</span>
-          </div>
-          <small class="text-muted mt-3">{{ t('adminStatistics.averageConfidence') || 'Average Confidence' }}</small>
-        </div>
       </article>
     </div>
   </section>
@@ -248,50 +245,6 @@ onMounted(() => {
   background: #28a745;
   border-radius: 5px;
   transition: width 1s ease-out;
-}
-
-/* 언어 분포 배지 */
-.locale-badge {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  padding: 8px 15px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  transition: transform 0.2s;
-}
-.locale-badge:hover {
-  transform: translateY(-3px);
-  border-color: #007bff;
-}
-.locale-badge .lang {
-  font-weight: bold;
-  color: #333;
-}
-.locale-badge .count {
-  background: #007bff;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.8rem;
-}
-
-/* OCR 정확도 서클 */
-.accuracy-circle {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 8px solid #f0f0f0;
-  border-top-color: #007bff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-}
-.accuracy-circle .value {
-  font-size: 1.5rem;
-  color: #007bff;
 }
 
 .summary-card {
