@@ -264,6 +264,7 @@ provide('appContext', {
   ideaPosterUrl,
   bootstrapPages,
   isEndingCreditsPage,
+  isHome,
 })
 </script>
 
