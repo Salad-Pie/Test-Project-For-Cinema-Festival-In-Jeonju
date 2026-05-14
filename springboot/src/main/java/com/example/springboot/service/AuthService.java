@@ -103,6 +103,7 @@ public class AuthService {
         if (existingUser.isPresent()) {
             User user = existingUser.get();
             mergeUser(user, SignupProvider.EMAIL, null, request.name(), email, phone);
+            user.setLastLoginAt(java.time.OffsetDateTime.now());
             return issueTabletTokenForExisting(user);
         }
 
@@ -155,6 +156,7 @@ public class AuthService {
         }
 
         User user = savedCode.getUser();
+        user.setLastLoginAt(java.time.OffsetDateTime.now());
 
         TokenType tokenType = user.isVerified() ? TokenType.VERIFIED : TokenType.REGISTER;
         String token = jwtTokenProvider.generateToken(user.getId(), tokenType);
@@ -180,6 +182,7 @@ public class AuthService {
         }
 
         User user = savedCode.getUser();
+        user.setLastLoginAt(java.time.OffsetDateTime.now());
         return issueTabletTokenForExisting(user);
     }
 
@@ -226,6 +229,7 @@ public class AuthService {
         if (existingUser.isPresent()) {
             User user = existingUser.get();
             mergeUser(user, provider, profile.providerUserId(), profile.name(), email, phone);
+            user.setLastLoginAt(java.time.OffsetDateTime.now());
             return issueTabletTokenForExisting(user);
         }
 
