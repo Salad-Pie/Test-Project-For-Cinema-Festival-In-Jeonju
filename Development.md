@@ -25,7 +25,10 @@
 | 오시는길 | 주소, 주소 복사, 카카오/네이버 지도 길찾기 링크, 교통 안내 | `/location` |
 | i18n | 한국어, 영어, 중국어, 일본어 번역 구조 적용 | 전역 언어 선택 |
 | 주소 입력 | 주소 검색 API 스크립트 연동 후 상세주소 별도 입력 | 후원/설문 페이지 |
-| 관리자 대시보드 | ADMIN 권한 접근 가능한 대시보드 및 권한 없음 에러 화면 분기 | `/admin` |
+| 관리자 대시보드 | 현대적인 카드 그리드 레이아웃 개편, 아이콘 및 설명 추가 | `/admin` |
+| 데이터 브라우저 | 엔티티 선택 방식을 버튼에서 셀렉트 박스로 변경, 전체 건수 표시 | `/admin/data` |
+| 통계 시각화 | 등락 추이 그래프(Bar Chart), 점유율 차트(Progress) 도입 | `/admin/statistics` |
+| 사용자 관리 | 실제 데이터베이스 User 엔티티 연동 및 권한(Admin/User) 변경 기능 | `/admin/users` |
 | 로컬 개발 프록시 | Vite `/api` 요청을 Spring Boot `8080`으로 프록시 | `vue/vite.config.js` |
 
 ## Backend(Spring Boot)
@@ -56,6 +59,7 @@
 | 예외 표준화 | 예외 원문 미노출, 짧은 고정 메시지 응답 | ApiExceptionHandler |
 | 요청 로깅 | HTTP 요청 처리 로그 기록 | RequestLoggingFilter |
 | 데이터 브라우저 | 관리자용 전체 엔티티 데이터 조회 API | `/api/admin/data/{entityType}` |
+| 사용자 관리 | 관리자용 사용자 목록 조회 및 권한 수정 API | `/api/admin/users/**` |
 
 ## 주요 API 목록
 
@@ -82,6 +86,8 @@
 | `/api/experience-zone-surveys` | POST | 체험존 설문 제출 |
 | `/api/project-recruitments/{projectKey}` | POST | 프로젝트 모집 신청 |
 | `/api/admin/data/{entityType}` | GET | 전체 엔티티 데이터 조회 (Admin) |
+| `/api/admin/users` | GET | 전체 사용자 목록 조회 (Admin) |
+| `/api/admin/users/{userId}/role` | PATCH | 사용자 권한 수정 (Admin) |
 
 ## 데이터/보안 처리
 
@@ -146,7 +152,7 @@
 | Google Translation API Key | 영어 OCR 결과의 의미 기준 한글 번역 사용 시 필요 |
 | S3 권한 | 버킷, IAM 권한, CORS 정책 확인 필요 |
 | 운영 DB 마이그레이션 | `ddl-auto=update` 사용 중이나 운영에서는 별도 migration 도입 권장 |
-| 관리자 화면 | 신청/설문/예약 데이터 확인용 관리자 기능은 별도 필요 |
+| 관리자 화면 | 신청/설문/예약 데이터 확인용 관리자 기능 구현 완료 |
 
 ## 증명서 PDF 생성 기능 추가
 
@@ -352,13 +358,7 @@
 | 테스트 지향 설계 | 향후 모든 신규 코드 작성 시 테스트 용이성을 최우선으로 고려하는 원칙 수립 |
 | 최종 검증 | `./gradlew test` 실행 결과 모든 테스트(36개) 통과 확인 (BUILD SUCCESSFUL) |
 
-## 관리자 데이터 브라우저 및 통합 테스트 안정화 (2026-05-13)
-
-| 항목 | 내용 |
-|---|---|
-| 통합 테스트 | `ExhibitionSurveyIntegrationTest` 500 에러 해결 및 MockMvc 설정 최적화 |
-| Backend API | `AdminDataController`, `AdminDataService`를 통한 전 엔티티 조회 기능 구현 |
-| Frontend UI | `AdminDataView.vue`를 통한 동적 데이터 테이블 브라우저 구현 |
-| 권한 제어 | 관리자 권한(`ADMIN` role) 필수 체크 로직 적용 |
-| 다국어 지원 | 데이터 브라우저 관련 한국어/영어 문구 추가 |
-| 빌드 검증 | Spring Boot `compileJava` 및 Vue `npm run build` 전체 성공 확인 |
+| 관리자 페이지 | 관리자 대시보드 레이아웃 개편 및 통계 시각화 고도화 완료 |
+| 사용자 관리 연동 | 사용자 관리 페이지와 실제 DB User 엔티티 연동 및 권한 변경 기능 구현 |
+| 코드 정리 | 서명 검수, OCR 검수, 다국어 편집기 등 미사용 페이지 및 로직 삭제 |
+| 최종 빌드 검증 | Spring Boot `build` (테스트 포함) 및 Vue `build` 전체 성공 확인 |

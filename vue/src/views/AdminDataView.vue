@@ -68,18 +68,23 @@ onMounted(() => {
       </button>
     </div>
 
-    <div class="mb-4">
-      <label class="form-label font-weight-bold">{{ t('adminData.selectEntity') }}</label>
-      <div class="d-flex flex-wrap gap-2">
-        <button 
-          v-for="entity in adminDataState.entities" 
-          :key="entity.key"
-          :class="['btn', adminDataState.selectedEntity === entity.key ? 'btn-primary' : 'btn-outline-secondary']"
-          @click="adminDataState.selectedEntity = entity.key"
+    <div class="mb-4 row align-items-center">
+      <div class="col-md-6">
+        <label class="form-label font-weight-bold text-secondary mb-2">{{ t('adminData.selectEntity') }}</label>
+        <select 
+          class="form-select form-select-lg shadow-sm border-primary" 
+          v-model="adminDataState.selectedEntity"
           :disabled="globalState.loading"
         >
-          {{ entity.label }}
-        </button>
+          <option v-for="entity in adminDataState.entities" :key="entity.key" :value="entity.key">
+            {{ entity.label }}
+          </option>
+        </select>
+      </div>
+      <div class="col-md-6 text-end pt-4">
+        <span class="text-muted small me-2" v-if="adminDataState.items.length > 0">
+          Total: <strong>{{ adminDataState.items.length }}</strong> rows
+        </span>
       </div>
     </div>
 

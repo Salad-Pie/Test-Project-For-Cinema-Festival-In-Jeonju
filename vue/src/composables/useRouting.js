@@ -94,13 +94,10 @@ export function useRouting() {
   
   const isAdminDashboardPage = computed(() => routePath.value === '/admin' || routePath.value === '/admin/')
   const isAdminReservationsPage = computed(() => routePath.value.startsWith('/admin/reservations'))
-  const isAdminSignaturesPage = computed(() => routePath.value.startsWith('/admin/signatures'))
   const isAdminStatisticsPage = computed(() => routePath.value.startsWith('/admin/statistics'))
-  const isAdminOCRReviewPage = computed(() => routePath.value.startsWith('/admin/ocr-review'))
   const isAdminUsersPage = computed(() => routePath.value.startsWith('/admin/users'))
   const isAdminConfigPage = computed(() => routePath.value.startsWith('/admin/config'))
   const isAdminExportPage = computed(() => routePath.value.startsWith('/admin/export'))
-  const isAdminI18nEditorPage = computed(() => routePath.value.startsWith('/admin/i18n-editor'))
   const isAdminDataPage = computed(() => routePath.value.startsWith('/admin/data'))
 
   return {
@@ -140,13 +137,10 @@ export function useRouting() {
     isLocationPage,
     isAdminDashboardPage,
     isAdminReservationsPage,
-    isAdminSignaturesPage,
     isAdminStatisticsPage,
-    isAdminOCRReviewPage,
     isAdminUsersPage,
     isAdminConfigPage,
     isAdminExportPage,
-    isAdminI18nEditorPage,
     isAdminDataPage,
   }
 }

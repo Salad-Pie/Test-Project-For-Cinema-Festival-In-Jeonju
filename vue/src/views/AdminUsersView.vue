@@ -1,39 +1,89 @@
 <script setup>
 import { inject, reactive, onMounted } from 'vue'
+import { apiRoot } from '../config/api'
+import { getIdeaContestAuthToken } from '../utils/authStorage'
+import { parseErrorResponse } from '../api/client'
 
 /**
  * 전역 컨텍스트 주입
  */
-const { t, state: globalState } = inject('appContext')
+const { t, state: globalState, setSafeError } = inject('appContext')
 
 /**
  * 사용자 목록 상태
  */
 const usersState = reactive({
   users: [],
+  loading: false
 })
 
 /**
- * 마운트 시 사용자 목록 로드 (Mock 데이터)
+ * 백엔드로부터 실제 사용자 목록 로드
  */
+async function fetchUsers() {
+  usersState.loading = true
+  try {
+    const authToken = getIdeaContestAuthToken()
+    const res = await fetch(`${apiRoot}/admin/users`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+    
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    
+    usersState.users = await res.json()
+  } catch (e) {
+    setSafeError(e)
+  } finally {
+    usersState.loading = false
+  }
+}
+
+/**
+ * 사용자 권한 변경 (USER <-> ADMIN)
+ */
+async function toggleRole(user) {
+  const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN'
+  if (!confirm(`${user.email}의 권한을 ${newRole}(으)로 변경하시겠습니까?`)) return
+
+  try {
+    const authToken = getIdeaContestAuthToken()
+    const res = await fetch(`${apiRoot}/admin/users/${user.id}/role`, {
+      method: 'PATCH',
+      headers: { 
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ role: newRole })
+    })
+
+    if (!res.ok) throw new Error(await parseErrorResponse(res, t('common.requestFailed')))
+    
+    // 성공 시 로컬 데이터 업데이트
+    user.role = newRole
+  } catch (e) {
+    setSafeError(e)
+  }
+}
+
 onMounted(() => {
-  usersState.users = [
-    { id: 'user1', email: 'admin@zdo.co.kr', role: 'ADMIN', lastAccess: '2026-05-08 10:00' },
-    { id: 'user2', email: 'guest@naver.com', role: 'USER', lastAccess: '2026-05-07 15:30' },
-  ]
+  fetchUsers()
 })
 </script>
 
 <template>
   <section class="card admin-users">
-    <h2>{{ t('adminUsers.title') }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">{{ t('adminUsers.title') }}</h2>
+      <button class="btn btn-outline-primary btn-sm" @click="fetchUsers" :disabled="usersState.loading">
+        {{ t('common.refresh') || '새로고침' }}
+      </button>
+    </div>
     
-    <div class="admin-table-wrap">
-      <!-- 사용자 관리 테이블 -->
-      <table class="admin-table">
-        <thead>
+    <div class="admin-table-wrap shadow-sm rounded">
+      <table class="admin-table table table-hover mb-0">
+        <thead class="table-light">
           <tr>
-            <th>{{ t('adminSignatures.userId') }}</th>
+            <th>ID</th>
             <th>{{ t('adminReservations.email') }}</th>
             <th>{{ t('adminUsers.role') }}</th>
             <th>{{ t('adminUsers.lastAccess') }}</th>
@@ -43,17 +93,46 @@ onMounted(() => {
         <tbody>
           <tr v-for="user in usersState.users" :key="user.id">
             <td>{{ user.id }}</td>
-            <td>{{ user.email }}</td>
-            <!-- 권한에 따른 뱃지 색상 구분 -->
-            <td><span class="badge" :class="user.role === 'ADMIN' ? 'bg-danger' : 'bg-secondary'">{{ user.role }}</span></td>
-            <td>{{ user.lastAccess }}</td>
+            <td class="fw-bold">{{ user.email }}</td>
             <td>
-              <!-- 본인이 어드민이거나 어드민 권한 수정은 비활성화 예시 -->
-              <button class="btn btn-sm btn-outline-primary" :disabled="user.role === 'ADMIN'">{{ t('adminUsers.manageRole') }}</button>
+              <span class="badge" :class="user.role === 'ADMIN' ? 'bg-danger' : 'bg-success'">
+                {{ user.role }}
+              </span>
             </td>
+            <td>{{ user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '-' }}</td>
+            <td>
+              <button 
+                class="btn btn-sm" 
+                :class="user.role === 'ADMIN' ? 'btn-outline-secondary' : 'btn-outline-danger'"
+                @click="toggleRole(user)"
+              >
+                {{ user.role === 'ADMIN' ? 'Demote to USER' : 'Promote to ADMIN' }}
+              </button>
+            </td>
+          </tr>
+          <tr v-if="usersState.users.length === 0 && !usersState.loading">
+            <td colspan="5" class="text-center py-5 text-muted">사용자가 없습니다.</td>
           </tr>
         </tbody>
       </table>
     </div>
   </section>
 </template>
+
+<style scoped>
+.admin-users {
+  padding: 2rem;
+}
+.admin-table-wrap {
+  overflow-x: auto;
+  background: white;
+}
+.admin-table th {
+  font-weight: 600;
+  color: #495057;
+}
+.badge {
+  font-size: 0.85rem;
+  padding: 0.4em 0.8em;
+}
+</style>
