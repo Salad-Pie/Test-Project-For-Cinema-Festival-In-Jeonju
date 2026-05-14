@@ -50,12 +50,6 @@ function exportExcel() {
   exportCsv()
 }
 
-/**
- * 증명서들을 일괄 PDF로 압축하여 다운로드하는 함수
- */
-function downloadCertificates() {
-  globalState.message = 'Certificates are being bundled into a ZIP file...'
-}
 </script>
 
 <template>
@@ -70,10 +64,6 @@ function downloadCertificates() {
       <!-- CSV 내보내기 버튼 -->
       <button class="btn btn-outline-secondary py-3 d-flex align-items-center justify-content-center" @click="exportCsv" :disabled="exportState.loading">
         <i class="bi bi-file-earmark-spreadsheet me-2"></i> {{ t('adminExport.exportToCsv') }}
-      </button>
-      <!-- 증명서 일괄 다운로드 버튼 -->
-      <button class="btn btn-outline-primary py-3 d-flex align-items-center justify-content-center" @click="downloadCertificates" :disabled="exportState.loading">
-        <i class="bi bi-file-earmark-pdf me-2"></i> {{ t('adminExport.certificateBatchDownload') }}
       </button>
     </div>
 

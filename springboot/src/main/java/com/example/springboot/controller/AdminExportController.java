@@ -27,10 +27,16 @@ public class AdminExportController {
     ) {
         String csvData = exportService.exportReservationsToCsv(authorization);
         byte[] csvBytes = csvData.getBytes(StandardCharsets.UTF_8);
+        
+        // Add UTF-8 BOM for Excel compatibility
+        byte[] bom = new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] csvWithBom = new byte[bom.length + csvBytes.length];
+        System.arraycopy(bom, 0, csvWithBom, 0, bom.length);
+        System.arraycopy(csvBytes, 0, csvWithBom, bom.length, csvBytes.length);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"reservations_export.csv\"")
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .body(csvBytes);
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(csvWithBom);
     }
 }
