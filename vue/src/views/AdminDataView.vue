@@ -50,6 +50,34 @@ async function fetchAdminData() {
   }
 }
 
+/**
+ * 헤더 영문 필드명을 한국어로 변환하는 헬퍼
+ */
+function translateHeader(header) {
+  const mapping = {
+    id: '번호',
+    email: '이메일',
+    role: '권한',
+    createdAt: '생성일시',
+    updatedAt: '수정일시',
+    fullName: '성함',
+    phoneNumber: '연락처',
+    nickname: '닉네임',
+    status: '상태',
+    reservationDate: '예약일',
+    reservationTime: '예약시간',
+    amount: '금액',
+    paymentMethodType: '결제수단',
+    paymentProviderName: '기관명',
+    projectKey: '프로젝트키',
+    recognizedText: '인식텍스트',
+    koreanName: '한글명',
+    englishName: '영문명',
+    lastLoginAt: '최근로그인'
+  }
+  return mapping[header] || header
+}
+
 watch(() => adminDataState.selectedEntity, () => {
   fetchAdminData()
 })
@@ -92,7 +120,7 @@ onMounted(() => {
       <table class="admin-table table table-hover">
         <thead class="thead-light">
           <tr>
-            <th v-for="header in adminDataState.headers" :key="header">{{ header }}</th>
+            <th v-for="header in adminDataState.headers" :key="header">{{ translateHeader(header) }}</th>
             <th v-if="adminDataState.headers.length === 0">데이터 없음</th>
           </tr>
         </thead>

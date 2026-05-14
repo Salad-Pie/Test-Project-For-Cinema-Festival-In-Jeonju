@@ -10,4 +10,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findFirstByEmail(String email);
     Optional<User> findFirstByPhoneNumber(String phoneNumber);
     List<User> findByCreatedAtAfter(OffsetDateTime threshold);
+    List<User> findByRole(String role);
 }

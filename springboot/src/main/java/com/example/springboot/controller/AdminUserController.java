@@ -19,8 +19,14 @@ public class AdminUserController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<List<User>> getAllUsers(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(required = false) String role) {
         requireAdmin(authorization);
+        
+        if (role != null && !role.isEmpty()) {
+            return ResponseEntity.ok(userRepository.findByRole(role));
+        }
         return ResponseEntity.ok(userRepository.findAll());
     }
 
