@@ -127,7 +127,15 @@ onMounted(() => {
         <tbody>
           <tr v-for="(item, idx) in adminDataState.items" :key="idx">
             <td v-for="header in adminDataState.headers" :key="header" class="text-truncate" style="max-width: 200px;" :title="item[header]">
-              {{ item[header] !== null ? item[header] : '-' }}
+              <template v-if="Array.isArray(item[header])">
+                {{ item[header].length }}건
+              </template>
+              <template v-else-if="typeof item[header] === 'object' && item[header] !== null">
+                {{ item[header].email || item[header].name || item[header].id || '객체' }}
+              </template>
+              <template v-else>
+                {{ item[header] !== null ? item[header] : '-' }}
+              </template>
             </td>
           </tr>
           <tr v-if="adminDataState.items.length === 0">
