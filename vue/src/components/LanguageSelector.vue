@@ -28,19 +28,19 @@ function setLocale(next) {
     <nav class="nav-links">
       <a :href="pageHref('/')" class="nav-btn" :class="{ active: isHome }">
         <i class="bi bi-house-door-fill"></i>
-        <span>{{ t('nav.home') || '홈' }}</span>
+        <span>홈</span>
       </a>
       <a :href="pageHref('/login-page')" class="nav-btn">
         <i class="bi bi-person-fill"></i>
-        <span>{{ t('nav.login') || '로그인' }}</span>
+        <span>로그인</span>
       </a>
       <a :href="pageHref('/tablet')" class="nav-btn">
         <i class="bi bi-pen-fill"></i>
-        <span>{{ t('nav.tablet') || '서명' }}</span>
+        <span>서명</span>
       </a>
       <a :href="pageHref('/ending-credits-cn')" class="nav-btn">
         <i class="bi bi-camera-reels-fill"></i>
-        <span>{{ t('nav.endingCredits') || '엔딩 크레딧' }}</span>
+        <span>엔딩 크레딧</span>
       </a>
     </nav>
     

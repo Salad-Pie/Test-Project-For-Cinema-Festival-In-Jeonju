@@ -25,7 +25,7 @@ async function fetchUsers() {
   usersState.loading = true
   try {
     const authToken = getIdeaContestAuthToken()
-    const url = new URL(`${apiRoot}/admin/users`)
+    const url = new URL(`${apiRoot}/admin/users`, window.location.origin)
     if (usersState.selectedRole) {
       url.searchParams.append('role', usersState.selectedRole)
     }
@@ -92,51 +92,73 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- 권한 필터 영역 -->
-    <div class="mb-4 row">
-      <div class="col-md-4">
-        <label class="form-label small text-muted">{{ t('adminUsers.role') }} 필터</label>
-        <select class="form-select" v-model="usersState.selectedRole" :disabled="usersState.loading">
-          <option value="">전체 권한</option>
-          <option value="USER">USER (일반 사용자)</option>
-          <option value="ADMIN">ADMIN (관리자)</option>
-        </select>
+    <!-- 필터 및 검색 영역 -->
+    <div class="filter-section p-4 mb-4 rounded-4 shadow-sm border border-info-subtle bg-white">
+      <div class="row align-items-end g-3">
+        <div class="col-md-4">
+          <label class="form-label fw-bold text-secondary mb-2">
+            <i class="bi bi-filter-circle me-1"></i> {{ t('adminUsers.role') }} 필터
+          </label>
+          <select class="form-select form-select-lg" v-model="usersState.selectedRole" :disabled="usersState.loading">
+            <option value="">전체 권한 보기</option>
+            <option value="USER">일반 사용자 (USER)</option>
+            <option value="ADMIN">관리자 (ADMIN)</option>
+          </select>
+        </div>
+        <div class="col-md-8 text-end">
+          <span class="text-muted small me-3" v-if="usersState.users.length > 0">
+            총 <strong>{{ usersState.users.length }}</strong>명의 사용자가 검색되었습니다.
+          </span>
+        </div>
       </div>
     </div>
     
-    <div class="admin-table-wrap shadow-sm rounded">
-      <table class="admin-table table table-hover mb-0">
+    <div class="admin-table-wrap shadow-sm rounded-4 overflow-hidden border">
+      <table class="admin-table table table-hover mb-0 align-middle">
         <thead class="table-light">
           <tr>
-            <th>{{ t('adminReservations.id') }}</th>
-            <th>{{ t('adminReservations.email') }}</th>
-            <th>{{ t('adminUsers.role') }}</th>
-            <th>{{ t('adminUsers.lastAccess') }}</th>
-            <th>{{ t('adminUsers.manageRole') }}</th>
+            <th class="py-3 px-4">{{ t('adminReservations.id') }}</th>
+            <th class="py-3 px-4">사용자 정보</th>
+            <th class="py-3 px-4">{{ t('adminUsers.role') }}</th>
+            <th class="py-3 px-4">{{ t('adminUsers.lastAccess') }}</th>
+            <th class="py-3 px-4 text-center">{{ t('adminUsers.manageRole') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="user in usersState.users" :key="user.id">
-            <td>{{ user.id }}</td>
-            <td class="fw-bold">{{ user.email }}</td>
-            <td>
-              <span class="badge" :class="user.role === 'ADMIN' ? 'bg-danger' : 'bg-success'">
+            <td class="px-4 text-muted">#{{ user.id }}</td>
+            <td class="px-4">
+              <div class="d-flex flex-column">
+                <span class="fw-bold text-dark">{{ user.email || user.phone || '정보 없음' }}</span>
+                <span class="small text-muted" v-if="user.nickname && user.nickname !== 'nickname'">{{ user.nickname }}</span>
+              </div>
+            </td>
+            <td class="px-4">
+              <span class="badge rounded-pill" :class="user.role === 'ADMIN' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle'">
                 {{ user.role }}
               </span>
             </td>
-            <td>{{ user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '-' }}</td>
-            <td>
+            <td class="px-4 text-secondary small">
+              {{ user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '접속 기록 없음' }}
+            </td>
+            <td class="px-4 text-center">
               <button 
-                class="btn btn-sm" 
+                class="btn btn-sm px-3 rounded-pill" 
                 :class="user.role === 'ADMIN' ? 'btn-outline-secondary' : 'btn-outline-danger'"
                 @click="toggleRole(user)"
               >
-                {{ user.role === 'ADMIN' ? 'USER로 변경' : 'ADMIN으로 승격' }}
+                <i class="bi" :class="user.role === 'ADMIN' ? 'bi-person-dash' : 'bi-person-up'"></i>
+                {{ user.role === 'ADMIN' ? '일반으로 강등' : '관리자 승격' }}
               </button>
             </td>
           </tr>
           <tr v-if="usersState.users.length === 0 && !usersState.loading">
-            <td colspan="5" class="text-center py-5 text-muted">해당 권한의 사용자가 없습니다.</td>
+            <td colspan="5" class="text-center py-5">
+              <div class="py-4">
+                <i class="bi bi-people text-muted display-1 d-block mb-3"></i>
+                <p class="text-muted mb-0">조회된 사용자가 없습니다.</p>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -146,18 +168,51 @@ onMounted(() => {
 
 <style scoped>
 .admin-users {
-  padding: 2rem;
+  padding: 2.5rem;
+  background-color: #f8faff;
 }
+
+.filter-section {
+  transition: transform 0.2s ease;
+}
+
+.filter-section:hover {
+  transform: translateY(-2px);
+}
+
 .admin-table-wrap {
-  overflow-x: auto;
   background: white;
+  border: none !important;
 }
+
 .admin-table th {
-  font-weight: 600;
-  color: #495057;
-}
-.badge {
+  background-color: #f8f9fa;
   font-size: 0.85rem;
-  padding: 0.4em 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.admin-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #f1f7ff !important;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.5em 1em;
+  font-weight: 700;
+}
+
+.btn-sm {
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 </style>
