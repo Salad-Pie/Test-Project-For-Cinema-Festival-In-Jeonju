@@ -1,5 +1,6 @@
 package com.example.springboot.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class MemoImage {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "idea_contest_id", nullable = false)
+    @JsonIgnore
     private IdeaContest ideaContest;
 
     @Column(nullable = false, length = 255)
